@@ -4,7 +4,7 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
-    container_name: pos-postgres
+    container_name: tanah-mas-kedungadem-postgres
     environment:
       POSTGRES_USER: tanah_mas_kedungadem
       POSTGRES_PASSWORD: tanah_mas_kedungadem_2026
@@ -27,7 +27,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: pos-backend
+    container_name: tanah-mas-kedungadem-backend
     environment:
       DATABASE_DSN: "host=postgres user=tanah_mas_kedungadem password=tanah_mas_kedungadem_2026 dbname=pos port=5432 sslmode=disable"
       JWT_SECRET: "tanah-mas-kedungadem-jwt-secret-2026"
@@ -46,7 +46,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: pos-frontend
+    container_name: tanah-mas-kedungadem-frontend
     ports:
       - "3001:80"
     depends_on:
