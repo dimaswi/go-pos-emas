@@ -6,16 +6,16 @@ services:
     image: postgres:15-alpine
     container_name: pos-postgres
     environment:
-      POSTGRES_USER: dimas
-      POSTGRES_PASSWORD: dimas123
+      POSTGRES_USER: tanah_mas_kedungadem
+      POSTGRES_PASSWORD: tanah_mas_kedungadem_2026
       POSTGRES_DB: pos
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "5434:5432"
+      - "5446:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dimas -d pos"]
+      test: ["CMD-SHELL", "pg_isready -U tanah_mas_kedungadem -d pos"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -29,11 +29,11 @@ services:
       dockerfile: Dockerfile
     container_name: pos-backend
     environment:
-      DATABASE_DSN: "host=postgres user=dimas password=dimas123 dbname=pos port=5434 sslmode=disable"
-      JWT_SECRET: "your-secret-key-change-in-production"
-      SERVER_PORT: "8080"
+      DATABASE_DSN: "host=postgres user=tanah_mas_kedungadem password=tanah_mas_kedungadem_2026 dbname=pos port=5432 sslmode=disable"
+      JWT_SECRET: "tanah-mas-kedungadem-jwt-secret-2026"
+      SERVER_PORT: "8088"
     ports:
-      - "8080:8080"
+      - "8088:8088"
     depends_on:
       postgres:
         condition: service_healthy
@@ -48,7 +48,7 @@ services:
       dockerfile: Dockerfile
     container_name: pos-frontend
     ports:
-      - "3000:80"
+      - "3001:80"
     depends_on:
       - backend
     networks:
