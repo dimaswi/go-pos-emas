@@ -43,6 +43,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { setPageTitle } from "@/lib/page-title";
+import { generateUUID } from "@/lib/utils";
 
 const productTypes: { value: ProductType; label: string }[] = [
   { value: "gelang", label: "Gelang" },
@@ -88,7 +89,7 @@ export default function ProductCreate() {
     is_active: true,
   });
   const [stockEntries, setStockEntries] = useState<StockEntry[]>([
-    { id: crypto.randomUUID(), location_id: "", storage_box_id: "", quantity: "1", storageBoxes: [] }
+    { id: generateUUID(), location_id: "", storage_box_id: "", quantity: "1", storageBoxes: [] }
   ]);
   const [supplierName, setSupplierName] = useState("");
   const [stockNotes, setStockNotes] = useState("");
@@ -155,7 +156,7 @@ export default function ProductCreate() {
 
   const addStockEntry = () => {
     setStockEntries(prev => [...prev, {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       location_id: "",
       storage_box_id: "",
       quantity: "1",

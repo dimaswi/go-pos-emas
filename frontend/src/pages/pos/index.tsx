@@ -36,6 +36,7 @@ import {
   type Member,
   type Location,
 } from "@/lib/api";
+import { generateUUID } from "@/lib/utils";
 
 interface CartItem {
   id: string;
@@ -232,7 +233,7 @@ export default function POSPage() {
     setCart([
       ...cart,
       {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         stock_id: stock.id,
         product_name: stock.product?.name || "Unknown",
         barcode: stock.product?.barcode || "",

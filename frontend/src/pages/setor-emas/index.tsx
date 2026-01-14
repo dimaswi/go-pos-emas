@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { goldCategoriesApi, locationsApi, api, type Member, type GoldCategory, type Location } from "@/lib/api";
+import { generateUUID } from "@/lib/utils";
 
 interface DepositItem {
   id: string;
@@ -217,7 +218,7 @@ export default function SetorEmasPage() {
     setDepositItems([
       ...depositItems,
       {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         gold_category_id: selectedCategory.id,
         gold_category_name: selectedCategory.name,
         purity: selectedCategory.purity,
@@ -268,7 +269,7 @@ export default function SetorEmasPage() {
     setDepositItems([
       ...depositItems,
       {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         purity,
         weight_gross: weightGross,
         shrinkage_percent: shrinkage,
