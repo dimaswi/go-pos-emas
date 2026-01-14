@@ -9,7 +9,16 @@ import {
   ChevronRight,
   Lock,
   Building2,
-  Settings
+  Settings,
+  Gem,
+  Package,
+  Warehouse,
+  UserCircle,
+  PackageSearch,
+  ShoppingCart,
+  Computer,
+  Box,
+  Scale,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import { usePermission } from '@/hooks/usePermission';
@@ -50,6 +59,36 @@ import {
 
 const menuItems = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard.view' },
+  { path: '/pos', label: 'POS', icon: Computer, permission: 'transactions.view' },
+  { 
+    path: '/master-data', 
+    label: 'Master Data', 
+    icon: Package,
+    permission: 'gold-categories.view',
+    submenu: [
+      { path: '/gold-categories', label: 'Kualitas Emas', icon: Gem, permission: 'gold-categories.view' },
+      { path: '/products', label: 'Produk', icon: Package, permission: 'products.view' },
+      { path: '/locations', label: 'Lokasi', icon: Warehouse, permission: 'locations.view' },
+      { path: '/storage-boxes', label: 'Kotak Penyimpanan', icon: Box, permission: 'locations.view' },
+    ]
+  },
+  { 
+    path: '/inventory', 
+    label: 'Inventori', 
+    icon: PackageSearch,
+    permission: 'stocks.view',
+    submenu: [
+      { path: '/stocks', label: 'Stok', icon: PackageSearch, permission: 'stocks.view' },
+      { path: '/raw-materials', label: 'Bahan Baku', icon: Scale, permission: 'raw-materials.view' },
+    ]
+  },
+  { path: '/members', label: 'Member', icon: UserCircle, permission: 'members.view' },
+  { 
+    path: '/transactions', 
+    label: 'Transaksi', 
+    icon: ShoppingCart,
+    permission: 'transactions.view',
+  },
   { 
     path: '/users', 
     label: 'User Management', 

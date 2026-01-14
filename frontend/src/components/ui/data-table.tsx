@@ -50,6 +50,8 @@ interface DataTableProps<TData, TValue> {
   showPagination?: boolean
   showSearch?: boolean
   pageSize?: number
+  onRowSelectionChange?: (selectedRows: TData[]) => void
+  getRowClassName?: (row: TData) => string
 }
 
 export function DataTable<TData, TValue>({
@@ -60,12 +62,25 @@ export function DataTable<TData, TValue>({
   showPagination = true,
   showSearch = true,
   pageSize = 10,
+  onRowSelectionChange,
+  getRowClassName,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
   const [globalFilter, setGlobalFilter] = React.useState("")
+
+  // Notify parent of row selection changes
+  React.useEffect(() => {
+    if (onRowSelectionChange) {
+      const selectedRows = Object.keys(rowSelection)
+        .filter((key) => rowSelection[key as keyof typeof rowSelection])
+        .map((key) => data[parseInt(key)])
+        .filter(Boolean)
+      onRowSelectionChange(selectedRows)
+    }
+  }, [rowSelection, data, onRowSelectionChange])
 
   const table = useReactTable({
     data,
@@ -165,6 +180,7 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  className={getRowClassName ? getRowClassName(row.original) : undefined}
                 >
                   {row.getVisibleCells().map((cell: any) => (
                     <TableCell key={cell.id}>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Card, CardContent, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { setPageTitle } from '@/lib/page-title';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -92,54 +92,53 @@ export default function RoleShow() {
   }
 
   return (
-    <div className="p-6">
-      <div className="max-w-full mx-auto space-y-6">
-        {/* Header with actions */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => navigate('/roles')}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Kembali
-            </Button>
-            <h1 className="text-xl font-semibold">Detail Role</h1>
-            <span className="text-muted-foreground">#{role.id}</span>
-          </div>
-          <div className="flex gap-2">
-            {hasPermission('roles.update') && (
+    <div className="p-6 space-y-4">
+      <Card className="shadow-md">
+        <CardHeader className="border-b bg-muted/50 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
               <Button 
-                variant="outline"
+                variant="outline" 
                 size="sm"
-                onClick={() => navigate(`/roles/${id}/edit`)}
+                onClick={() => navigate('/roles')}
               >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
+                <ArrowLeft/>
               </Button>
-            )}
-            {hasPermission('roles.delete') && (
-              <Button 
-                variant="destructive"
-                size="sm"
-                onClick={handleDelete}
-                disabled={deleting}
-              >
-                {deleting ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Trash2 className="h-4 w-4 mr-2" />
-                )}
-                Hapus
-              </Button>
-            )}
+              <div>
+                <CardTitle className="text-base font-semibold">Detail Role</CardTitle>
+                <CardDescription className="text-xs">Lihat detail informasi role</CardDescription>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              {hasPermission('roles.update') && (
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/roles/${id}/edit`)}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              )}
+              {hasPermission('roles.delete') && (
+                <Button 
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                >
+                  {deleting ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4 mr-2" />
+                  )}
+                  Hapus
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
-
-        {/* Single Card with Sections */}
-        <Card>
-          <CardContent className="p-6">
+        </CardHeader>
+        <CardContent className="pt-6">
             {/* Role Information Section */}
             <div className="mb-8">
               <CardTitle className="text-base text-muted-foreground font-normal mb-4">
@@ -244,8 +243,7 @@ export default function RoleShow() {
               )}
             </div>
           </CardContent>
-        </Card>
-      </div>
+      </Card>
 
       <ConfirmDialog
         open={deleteDialogOpen}

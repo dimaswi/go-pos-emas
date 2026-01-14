@@ -1,19 +1,163 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore } from '@/lib/store';
-import { usersApi, rolesApi } from '@/lib/api';
-import { Users, Shield, Activity, UserPlus, Loader2 } from 'lucide-react';
+import {
+  usersApi,
+  rolesApi,
+  stocksApi,
+  productsApi,
+  membersApi,
+  transactionsApi,
+  locationsApi,
+  goldCategoriesApi,
+  type Transaction,
+  type Member,
+  type DailySummary
+} from '@/lib/api';
+import {
+  Users,
+  Shield,
+  Activity,
+  Package,
+  TrendingUp,
+  TrendingDown,
+  ShoppingCart,
+  Coins,
+  MapPin,
+  UserCheck,
+  ArrowUpRight,
+  ArrowDownRight,
+  Clock,
+  Receipt,
+  Crown,
+  Boxes,
+  BarChart3,
+  RefreshCw,
+  ChevronRight,
+  DollarSign,
+  Banknote
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { setPageTitle } from '@/lib/page-title';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { XAxis, YAxis, CartesianGrid, BarChart, Bar, Legend } from 'recharts';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
+import { Link } from 'react-router-dom';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+interface DashboardStats {
+  totalUsers: number;
+  activeUsers: number;
+  totalRoles: number;
+  totalProducts: number;
+  totalStocks: number;
+  availableStocks: number;
+  totalMembers: number;
+  totalLocations: number;
+  totalGoldCategories: number;
+  dailySummary: DailySummary | null;
+  recentTransactions: Transaction[];
+  recentMembers: Member[];
+  stocksByStatus: { status: string; count: number }[];
+  membersByType: { type: string; count: number }[];
+  weeklyTransactions: { date: string; sales: number; purchases: number; profit: number }[];
+  // New stats
+  totalSalesAllTime: number;
+  totalPurchasesAllTime: number;
+  totalProfit: number;
+  monthlyCashFlow: { month: string; income: number; expense: number }[];
+  stocksByCategory: { name: string; count: number; weight: number }[];
+}
+
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+};
+
+const formatCompactCurrency = (value: number) => {
+  if (value >= 1000000000) {
+    return `Rp ${(value / 1000000000).toFixed(1)}M`;
+  } else if (value >= 1000000) {
+    return `Rp ${(value / 1000000).toFixed(1)}jt`;
+  } else if (value >= 1000) {
+    return `Rp ${(value / 1000).toFixed(0)}rb`;
+  }
+  return formatCurrency(value);
+};
+
+const formatNumber = (value: number) => {
+  return new Intl.NumberFormat('id-ID').format(value);
+};
+
+const getTransactionStatusColor = (status: string) => {
+  switch (status) {
+    case 'completed':
+      return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
+    case 'cancelled':
+      return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+    default:
+      return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400';
+  }
+};
+
+const getMemberTypeColor = (type: string) => {
+  switch (type) {
+    case 'platinum':
+      return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
+    case 'gold':
+      return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
+    case 'silver':
+      return 'bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400';
+    default:
+      return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+  }
+};
+
+const CHART_COLORS = {
+  sales: 'hsl(142, 76%, 36%)',
+  purchases: 'hsl(221, 83%, 53%)',
+  profit: 'hsl(45, 93%, 47%)',
+  income: '#22c55e',
+  expense: '#3b82f6',
+};
+
+const PIE_COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'];
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
+  const [refreshing, setRefreshing] = useState(false);
+  const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
     activeUsers: 0,
     totalRoles: 0,
-    newUsersThisMonth: 0,
+    totalProducts: 0,
+    totalStocks: 0,
+    availableStocks: 0,
+    totalMembers: 0,
+    totalLocations: 0,
+    totalGoldCategories: 0,
+    dailySummary: null,
+    recentTransactions: [],
+    recentMembers: [],
+    stocksByStatus: [],
+    membersByType: [],
+    weeklyTransactions: [],
+    totalSalesAllTime: 0,
+    totalPurchasesAllTime: 0,
+    totalProfit: 0,
+    monthlyCashFlow: [],
+    stocksByCategory: [],
   });
 
   useEffect(() => {
@@ -21,215 +165,767 @@ export default function DashboardPage() {
     loadDashboardData();
   }, []);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = async (isRefresh = false) => {
     try {
-      const [usersRes, rolesRes] = await Promise.all([
+      if (isRefresh) setRefreshing(true);
+
+      const [
+        usersRes,
+        rolesRes,
+        stocksRes,
+        productsRes,
+        membersRes,
+        transactionsRes,
+        locationsRes,
+        goldCategoriesRes,
+        dailySummaryRes,
+        allTransactionsRes
+      ] = await Promise.all([
         usersApi.getAll(),
         rolesApi.getAll(),
+        stocksApi.getAll({ page_size: 1000 }),
+        productsApi.getAll({ page_size: 1000 }),
+        membersApi.getAll({ page_size: 1000 }),
+        transactionsApi.getAll({ page_size: 10 }),
+        locationsApi.getAll(),
+        goldCategoriesApi.getAll(),
+        transactionsApi.getDailySummary(),
+        transactionsApi.getAll({ page_size: 1000 }), // Get all transactions for totals
       ]);
 
-      const users = usersRes.data.data;
-      const roles = rolesRes.data.data;
+      const users = usersRes.data.data || [];
+      const roles = rolesRes.data.data || [];
+      const stocks = stocksRes.data.data || [];
+      const products = productsRes.data.data || [];
+      const members = membersRes.data.data || [];
+      const transactions = transactionsRes.data.data || [];
+      const locations = locationsRes.data.data || [];
+      const goldCategories = goldCategoriesRes.data.data || [];
+      const dailySummary = dailySummaryRes.data.data || null;
+      const allTransactions = allTransactionsRes.data.data || [];
 
       // Calculate stats
       const activeUsers = users.filter((u: any) => u.is_active).length;
-      
-      // Get new users this month (created in the last 30 days)
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const newUsers = users.filter((u: any) => {
-        const createdDate = new Date(u.created_at);
-        return createdDate >= thirtyDaysAgo;
-      }).length;
+      const availableStocks = stocks.filter((s: any) => s.status === 'available').length;
+
+      // Calculate total sales and purchases all time
+      const totalSalesAllTime = allTransactions
+        .filter((t: Transaction) => t.type === 'sale' && t.status === 'completed')
+        .reduce((sum: number, t: Transaction) => sum + (t.grand_total || 0), 0);
+
+      const totalPurchasesAllTime = allTransactions
+        .filter((t: Transaction) => t.type === 'purchase' && t.status === 'completed')
+        .reduce((sum: number, t: Transaction) => sum + (t.grand_total || 0), 0);
+
+      const totalProfit = totalSalesAllTime - totalPurchasesAllTime;
+
+      // Stocks by status
+      const stockStatusMap: Record<string, number> = {};
+      stocks.forEach((s: any) => {
+        stockStatusMap[s.status] = (stockStatusMap[s.status] || 0) + 1;
+      });
+      const stocksByStatus = Object.entries(stockStatusMap).map(([status, count]) => ({ status, count }));
+
+      // Stocks by gold category (available stocks only)
+      const stockCategoryMap: Record<string, { count: number; weight: number }> = {};
+      stocks
+        .filter((s: any) => s.status === 'available')
+        .forEach((s: any) => {
+          const categoryName = s.product?.gold_category?.name || 'Lainnya';
+          if (!stockCategoryMap[categoryName]) {
+            stockCategoryMap[categoryName] = { count: 0, weight: 0 };
+          }
+          stockCategoryMap[categoryName].count += 1;
+          stockCategoryMap[categoryName].weight += parseFloat(s.weight) || 0;
+        });
+      const stocksByCategory = Object.entries(stockCategoryMap)
+        .map(([name, data]) => ({ name, count: data.count, weight: data.weight }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+      // Members by type
+      const memberTypeMap: Record<string, number> = {};
+      members.forEach((m: any) => {
+        const type = m.member_type || m.type || 'regular';
+        memberTypeMap[type] = (memberTypeMap[type] || 0) + 1;
+      });
+      const membersByType = Object.entries(memberTypeMap).map(([type, count]) => ({ type, count }));
+
+      // Recent members (last 5)
+      const sortedMembers = [...members].sort((a: any, b: any) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      ).slice(0, 5);
+
+      // Generate weekly transaction data (last 7 days)
+      const weeklyTransactions = generateWeeklyData(allTransactions);
+
+      // Generate monthly cash flow data
+      const monthlyCashFlow = generateMonthlyCashFlow(allTransactions);
 
       setStats({
         totalUsers: users.length,
         activeUsers: activeUsers,
         totalRoles: roles.length,
-        newUsersThisMonth: newUsers,
+        totalProducts: products.length,
+        totalStocks: stocks.length,
+        availableStocks: availableStocks,
+        totalMembers: members.length,
+        totalLocations: locations.length,
+        totalGoldCategories: goldCategories.length,
+        dailySummary: dailySummary,
+        recentTransactions: transactions.slice(0, 5),
+        recentMembers: sortedMembers,
+        stocksByStatus: stocksByStatus,
+        membersByType: membersByType,
+        weeklyTransactions: weeklyTransactions,
+        totalSalesAllTime,
+        totalPurchasesAllTime,
+        totalProfit,
+        monthlyCashFlow,
+        stocksByCategory,
       });
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const dashboardStats = [
-    { 
-      title: 'Total Users', 
-      value: loading ? '...' : stats.totalUsers.toString(), 
-      change: stats.activeUsers > 0 ? `${stats.activeUsers} active` : 'No data',
-      icon: Users, 
-      color: 'text-blue-600 dark:text-blue-400',
-      bgColor: 'bg-blue-50 dark:bg-blue-950'
-    },
-    { 
-      title: 'Active Roles', 
-      value: loading ? '...' : stats.totalRoles.toString(), 
-      change: 'System roles',
-      icon: Shield, 
-      color: 'text-green-600 dark:text-green-400',
-      bgColor: 'bg-green-50 dark:bg-green-950'
-    },
-    { 
-      title: 'System Status', 
-      value: '99.9%', 
-      change: 'Uptime',
-      icon: Activity, 
-      color: 'text-purple-600 dark:text-purple-400',
-      bgColor: 'bg-purple-50 dark:bg-purple-950'
-    },
-    { 
-      title: 'New Users', 
-      value: loading ? '...' : `+${stats.newUsersThisMonth}`, 
-      change: 'Last 30 days',
-      icon: UserPlus, 
-      color: 'text-orange-600 dark:text-orange-400',
-      bgColor: 'bg-orange-50 dark:bg-orange-950'
-    },
+  const generateWeeklyData = (transactions: Transaction[]) => {
+    const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+    const data = [];
+
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dayName = days[date.getDay()];
+
+      const dayTransactions = transactions.filter((t: Transaction) => {
+        const tDate = new Date(t.transaction_date || t.created_at);
+        return tDate.toDateString() === date.toDateString() && t.status === 'completed';
+      });
+
+      const sales = dayTransactions
+        .filter((t: Transaction) => t.type === 'sale')
+        .reduce((sum: number, t: Transaction) => sum + (t.grand_total || 0), 0);
+
+      const purchases = dayTransactions
+        .filter((t: Transaction) => t.type === 'purchase')
+        .reduce((sum: number, t: Transaction) => sum + (t.grand_total || 0), 0);
+
+      data.push({
+        date: dayName,
+        sales: sales / 1000000,
+        purchases: purchases / 1000000,
+        profit: (sales - purchases) / 1000000,
+      });
+    }
+
+    return data;
+  };
+
+  const generateMonthlyCashFlow = (transactions: Transaction[]) => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    const currentYear = new Date().getFullYear();
+    const data = [];
+
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const monthIndex = date.getMonth();
+      const year = date.getFullYear();
+
+      const monthTransactions = transactions.filter((t: Transaction) => {
+        const tDate = new Date(t.transaction_date || t.created_at);
+        return tDate.getMonth() === monthIndex && tDate.getFullYear() === year && t.status === 'completed';
+      });
+
+      const income = monthTransactions
+        .filter((t: Transaction) => t.type === 'sale')
+        .reduce((sum: number, t: Transaction) => sum + (t.grand_total || 0), 0);
+
+      const expense = monthTransactions
+        .filter((t: Transaction) => t.type === 'purchase')
+        .reduce((sum: number, t: Transaction) => sum + (t.grand_total || 0), 0);
+
+      data.push({
+        month: year === currentYear ? months[monthIndex] : `${months[monthIndex]} ${year}`,
+        income: income / 1000000,
+        expense: expense / 1000000,
+      });
+    }
+
+    return data;
+  };
+
+  const handleRefresh = () => {
+    loadDashboardData(true);
+  };
+
+  const quickLinks = [
+    { title: 'POS Penjualan', href: '/pos', icon: ShoppingCart, color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-50 dark:bg-green-950' },
+    { title: 'Setor Emas', href: '/setor-emas', icon: Coins, color: 'text-yellow-600 dark:text-yellow-400', bgColor: 'bg-yellow-50 dark:bg-yellow-950' },
+    { title: 'Daftar Stok', href: '/stocks', icon: Boxes, color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-50 dark:bg-blue-950' },
+    { title: 'Daftar Member', href: '/members', icon: Users, color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-50 dark:bg-purple-950' },
   ];
+
+  const chartConfig = {
+    sales: { label: 'Penjualan', color: CHART_COLORS.sales },
+    purchases: { label: 'Pembelian', color: CHART_COLORS.purchases },
+    income: { label: 'Uang Masuk', color: CHART_COLORS.income },
+    expense: { label: 'Uang Keluar', color: CHART_COLORS.expense },
+  };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex flex-1 flex-col gap-4 p-6">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="shadow-sm">
+              <CardContent className="pt-4">
+                <Skeleton className="h-4 w-24 mb-2" />
+                <Skeleton className="h-8 w-16 mb-1" />
+                <Skeleton className="h-3 w-20" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+          <Card className="col-span-4">
+            <CardHeader>
+              <Skeleton className="h-5 w-32" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-[300px] w-full" />
+            </CardContent>
+          </Card>
+          <Card className="col-span-3">
+            <CardHeader>
+              <Skeleton className="h-5 w-32" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-[300px] w-full" />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-6">
-      <div className="grid gap-4">
-        {/* Main Card Container */}
-        <Card className="shadow-md">
-          <CardHeader className="border-b bg-muted/50">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">
+            Selamat datang kembali, {user?.full_name}!
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={refreshing}
+          >
+            <RefreshCw className={cn("h-4 w-4 mr-2", refreshing && "animate-spin")} />
+            Refresh
+          </Button>
+          <Badge variant="outline" className="hidden sm:flex">
+            <Clock className="h-3 w-3 mr-1" />
+            {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          </Badge>
+        </div>
+      </div>
+
+      {/* Quick Links */}
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
+        {quickLinks.map((link) => {
+          const Icon = link.icon;
+          return (
+            <Link key={link.title} to={link.href} className="group">
+              <Card className="shadow-sm hover:shadow-md transition-all duration-200 hover:border-primary/50 cursor-pointer">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className={cn(link.bgColor, "p-2.5 rounded-lg group-hover:scale-110 transition-transform")}>
+                    <Icon className={cn("h-5 w-5", link.color)} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{link.title}</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                </CardContent>
+              </Card>
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Financial Summary Cards - Row 1 */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Total Penjualan Semua Waktu */}
+        <Card className="shadow-sm hover:shadow-md transition-shadow border-l-4 border-l-green-500">
+          <CardContent className="pt-4">
             <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base font-semibold">Dashboard</CardTitle>
-                <CardDescription>
-                  Welcome back, {user?.full_name}! Here's what's happening today.
-                </CardDescription>
+              <span className="text-sm font-medium text-muted-foreground">Total Penjualan</span>
+              <div className="p-2 rounded-lg bg-green-50 dark:bg-green-950">
+                <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
               </div>
             </div>
-          </CardHeader>
-          <CardContent className="pt-6 space-y-6">
-            {/* Stats Grid */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              {dashboardStats.map((stat) => {
-                const Icon = stat.icon;
-                return (
-                  <Card key={stat.title} className="border shadow-sm">
-                    <CardContent className="pt-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-muted-foreground">
-                          {stat.title}
-                        </span>
-                        <div className={cn(stat.bgColor, "p-2 rounded-lg")}>
-                          <Icon className={cn("h-4 w-4", stat.color)} />
-                        </div>
-                      </div>
-                      <div className="mt-2 space-y-1">
-                        <div className="text-2xl font-bold">{stat.value}</div>
-                        <p className="text-xs text-muted-foreground">
-                          {stat.change}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+            <div className="mt-2 space-y-1">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {formatCompactCurrency(stats.totalSalesAllTime)}
+              </div>
+              <p className="text-xs text-muted-foreground">Seluruh waktu</p>
             </div>
           </CardContent>
         </Card>
 
-        {/* Two Column Layout */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          {/* System Information */}
-          <Card className="col-span-4 shadow-md">
-            <CardHeader className="border-b bg-muted/50">
-              <CardTitle className="text-base font-semibold">System Information</CardTitle>
-              <CardDescription>Quick overview of the system</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6 space-y-4">
-              <div className="flex items-center gap-4 p-4 rounded-lg border bg-card">
-                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Users className="h-4 w-4 text-primary" />
-                </div>
-                <div className="flex-1 space-y-1">
-                  <p className="text-sm font-medium leading-none">
-                    User Management
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {stats.totalUsers} total users with {stats.activeUsers} active accounts
-                  </p>
-                </div>
+        {/* Total Pembelian/Setor Emas */}
+        <Card className="shadow-sm hover:shadow-md transition-shadow border-l-4 border-l-blue-500">
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">Total Setor Emas</span>
+              <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950">
+                <TrendingDown className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               </div>
-              <div className="flex items-center gap-4 p-4 rounded-lg border bg-card">
-                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Shield className="h-4 w-4 text-primary" />
-                </div>
-                <div className="flex-1 space-y-1">
-                  <p className="text-sm font-medium leading-none">
-                    Role Management
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {stats.totalRoles} active roles configured in the system
-                  </p>
-                </div>
+            </div>
+            <div className="mt-2 space-y-1">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {formatCompactCurrency(stats.totalPurchasesAllTime)}
               </div>
-              <div className="flex items-center gap-4 p-4 rounded-lg border bg-card">
-                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Activity className="h-4 w-4 text-primary" />
-                </div>
-                <div className="flex-1 space-y-1">
-                  <p className="text-sm font-medium leading-none">
-                    System Health
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    All services running normally
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              <p className="text-xs text-muted-foreground">Seluruh waktu</p>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Your Profile */}
-          <Card className="col-span-3 shadow-md">
-            <CardHeader className="border-b bg-muted/50">
-              <CardTitle className="text-base font-semibold">Your Profile</CardTitle>
-              <CardDescription>Account information</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6 space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold">
-                  {user?.full_name?.charAt(0) || 'U'}
-                </div>
-                <div>
-                  <p className="font-medium">{user?.full_name}</p>
-                  <p className="text-sm text-muted-foreground">{user?.email}</p>
-                </div>
+        {/* Pendapatan Bersih */}
+        <Card className="shadow-sm hover:shadow-md transition-shadow border-l-4 border-l-yellow-500">
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">Pendapatan Bersih</span>
+              <div className="p-2 rounded-lg bg-yellow-50 dark:bg-yellow-950">
+                <DollarSign className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
               </div>
-              <div className="space-y-3">
-                <div className="flex justify-between py-2 border-b">
-                  <span className="text-sm text-muted-foreground">Role</span>
-                  <span className="text-sm font-medium">{user?.role?.name || 'N/A'}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b">
-                  <span className="text-sm text-muted-foreground">Status</span>
-                  <span className="text-sm font-medium text-green-600">
-                    {user?.is_active ? 'Active' : 'Inactive'}
-                  </span>
-                </div>
-                <div className="flex justify-between py-2">
-                  <span className="text-sm text-muted-foreground">User ID</span>
-                  <span className="text-sm font-medium">#{user?.id}</span>
-                </div>
+            </div>
+            <div className="mt-2 space-y-1">
+              <div className={cn("text-2xl font-bold", stats.totalProfit >= 0 ? "text-yellow-600 dark:text-yellow-400" : "text-red-600")}>
+                {stats.totalProfit >= 0 ? '+' : ''}{formatCompactCurrency(stats.totalProfit)}
               </div>
-            </CardContent>
-          </Card>
-        </div>
+              <p className="text-xs text-muted-foreground">Penjualan - Setor Emas</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Stok Tersedia */}
+        <Card className="shadow-sm hover:shadow-md transition-shadow border-l-4 border-l-purple-500">
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">Stok Tersedia</span>
+              <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-950">
+                <Package className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+              </div>
+            </div>
+            <div className="mt-2 space-y-1">
+              <div className="text-2xl font-bold">{formatNumber(stats.availableStocks)}</div>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="text-xs">
+                  dari {formatNumber(stats.totalStocks)} total
+                </Badge>
+                <Progress
+                  value={stats.totalStocks > 0 ? (stats.availableStocks / stats.totalStocks) * 100 : 0}
+                  className="h-1.5 w-16"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Daily Stats Cards - Row 2 */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Penjualan Hari Ini */}
+        <Card className="shadow-sm hover:shadow-md transition-shadow bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/50 dark:to-green-900/30 border-green-200 dark:border-green-800">
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-green-700 dark:text-green-300">Penjualan Hari Ini</span>
+              <ArrowUpRight className="h-5 w-5 text-green-600 dark:text-green-400" />
+            </div>
+            <div className="mt-2 space-y-1">
+              <div className="text-2xl font-bold text-green-700 dark:text-green-300">
+                {formatCurrency(stats.dailySummary?.sales_amount || 0)}
+              </div>
+              <Badge className="bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200">
+                {stats.dailySummary?.sales_count || 0} transaksi
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Pembelian Hari Ini */}
+        <Card className="shadow-sm hover:shadow-md transition-shadow bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/50 dark:to-blue-900/30 border-blue-200 dark:border-blue-800">
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Setor Emas Hari Ini</span>
+              <ArrowDownRight className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="mt-2 space-y-1">
+              <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+                {formatCurrency(stats.dailySummary?.purchases_amount || 0)}
+              </div>
+              <Badge className="bg-blue-200 text-blue-800 dark:bg-blue-800 dark:text-blue-200">
+                {stats.dailySummary?.purchases_count || 0} transaksi
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Profit Hari Ini */}
+        <Card className="shadow-sm hover:shadow-md transition-shadow bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/50 dark:to-amber-900/30 border-amber-200 dark:border-amber-800">
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-amber-700 dark:text-amber-300">Profit Hari Ini</span>
+              <Banknote className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div className="mt-2 space-y-1">
+              <div className={cn("text-2xl font-bold",
+                ((stats.dailySummary?.sales_amount || 0) - (stats.dailySummary?.purchases_amount || 0)) >= 0
+                  ? "text-amber-700 dark:text-amber-300"
+                  : "text-red-600"
+              )}>
+                {((stats.dailySummary?.sales_amount || 0) - (stats.dailySummary?.purchases_amount || 0)) >= 0 ? '+' : ''}
+                {formatCurrency((stats.dailySummary?.sales_amount || 0) - (stats.dailySummary?.purchases_amount || 0))}
+              </div>
+              <p className="text-xs text-amber-600 dark:text-amber-400">Penjualan - Setor Emas</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Total Member */}
+        <Card className="shadow-sm hover:shadow-md transition-shadow bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/50 dark:to-purple-900/30 border-purple-200 dark:border-purple-800">
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Total Member</span>
+              <UserCheck className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div className="mt-2 space-y-1">
+              <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">{formatNumber(stats.totalMembers)}</div>
+              <div className="flex items-center gap-1 flex-wrap">
+                {stats.membersByType.slice(0, 2).map((m) => (
+                  <Badge key={m.type} variant="secondary" className="text-[10px] capitalize bg-purple-200 text-purple-800 dark:bg-purple-800 dark:text-purple-200">
+                    {m.type}: {m.count}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Section with Tabs */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        {/* Cash Flow Chart */}
+        <Card className="col-span-4 shadow-sm">
+          <CardHeader className="pb-2">
+            <Tabs defaultValue="weekly" className="w-full">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base font-semibold flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4" />
+                    Grafik Keuangan
+                  </CardTitle>
+                  <CardDescription>Uang Masuk vs Uang Keluar</CardDescription>
+                </div>
+                <TabsList className="h-8">
+                  <TabsTrigger value="weekly" className="text-xs px-3">Mingguan</TabsTrigger>
+                  <TabsTrigger value="monthly" className="text-xs px-3">Bulanan</TabsTrigger>
+                </TabsList>
+              </div>
+
+              <TabsContent value="weekly" className="mt-4">
+                <ChartContainer config={chartConfig} className="h-[280px] w-full">
+                  <BarChart data={stats.weeklyTransactions} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="date" className="text-xs" />
+                    <YAxis className="text-xs" tickFormatter={(value) => `${value}jt`} />
+                    <ChartTooltip
+                      content={<ChartTooltipContent />}
+                      formatter={(value: number) => [`Rp ${value.toFixed(1)} jt`, '']}
+                    />
+                    <Legend />
+                    <Bar dataKey="sales" name="Penjualan (Uang Masuk)" fill={CHART_COLORS.income} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="purchases" name="Setor Emas (Uang Keluar)" fill={CHART_COLORS.expense} radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ChartContainer>
+              </TabsContent>
+
+              <TabsContent value="monthly" className="mt-4">
+                <ChartContainer config={chartConfig} className="h-[280px] w-full">
+                  <BarChart data={stats.monthlyCashFlow} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="month" className="text-xs" />
+                    <YAxis className="text-xs" tickFormatter={(value) => `${value}jt`} />
+                    <ChartTooltip
+                      content={<ChartTooltipContent />}
+                      formatter={(value: number) => [`Rp ${value.toFixed(1)} jt`, '']}
+                    />
+                    <Legend />
+                    <Bar dataKey="income" name="Uang Masuk (Penjualan)" fill={CHART_COLORS.income} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="expense" name="Uang Keluar (Setor Emas)" fill={CHART_COLORS.expense} radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ChartContainer>
+              </TabsContent>
+            </Tabs>
+          </CardHeader>
+        </Card>
+
+        {/* Stock by Category */}
+        <Card className="col-span-3 shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <Crown className="h-4 w-4" />
+              Stok per Kategori Emas
+            </CardTitle>
+            <CardDescription>Top 5 kategori (tersedia)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {stats.stocksByCategory.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Boxes className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Belum ada data stok</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {stats.stocksByCategory.map((item, index) => {
+                  const maxCount = Math.max(...stats.stocksByCategory.map(s => s.count));
+                  const percentage = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
+                  return (
+                    <div key={item.name} className="space-y-1.5">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-2.5 h-2.5 rounded-full"
+                            style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
+                          />
+                          <span className="font-medium">{item.name}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-muted-foreground">
+                          <span className="text-xs">{item.weight.toFixed(2)}g</span>
+                          <Badge variant="secondary" className="text-xs">
+                            {item.count} pcs
+                          </Badge>
+                        </div>
+                      </div>
+                      <Progress 
+                        value={percentage} 
+                        className="h-2"
+                        style={{ 
+                          ['--progress-background' as string]: PIE_COLORS[index % PIE_COLORS.length] 
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <Separator className="my-3" />
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Total Stok Tersedia</span>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline">
+                  {stats.stocksByCategory.reduce((sum, item) => sum + item.count, 0)} pcs
+                </Badge>
+                <Badge variant="outline">
+                  {stats.stocksByCategory.reduce((sum, item) => sum + item.weight, 0).toFixed(2)}g
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Bottom Section */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {/* Recent Transactions */}
+        <Card className="col-span-2 shadow-sm">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <Receipt className="h-4 w-4" />
+                  Transaksi Terbaru
+                </CardTitle>
+                <CardDescription>5 transaksi terakhir</CardDescription>
+              </div>
+              <Link to="/pos/history">
+                <Button variant="ghost" size="sm" className="text-xs">
+                  Lihat Semua
+                  <ChevronRight className="h-3 w-3 ml-1" />
+                </Button>
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {stats.recentTransactions.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Receipt className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Belum ada transaksi</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {stats.recentTransactions.map((transaction) => (
+                  <Link
+                    key={transaction.id}
+                    to={`/pos/history/${transaction.id}`}
+                    className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "p-2 rounded-lg",
+                        transaction.type === 'sale'
+                          ? 'bg-green-50 dark:bg-green-950'
+                          : 'bg-blue-50 dark:bg-blue-950'
+                      )}>
+                        {transaction.type === 'sale' ? (
+                          <ArrowUpRight className="h-4 w-4 text-green-600 dark:text-green-400" />
+                        ) : (
+                          <ArrowDownRight className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{transaction.transaction_code}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {transaction.customer_name || transaction.member?.name || 'Umum'} • {' '}
+                          {new Date(transaction.transaction_date || transaction.created_at).toLocaleString('id-ID', {
+                            day: 'numeric',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className={cn(
+                        "text-sm font-semibold",
+                        transaction.type === 'sale' ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'
+                      )}>
+                        {transaction.type === 'sale' ? '+' : '-'}{formatCurrency(transaction.grand_total || 0)}
+                      </p>
+                      <Badge variant="outline" className={cn("text-[10px]", getTransactionStatusColor(transaction.status))}>
+                        {transaction.status}
+                      </Badge>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* System Info & Member Stats */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Ringkasan Sistem
+            </CardTitle>
+            <CardDescription>Informasi cepat</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* System Stats */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm">Pengguna Aktif</span>
+                </div>
+                <Badge variant="secondary">{stats.activeUsers}/{stats.totalUsers}</Badge>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-green-600" />
+                  <span className="text-sm">Role</span>
+                </div>
+                <Badge variant="secondary">{stats.totalRoles}</Badge>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                <div className="flex items-center gap-2">
+                  <Package className="h-4 w-4 text-purple-600" />
+                  <span className="text-sm">Produk</span>
+                </div>
+                <Badge variant="secondary">{stats.totalProducts}</Badge>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-orange-600" />
+                  <span className="text-sm">Lokasi</span>
+                </div>
+                <Badge variant="secondary">{stats.totalLocations}</Badge>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                <div className="flex items-center gap-2">
+                  <Coins className="h-4 w-4 text-yellow-600" />
+                  <span className="text-sm">Kategori Emas</span>
+                </div>
+                <Badge variant="secondary">{stats.totalGoldCategories}</Badge>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Member Types Distribution */}
+            <div>
+              <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                <Crown className="h-4 w-4" />
+                Tipe Member
+              </p>
+              <div className="space-y-2">
+                {stats.membersByType.map((item) => (
+                  <div key={item.type} className="flex items-center justify-between">
+                    <Badge className={cn("capitalize", getMemberTypeColor(item.type))}>
+                      {item.type}
+                    </Badge>
+                    <span className="text-sm font-medium">{item.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* User Profile Card */}
+      <Card className="shadow-sm">
+        <CardHeader className="pb-2 border-b bg-muted/50">
+          <CardTitle className="text-base font-semibold">Profil Anda</CardTitle>
+          <CardDescription>Informasi akun</CardDescription>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/60 text-primary-foreground flex items-center justify-center text-2xl font-bold shadow-lg">
+              {user?.full_name?.charAt(0) || 'U'}
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-lg">{user?.full_name}</p>
+              <p className="text-sm text-muted-foreground">{user?.email}</p>
+              <div className="flex items-center gap-2 mt-2">
+                <Badge variant="outline">{user?.role?.name || 'N/A'}</Badge>
+                <Badge className={user?.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700'}>
+                  {user?.is_active ? 'Aktif' : 'Nonaktif'}
+                </Badge>
+              </div>
+            </div>
+            <Link to="/account">
+              <Button variant="outline" size="sm">
+                Edit Profil
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

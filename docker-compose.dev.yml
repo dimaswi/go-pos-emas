@@ -4,18 +4,18 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
-    container_name: starter-postgres-dev
+    container_name: posTM-postgres-dev
     environment:
-      POSTGRES_USER: starter
-      POSTGRES_PASSWORD: starter123
-      POSTGRES_DB: starter
+      POSTGRES_USER: posTM
+      POSTGRES_PASSWORD: posTM123
+      POSTGRES_DB: posTM
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "5434:5432"
+      - "5436:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U starter -d starter"]
+      test: ["CMD-SHELL", "pg_isready -U posTM -d posTM"]
       interval: 10s
       timeout: 5s
       retries: 5

@@ -1,15 +1,21 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { setPageTitle } from '@/lib/page-title';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DataTable } from '@/components/ui/data-table';
-import { createPermissionColumns } from './columns';
-import { permissionsApi, type Permission } from '@/lib/api';
-import { usePermission } from '@/hooks/usePermission';
-import { useToast } from '@/hooks/use-toast';
-import { ConfirmDialog } from '@/components/confirm-dialog';
-import { Loader2, Plus } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { setPageTitle } from "@/lib/page-title";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { DataTable } from "@/components/ui/data-table";
+import { createPermissionColumns } from "./columns";
+import { permissionsApi, type Permission } from "@/lib/api";
+import { usePermission } from "@/hooks/usePermission";
+import { useToast } from "@/hooks/use-toast";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { Loader2, Plus } from "lucide-react";
 
 export default function PermissionsPage() {
   const navigate = useNavigate();
@@ -18,10 +24,12 @@ export default function PermissionsPage() {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [permissionToDelete, setPermissionToDelete] = useState<number | null>(null);
+  const [permissionToDelete, setPermissionToDelete] = useState<number | null>(
+    null
+  );
 
   useEffect(() => {
-    setPageTitle('Permissions');
+    setPageTitle("Permissions");
     loadPermissions();
   }, []);
 
@@ -33,7 +41,8 @@ export default function PermissionsPage() {
       toast({
         variant: "destructive",
         title: "Error!",
-        description: error.response?.data?.error || "Failed to load permissions.",
+        description:
+          error.response?.data?.error || "Failed to load permissions.",
       });
     } finally {
       setLoading(false);
@@ -47,7 +56,7 @@ export default function PermissionsPage() {
 
   const confirmDelete = async () => {
     if (!permissionToDelete) return;
-    
+
     try {
       await permissionsApi.delete(permissionToDelete);
       toast({
@@ -60,7 +69,8 @@ export default function PermissionsPage() {
       toast({
         variant: "destructive",
         title: "Error!",
-        description: error.response?.data?.error || "Failed to delete permission.",
+        description:
+          error.response?.data?.error || "Failed to delete permission.",
       });
     } finally {
       setDeleteDialogOpen(false);
@@ -82,9 +92,9 @@ export default function PermissionsPage() {
     onView: handleView,
     onEdit: handleEdit,
     onDelete: handleDeleteClick,
-    hasViewPermission: hasPermission('permissions.view'),
-    hasEditPermission: hasPermission('permissions.update'),
-    hasDeletePermission: hasPermission('permissions.delete'),
+    hasViewPermission: hasPermission("permissions.view"),
+    hasEditPermission: hasPermission("permissions.update"),
+    hasDeletePermission: hasPermission("permissions.delete"),
   });
 
   if (loading) {
@@ -96,33 +106,33 @@ export default function PermissionsPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-6">
-      <div className="grid gap-4">
-        <Card className="shadow-md">
-          <CardHeader className="border-b bg-muted/50">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <CardTitle className="text-base font-semibold">Permissions</CardTitle>
-                <CardDescription>Manage system permissions</CardDescription>
-              </div>
-              {hasPermission('permissions.create') && (
-                <Button onClick={() => navigate('/permissions/create')} size="sm">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Permission
-                </Button>
-              )}
+    <div className="p-6 space-y-4">
+      <Card className="shadow-md">
+        <CardHeader className="border-b bg-muted/50 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base font-semibold">
+                Permissions
+              </CardTitle>
+              <CardDescription className="text-xs">Manage system permissions</CardDescription>
             </div>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <DataTable
-              columns={columns}
-              data={permissions}
-              searchPlaceholder="Search permissions by name or description..."
-              pageSize={10}
-            />
-          </CardContent>
-        </Card>
-      </div>
+            {hasPermission("permissions.create") && (
+              <Button onClick={() => navigate("/permissions/create")} size="sm">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Permission
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <DataTable
+            columns={columns}
+            data={permissions}
+            searchPlaceholder="Search permissions by name or description..."
+            pageSize={10}
+          />
+        </CardContent>
+      </Card>
 
       <ConfirmDialog
         open={deleteDialogOpen}

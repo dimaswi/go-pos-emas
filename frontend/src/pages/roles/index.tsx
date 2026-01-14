@@ -1,15 +1,21 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { setPageTitle } from '@/lib/page-title';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DataTable } from '@/components/ui/data-table';
-import { createRoleColumns } from './columns';
-import { rolesApi, type Role } from '@/lib/api';
-import { usePermission } from '@/hooks/usePermission';
-import { useToast } from '@/hooks/use-toast';
-import { ConfirmDialog } from '@/components/confirm-dialog';
-import { Loader2, Plus } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { setPageTitle } from "@/lib/page-title";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { DataTable } from "@/components/ui/data-table";
+import { createRoleColumns } from "./columns";
+import { rolesApi, type Role } from "@/lib/api";
+import { usePermission } from "@/hooks/usePermission";
+import { useToast } from "@/hooks/use-toast";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { Loader2, Plus } from "lucide-react";
 
 export default function RolesPage() {
   const navigate = useNavigate();
@@ -21,7 +27,7 @@ export default function RolesPage() {
   const [roleToDelete, setRoleToDelete] = useState<number | null>(null);
 
   useEffect(() => {
-    setPageTitle('Roles');
+    setPageTitle("Roles");
     loadRoles();
   }, []);
 
@@ -42,7 +48,7 @@ export default function RolesPage() {
 
   const confirmDelete = async () => {
     if (!roleToDelete) return;
-    
+
     try {
       await rolesApi.delete(roleToDelete);
       toast({
@@ -82,9 +88,9 @@ export default function RolesPage() {
     onView: handleView,
     onEdit: handleEdit,
     onDelete: handleDeleteClick,
-    hasViewPermission: hasPermission('roles.view'),
-    hasEditPermission: hasPermission('roles.update'),
-    hasDeletePermission: hasPermission('roles.delete'),
+    hasViewPermission: hasPermission("roles.view"),
+    hasEditPermission: hasPermission("roles.update"),
+    hasDeletePermission: hasPermission("roles.delete"),
   });
 
   if (loading) {
@@ -96,34 +102,33 @@ export default function RolesPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-6">
-      <div className="grid gap-4">
-        <Card className="shadow-md">
-          <CardHeader className="border-b bg-muted/50">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <CardTitle className="text-base font-semibold">Roles</CardTitle>
-                <CardDescription>Manage roles and permissions</CardDescription>
-              </div>
-              {hasPermission('roles.create') && (
-                <Button onClick={() => navigate('/roles/create')} size="sm">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Role
-                </Button>
-              )}
+    <div className="p-6 space-y-4">
+      <Card className="shadow-md">
+        <CardHeader className="border-b bg-muted/50 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base font-semibold">Roles</CardTitle>
+              <CardDescription className="text-xs">
+                Manage roles and permissions
+              </CardDescription>
             </div>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <DataTable
-              columns={columns}
-              data={roles}
-              searchPlaceholder="Search roles by name or description..."
-              pageSize={10}
-            />
-          </CardContent>
-        </Card>
-      </div>
-
+            {hasPermission("roles.create") && (
+              <Button onClick={() => navigate("/roles/create")} size="sm">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Role
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <DataTable
+            columns={columns}
+            data={roles}
+            searchPlaceholder="Search roles by name or description..."
+            pageSize={10}
+          />
+        </CardContent>
+      </Card>
       <ConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}

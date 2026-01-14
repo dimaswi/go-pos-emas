@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Card,
@@ -25,16 +25,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { permissionsApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Loader2, Lock, FileText, Package, Tag, Check, ChevronsUpDown } from "lucide-react";
+import { ArrowLeft, Loader2, Lock, FileText, Package, Tag, Check, ChevronsUpDown, Eye, PlusCircle, Edit, Trash, UserCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function PermissionEdit() {
@@ -73,13 +67,13 @@ export default function PermissionEdit() {
     "Account"
   ];
 
-  const actionOptions = [
-    { id: 'view', label: 'View', description: 'Melihat/membaca data' },
-    { id: 'create', label: 'Create', description: 'Membuat data baru' },
-    { id: 'update', label: 'Update', description: 'Mengubah data yang ada' },
-    { id: 'delete', label: 'Delete', description: 'Menghapus data' },
-    { id: 'assign', label: 'Assign', description: 'Memberikan permission' },
-  ];
+  const actionSelectOptions = useMemo(() => [
+    { value: 'view', label: 'View', description: 'Melihat/membaca data', icon: <Eye className="h-4 w-4" /> },
+    { value: 'create', label: 'Create', description: 'Membuat data baru', icon: <PlusCircle className="h-4 w-4" /> },
+    { value: 'update', label: 'Update', description: 'Mengubah data yang ada', icon: <Edit className="h-4 w-4" /> },
+    { value: 'delete', label: 'Delete', description: 'Menghapus data', icon: <Trash className="h-4 w-4" /> },
+    { value: 'assign', label: 'Assign', description: 'Memberikan permission', icon: <UserCheck className="h-4 w-4" /> },
+  ], []);
 
   // Generate permission name automatically based on module and action
   const generatePermissionName = (module: string, action: string) => {
@@ -179,10 +173,9 @@ export default function PermissionEdit() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-6">
-      <div className="grid gap-4">
+      <div className="p-6 space-y-4">
         <Card className="shadow-md">
-          <CardHeader className="border-b bg-muted/50">
+          <CardHeader className="border-b bg-muted/50 py-4">
             <div className="flex items-center gap-4">
               <div>
                 <Button
@@ -191,14 +184,14 @@ export default function PermissionEdit() {
                   onClick={() => navigate("/permissions")}
                   className="h-9 w-9"
                 >
-                  <ArrowLeft className="h-4 w-4" />
+                  <ArrowLeft/>
                 </Button>
               </div>
               <div>
                 <CardTitle className="text-base font-semibold">
                   Informasi Permission
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs">
                   Edit detail informasi permission
                 </CardDescription>
               </div>
@@ -317,24 +310,14 @@ export default function PermissionEdit() {
                   <Lock className="h-4 w-4 text-muted-foreground" />
                   Action
                 </Label>
-                <Select
+                <SearchableSelect
+                  options={actionSelectOptions}
                   value={formData.action}
                   onValueChange={(value) => setFormData({ ...formData, action: value })}
-                >
-                  <SelectTrigger className="h-10">
-                    <SelectValue placeholder="Pilih action" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {actionOptions.map((action) => (
-                      <SelectItem key={action.id} value={action.id}>
-                        <div className="flex flex-col">
-                          <div className="font-medium text-left">{action.label}</div>
-                          <div className="text-xs text-muted-foreground">{action.description}</div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Pilih action"
+                  searchPlaceholder="Cari action..."
+                  emptyMessage="Action tidak ditemukan"
+                />
               </div>
 
               <div className="space-y-2">
@@ -397,6 +380,5 @@ export default function PermissionEdit() {
           </CardContent>
         </Card>
       </div>
-    </div>
   );
 }

@@ -12,8 +12,8 @@ type User struct {
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-	Email     string         `gorm:"uniqueIndex;not null;size:150" json:"email"`
-	Username  string         `gorm:"uniqueIndex;not null;size:50" json:"username"`
+	Email     string         `gorm:"not null;size:150" json:"email"`    // unique index created manually in migration
+	Username  string         `gorm:"not null;size:50" json:"username"` // unique index created manually in migration
 	Password  string         `gorm:"not null;size:255" json:"-"`
 	FullName  string         `gorm:"size:100" json:"full_name"`
 	IsActive  bool           `gorm:"default:true" json:"is_active"`

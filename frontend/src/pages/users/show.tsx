@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Card, CardContent, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { usersApi } from '@/lib/api';
@@ -92,54 +92,53 @@ export default function UserShow() {
   }
 
   return (
-    <div className="p-6">
-      <div className="max-w-full mx-auto space-y-6">
-        {/* Header with actions */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => navigate('/users')}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Kembali
-            </Button>
-            <h1 className="text-xl font-semibold">Detail User</h1>
-            <span className="text-muted-foreground">#{user.id}</span>
-          </div>
-          <div className="flex gap-2">
-            {hasPermission('users.update') && (
+    <div className="p-6 space-y-4">
+      <Card className="shadow-md">
+        <CardHeader className="border-b bg-muted/50 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
               <Button 
-                variant="outline"
+                variant="outline" 
                 size="sm"
-                onClick={() => navigate(`/users/${id}/edit`)}
+                onClick={() => navigate('/users')}
               >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
+                <ArrowLeft/>
               </Button>
-            )}
-            {hasPermission('users.delete') && (
-              <Button 
-                variant="destructive"
-                size="sm"
-                onClick={handleDelete}
-                disabled={deleting}
-              >
-                {deleting ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Trash2 className="h-4 w-4 mr-2" />
-                )}
-                Hapus
-              </Button>
-            )}
+              <div>
+                <CardTitle className="text-base font-semibold">Detail User</CardTitle>
+                <CardDescription className="text-xs">{user.full_name}</CardDescription>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              {hasPermission('users.update') && (
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/users/${id}/edit`)}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              )}
+              {hasPermission('users.delete') && (
+                <Button 
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                >
+                  {deleting ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4 mr-2" />
+                  )}
+                  Hapus
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
-
-        {/* Single Card with Sections */}
-        <Card>
-          <CardContent className="p-6">
+        </CardHeader>
+        <CardContent className="pt-6">
             {/* User Information Section */}
             <div className="mb-8">
               <CardTitle className="text-base text-muted-foreground font-normal mb-4">
@@ -261,8 +260,7 @@ export default function UserShow() {
               </>
             )}
           </CardContent>
-        </Card>
-      </div>
+      </Card>
 
       <ConfirmDialog
         open={deleteDialogOpen}

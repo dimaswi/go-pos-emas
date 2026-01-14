@@ -86,6 +86,75 @@ func main() {
 			protected.POST("/permissions", middleware.RequirePermission("permissions.create"), handlers.CreatePermission)
 			protected.PUT("/permissions/:id", middleware.RequirePermission("permissions.update"), handlers.UpdatePermission)
 			protected.DELETE("/permissions/:id", middleware.RequirePermission("permissions.delete"), handlers.DeletePermission)
+
+			// Gold Categories routes
+			protected.GET("/gold-categories", middleware.RequirePermission("gold-categories.view"), handlers.GetGoldCategories)
+			protected.GET("/gold-categories/:id", middleware.RequirePermission("gold-categories.view"), handlers.GetGoldCategory)
+			protected.POST("/gold-categories", middleware.RequirePermission("gold-categories.create"), handlers.CreateGoldCategory)
+			protected.PUT("/gold-categories/:id", middleware.RequirePermission("gold-categories.update"), handlers.UpdateGoldCategory)
+			protected.DELETE("/gold-categories/:id", middleware.RequirePermission("gold-categories.delete"), handlers.DeleteGoldCategory)
+
+			// Products routes
+			protected.GET("/products", middleware.RequirePermission("products.view"), handlers.GetProducts)
+			protected.GET("/products/:id", middleware.RequirePermission("products.view"), handlers.GetProduct)
+			protected.GET("/products/barcode/:barcode", middleware.RequirePermission("products.view"), handlers.GetProductByBarcode)
+			protected.POST("/products", middleware.RequirePermission("products.create"), handlers.CreateProduct)
+			protected.PUT("/products/:id", middleware.RequirePermission("products.update"), handlers.UpdateProduct)
+			protected.DELETE("/products/:id", middleware.RequirePermission("products.delete"), handlers.DeleteProduct)
+
+			// Locations routes (Gudang & Toko)
+			protected.GET("/locations", middleware.RequirePermission("locations.view"), handlers.GetLocations)
+			protected.GET("/locations/:id", middleware.RequirePermission("locations.view"), handlers.GetLocation)
+			protected.POST("/locations", middleware.RequirePermission("locations.create"), handlers.CreateLocation)
+			protected.PUT("/locations/:id", middleware.RequirePermission("locations.update"), handlers.UpdateLocation)
+			protected.DELETE("/locations/:id", middleware.RequirePermission("locations.delete"), handlers.DeleteLocation)
+
+			// Storage Boxes routes
+			protected.GET("/storage-boxes", middleware.RequirePermission("locations.view"), handlers.GetStorageBoxes)
+			protected.GET("/storage-boxes/:id", middleware.RequirePermission("locations.view"), handlers.GetStorageBox)
+			protected.POST("/storage-boxes", middleware.RequirePermission("locations.create"), handlers.CreateStorageBox)
+			protected.PUT("/storage-boxes/:id", middleware.RequirePermission("locations.update"), handlers.UpdateStorageBox)
+			protected.DELETE("/storage-boxes/:id", middleware.RequirePermission("locations.delete"), handlers.DeleteStorageBox)
+
+			// Members routes
+			protected.GET("/members", middleware.RequirePermission("members.view"), handlers.GetMembers)
+			protected.GET("/members/:id", middleware.RequirePermission("members.view"), handlers.GetMember)
+			protected.GET("/members/code/:code", middleware.RequirePermission("members.view"), handlers.GetMemberByCode)
+			protected.POST("/members", middleware.RequirePermission("members.create"), handlers.CreateMember)
+			protected.PUT("/members/:id", middleware.RequirePermission("members.update"), handlers.UpdateMember)
+			protected.DELETE("/members/:id", middleware.RequirePermission("members.delete"), handlers.DeleteMember)
+			protected.POST("/members/:id/points", middleware.RequirePermission("members.update"), handlers.AddMemberPoints)
+			protected.POST("/members/recalculate-stats", middleware.RequirePermission("members.update"), handlers.RecalculateMemberStats)
+
+			// Stocks routes
+			protected.GET("/stocks", middleware.RequirePermission("stocks.view"), handlers.GetStocks)
+			protected.GET("/stocks/by-location", middleware.RequirePermission("stocks.view"), handlers.GetStocksByLocation)
+			protected.POST("/stocks", middleware.RequirePermission("stocks.create"), handlers.CreateStock)
+			protected.POST("/stocks-mark-printed", middleware.RequirePermission("stocks.update"), handlers.MarkStocksPrinted)
+			protected.POST("/stocks/transfer", middleware.RequirePermission("stocks.transfer"), handlers.TransferStock)
+			protected.GET("/stocks/serial/:serial", middleware.RequirePermission("stocks.view"), handlers.GetStockBySerial)
+			protected.GET("/stocks/box/:box_id/items", middleware.RequirePermission("stocks.view"), handlers.GetStocksByBox)
+			protected.GET("/stocks/:id", middleware.RequirePermission("stocks.view"), handlers.GetStock)
+			protected.PUT("/stocks/:id", middleware.RequirePermission("stocks.update"), handlers.UpdateStock)
+			protected.DELETE("/stocks/:id", middleware.RequirePermission("stocks.delete"), handlers.DeleteStock)
+			protected.GET("/stock-transfers", middleware.RequirePermission("stocks.view"), handlers.GetStockTransfers)
+
+			// Transactions routes (POS)
+			protected.GET("/transactions", middleware.RequirePermission("transactions.view"), handlers.GetTransactions)
+			protected.GET("/transactions/:id", middleware.RequirePermission("transactions.view"), handlers.GetTransaction)
+			protected.GET("/transactions/code/:code", middleware.RequirePermission("transactions.view"), handlers.GetTransactionByCode)
+			protected.POST("/transactions/sale", middleware.RequirePermission("transactions.sale"), handlers.CreateSale)
+			protected.POST("/transactions/purchase", middleware.RequirePermission("transactions.purchase"), handlers.CreatePurchase)
+			protected.PUT("/transactions/:id/cancel", middleware.RequirePermission("transactions.cancel"), handlers.CancelTransaction)
+			protected.GET("/transactions/daily-summary", middleware.RequirePermission("transactions.view"), handlers.GetDailySummary)
+
+			// Raw Materials routes
+			protected.GET("/raw-materials", middleware.RequirePermission("raw-materials.view"), handlers.GetRawMaterials)
+			protected.GET("/raw-materials/stats", middleware.RequirePermission("raw-materials.view"), handlers.GetRawMaterialStats)
+			protected.GET("/raw-materials/:id", middleware.RequirePermission("raw-materials.view"), handlers.GetRawMaterial)
+			protected.POST("/raw-materials", middleware.RequirePermission("raw-materials.create"), handlers.CreateRawMaterial)
+			protected.PUT("/raw-materials/:id", middleware.RequirePermission("raw-materials.update"), handlers.UpdateRawMaterial)
+			protected.DELETE("/raw-materials/:id", middleware.RequirePermission("raw-materials.delete"), handlers.DeleteRawMaterial)
 		}
 	}
 

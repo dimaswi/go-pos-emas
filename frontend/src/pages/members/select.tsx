@@ -1,0 +1,253 @@
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { membersApi, type Member } from "@/lib/api";
+import { toast } from "sonner";
+import { ArrowLeft, Search, Loader2, UserPlus, Check, X } from "lucide-react";
+
+export default function MemberSelectPage() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnUrl = searchParams.get("return") || "/pos";
+
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ name: "", phone: "", email: "", address: "" });
+
+  useEffect(() => {
+    loadMembers();
+  }, []);
+
+  const loadMembers = async () => {
+    setLoading(true);
+    try {
+      const res = await membersApi.getAll({ is_active: true, page_size: 500 });
+      setMembers(res.data.data || []);
+    } catch {
+      toast.error("Gagal memuat data member");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredMembers = search
+    ? members.filter(
+        (m) =>
+          m.name.toLowerCase().includes(search.toLowerCase()) ||
+          m.code.toLowerCase().includes(search.toLowerCase()) ||
+          m.phone?.includes(search)
+      )
+    : members;
+
+  const handleSelect = (member: Member) => {
+    // Simpan member yang dipilih ke sessionStorage
+    sessionStorage.setItem("selectedMember", JSON.stringify(member));
+    navigate(returnUrl);
+  };
+
+  const handleBack = () => {
+    navigate(returnUrl);
+  };
+
+  const handleSkip = () => {
+    sessionStorage.removeItem("selectedMember");
+    navigate(returnUrl);
+  };
+
+  const handleCreate = async () => {
+    if (!form.name.trim()) {
+      toast.error("Nama wajib diisi");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await membersApi.create({
+        name: form.name,
+        phone: form.phone || undefined,
+        email: form.email || undefined,
+        address: form.address || undefined,
+        is_active: true,
+      });
+
+      toast.success(`Member ${res.data.data.code} berhasil dibuat`);
+      handleSelect(res.data.data);
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      toast.error(err.response?.data?.error || "Gagal membuat member");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="h-screen flex flex-col bg-background">
+      {/* Header */}
+      <header className="h-12 border-b flex items-center px-4 gap-3 shrink-0">
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleBack}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <h1 className="font-semibold">Pilih Member</h1>
+        <div className="flex-1" />
+        <Button
+          variant={showForm ? "secondary" : "outline"}
+          size="sm"
+          className="h-8"
+          onClick={() => setShowForm(!showForm)}
+        >
+          <UserPlus className="h-4 w-4 mr-1.5" />
+          Baru
+        </Button>
+      </header>
+
+      {/* Form Buat Member */}
+      {showForm && (
+        <div className="border-b bg-gradient-to-r from-primary/5 via-primary/10 to-amber-500/5 p-4">
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-background rounded-xl border shadow-sm overflow-hidden">
+              <div className="bg-gradient-to-r from-primary to-amber-500 px-4 py-3">
+                <h3 className="text-white font-semibold flex items-center gap-2">
+                  <UserPlus className="h-4 w-4" />
+                  Member Baru
+                </h3>
+              </div>
+              <div className="p-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2 sm:col-span-1">
+                    <Label className="text-xs font-medium mb-1.5 block">Nama Lengkap <span className="text-destructive">*</span></Label>
+                    <Input
+                      value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      placeholder="Masukkan nama lengkap"
+                      className="h-10"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <Label className="text-xs font-medium mb-1.5 block">No. Telepon</Label>
+                    <Input
+                      value={form.phone}
+                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                      placeholder="08xxxxxxxxxx"
+                      className="h-10"
+                    />
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <Label className="text-xs font-medium mb-1.5 block">Email</Label>
+                    <Input
+                      type="email"
+                      value={form.email}
+                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      placeholder="email@contoh.com"
+                      className="h-10"
+                    />
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <Label className="text-xs font-medium mb-1.5 block">Alamat</Label>
+                    <Input
+                      value={form.address}
+                      onChange={(e) => setForm({ ...form, address: e.target.value })}
+                      placeholder="Alamat lengkap"
+                      className="h-10"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-4 pt-4 border-t justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowForm(false);
+                      setForm({ name: "", phone: "", email: "", address: "" });
+                    }}
+                  >
+                    <X className="h-4 w-4 mr-1.5" />
+                    Batal
+                  </Button>
+                  <Button onClick={handleCreate} disabled={saving || !form.name.trim()} className="bg-gradient-to-r from-primary to-amber-500 hover:from-primary/90 hover:to-amber-500/90">
+                    {saving ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Check className="h-4 w-4 mr-1.5" />}
+                    Simpan & Pilih Member
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Search */}
+      <div className="p-4 border-b">
+        <div className="max-w-md relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Cari nama, kode, atau telepon..."
+            className="pl-9 h-9"
+            autoFocus
+          />
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="flex-1 overflow-auto">
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : filteredMembers.length === 0 ? (
+          <div className="text-center py-20 text-muted-foreground text-sm">
+            {search ? "Tidak ada member ditemukan" : "Belum ada member"}
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[100px]">Kode</TableHead>
+                <TableHead>Nama</TableHead>
+                <TableHead className="w-[140px]">Telepon</TableHead>
+                <TableHead className="w-[180px]">Email</TableHead>
+                <TableHead className="w-[80px] text-right">Poin</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredMembers.map((member) => (
+                <TableRow
+                  key={member.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleSelect(member)}
+                >
+                  <TableCell className="font-mono text-sm">{member.code}</TableCell>
+                  <TableCell className="font-medium">{member.name}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">{member.phone || "-"}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">{member.email || "-"}</TableCell>
+                  <TableCell className="text-right font-medium">{member.points.toLocaleString()}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="h-11 border-t flex items-center justify-between px-4 text-sm shrink-0">
+        <span className="text-muted-foreground">{filteredMembers.length} member</span>
+        <Button variant="ghost" size="sm" onClick={handleSkip}>
+          Lewati (Tanpa Member)
+        </Button>
+      </div>
+    </div>
+  );
+}

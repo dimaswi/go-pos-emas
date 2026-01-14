@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Card, CardContent, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { setPageTitle } from '@/lib/page-title';
 import { Button } from '@/components/ui/button';
 import { permissionsApi } from '@/lib/api';
@@ -86,54 +86,53 @@ export default function PermissionShow() {
   }
 
   return (
-    <div className="p-6">
-      <div className="max-w-full mx-auto space-y-6">
-        {/* Header with actions */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => navigate('/permissions')}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Kembali
-            </Button>
-            <h1 className="text-xl font-semibold">Detail Permission</h1>
-            <span className="text-muted-foreground">#{permission.id}</span>
-          </div>
-          <div className="flex gap-2">
-            {canPerform('role_management', 'update') && (
+    <div className="p-6 space-y-4">
+      <Card className="shadow-md">
+        <CardHeader className="border-b bg-muted/50 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
               <Button 
-                variant="outline"
+                variant="outline" 
                 size="sm"
-                onClick={() => navigate(`/permissions/${id}/edit`)}
+                onClick={() => navigate('/permissions')}
               >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
+                <ArrowLeft/>
               </Button>
-            )}
-            {canPerform('role_management', 'delete') && (
-              <Button 
-                variant="destructive"
-                size="sm"
-                onClick={handleDelete}
-                disabled={deleting}
-              >
-                {deleting ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Trash2 className="h-4 w-4 mr-2" />
-                )}
-                Hapus
-              </Button>
-            )}
+              <div>
+                <CardTitle className="text-base font-semibold">Detail Permission</CardTitle>
+                <CardDescription className="text-xs">Lihat detail informasi permission</CardDescription>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              {canPerform('role_management', 'update') && (
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/permissions/${id}/edit`)}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              )}
+              {canPerform('role_management', 'delete') && (
+                <Button 
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                >
+                  {deleting ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4 mr-2" />
+                  )}
+                  Hapus
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
-
-        {/* Single Card with Sections */}
-        <Card>
-          <CardContent className="p-6">
+        </CardHeader>
+        <CardContent className="pt-6">
             {/* Permission Information Section */}
             <div className="mb-8">
               <CardTitle className="text-base text-muted-foreground font-normal mb-4">
@@ -198,8 +197,7 @@ export default function PermissionShow() {
               </div>
             </div>
           </CardContent>
-        </Card>
-      </div>
+      </Card>
 
       <ConfirmDialog
         open={deleteDialogOpen}

@@ -1,15 +1,21 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { DataTable } from '@/components/ui/data-table';
-import { createUserColumns } from './columns';
-import { usersApi, type User } from '@/lib/api';
-import { usePermission } from '@/hooks/usePermission';
-import { useToast } from '@/hooks/use-toast';
-import { ConfirmDialog } from '@/components/confirm-dialog';
-import { setPageTitle } from '@/lib/page-title';
-import { Loader2, Plus } from 'lucide-react';
+import { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { DataTable } from "@/components/ui/data-table";
+import { createUserColumns } from "./columns";
+import { usersApi, type User } from "@/lib/api";
+import { usePermission } from "@/hooks/usePermission";
+import { useToast } from "@/hooks/use-toast";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { setPageTitle } from "@/lib/page-title";
+import { Loader2, Plus } from "lucide-react";
 
 export default function UsersPage() {
   const navigate = useNavigate();
@@ -28,7 +34,8 @@ export default function UsersPage() {
       toast({
         variant: "destructive",
         title: "Error!",
-        description: error instanceof Error ? error.message : "Failed to load data.",
+        description:
+          error instanceof Error ? error.message : "Failed to load data.",
       });
     } finally {
       setLoading(false);
@@ -36,13 +43,13 @@ export default function UsersPage() {
   }, [toast]);
 
   useEffect(() => {
-    setPageTitle('Users');
+    setPageTitle("Users");
     loadData();
   }, [loadData]);
 
   const confirmDelete = async () => {
     if (!userToDelete) return;
-    
+
     try {
       await usersApi.delete(userToDelete);
       toast({
@@ -55,14 +62,14 @@ export default function UsersPage() {
       toast({
         variant: "destructive",
         title: "Error!",
-        description: error instanceof Error ? error.message : "Failed to delete user.",
+        description:
+          error instanceof Error ? error.message : "Failed to delete user.",
       });
     } finally {
       setDeleteDialogOpen(false);
       setUserToDelete(null);
     }
   };
-
 
   const handleView = (id: number) => {
     navigate(`/users/${id}`);
@@ -82,9 +89,9 @@ export default function UsersPage() {
     onView: handleView,
     onEdit: handleEdit,
     onDelete: handleDeleteUser,
-    hasViewPermission: hasPermission('users.view'),
-    hasEditPermission: hasPermission('users.update'),
-    hasDeletePermission: hasPermission('users.delete'),
+    hasViewPermission: hasPermission("users.view"),
+    hasEditPermission: hasPermission("users.update"),
+    hasDeletePermission: hasPermission("users.delete"),
   });
 
   if (loading) {
@@ -96,34 +103,33 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-6">
-      <div className="grid gap-4">
-        <Card className="shadow-md">
-          <CardHeader className="border-b bg-muted/50">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <CardTitle className="text-base font-semibold">Users</CardTitle>
-                <CardDescription>Manage system users and their permissions</CardDescription>
-              </div>
-              {hasPermission('users.create') && (
-                <Button onClick={() => navigate('/users/create')} size="sm">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add User
-                </Button>
-              )}
+    <div className="p-6 space-y-4">
+      <Card className="shadow-md">
+        <CardHeader className="border-b bg-muted/50 py-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <CardTitle className="text-base font-semibold">Users</CardTitle>
+              <CardDescription className="text-xs">
+                Manage system users and their permissions
+              </CardDescription>
             </div>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <DataTable
-              columns={columns}
-              data={users}
-              searchPlaceholder="Search users by name, username, or email..."
-              pageSize={10}
-            />
-          </CardContent>
-        </Card>
-      </div>
-
+            {hasPermission("users.create") && (
+              <Button onClick={() => navigate("/users/create")} size="sm">
+                <Plus className="mr-2 h-4 w-4" />
+                Add User
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <DataTable
+            columns={columns}
+            data={users}
+            searchPlaceholder="Search users by name, username, or email..."
+            pageSize={10}
+          />
+        </CardContent>
+      </Card>
       <ConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
