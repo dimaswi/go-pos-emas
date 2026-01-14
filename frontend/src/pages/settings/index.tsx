@@ -16,7 +16,7 @@ import { settingsApi } from "@/lib/api";
 
 // Get base URL without /api suffix
 const getBaseUrl = () => {
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+  const apiUrl = import.meta.env.VITE_API_URL || '/api';
   return apiUrl.replace(/\/api$/, '');
 };
 const BASE_URL = getBaseUrl();
