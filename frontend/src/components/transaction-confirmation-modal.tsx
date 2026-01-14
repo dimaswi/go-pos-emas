@@ -12,7 +12,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   CheckCircle2,
   Printer,
-  Receipt,
   User,
   MapPin,
   CreditCard,
@@ -24,7 +23,6 @@ import {
   ArrowUpRight,
   Loader2,
   Clock,
-  Hash,
   X,
   FileText,
 } from "lucide-react";

@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
 import { rawMaterialsApi, type RawMaterial, type RawMaterialStats } from '@/lib/api';
 import { usePermission } from '@/hooks/usePermission';
@@ -21,7 +19,6 @@ const formatCurrency = (value: number) => {
 };
 
 export default function RawMaterialsPage() {
-  const navigate = useNavigate();
   const { toast } = useToast();
   const { hasPermission } = usePermission();
   const [rawMaterials, setRawMaterials] = useState<RawMaterial[]>([]);

@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { printReceipt, type ReceiptData } from "@/lib/print-receipt";
-import { PrintNotaOverlay, transactionToNotaData, type NotaData } from "@/components/print-nota-overlay";
+import { PrintNotaOverlay, type NotaData } from "@/components/print-nota-overlay";
 import {
   LayoutDashboard,
   Search,
@@ -176,13 +176,11 @@ export default function POSHistoryPage() {
     setIsPrinting(true);
 
     try {
-      const isDeposit = selectedTransaction.type === 'deposit' || selectedTransaction.type === 'gold_deposit';
-
-      // Calculate totals for deposit transactions
+      // Calculate totals for transactions
       let totalWeightGross = 0;
       let totalWeightNet = 0;
 
-      if (isDeposit && selectedTransaction.items) {
+      if (selectedTransaction.items) {
         selectedTransaction.items.forEach(item => {
           totalWeightGross += item.weight || 0;
           totalWeightNet += item.weight || 0;
@@ -190,7 +188,7 @@ export default function POSHistoryPage() {
       }
 
       const receiptData: ReceiptData = {
-        type: isDeposit ? 'deposit' : 'sale',
+        type: selectedTransaction.type === 'purchase' ? 'purchase' : 'sale',
         storeName: selectedTransaction.location?.name || 'TOKO EMAS',
         storeAddress: selectedTransaction.location?.address || 'Alamat Toko',
         storePhone: '',
@@ -215,8 +213,8 @@ export default function POSHistoryPage() {
         changeAmount: selectedTransaction.change_amount,
         paymentMethod: selectedTransaction.payment_method,
         notes: selectedTransaction.notes,
-        totalWeightGross: isDeposit ? totalWeightGross : undefined,
-        totalWeightNet: isDeposit ? totalWeightNet : undefined,
+        totalWeightGross: totalWeightGross > 0 ? totalWeightGross : undefined,
+        totalWeightNet: totalWeightNet > 0 ? totalWeightNet : undefined,
       };
 
       printReceipt(receiptData);

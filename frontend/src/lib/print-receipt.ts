@@ -19,7 +19,7 @@ interface ReceiptItem {
 }
 
 interface ReceiptData {
-  type: 'sale' | 'deposit';
+  type: 'sale' | 'deposit' | 'purchase';
   storeName?: string;
   storeAddress?: string;
   storePhone?: string;

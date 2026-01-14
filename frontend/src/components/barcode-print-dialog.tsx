@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -45,7 +45,6 @@ const COLS = 2;
 const LABEL_WIDTH = Math.floor((PAPER_WIDTH - MARGIN_H - MARGIN_H - GAP_BETWEEN) / COLS); // 33mm
 const LABEL_HEIGHT = PAPER_HEIGHT - MARGIN_V - MARGIN_V; // 21mm
 const QR_SIZE = 12;       // mm - QR code size (max untuk tinggi 19mm)
-const INFO_WIDTH = LABEL_WIDTH - QR_SIZE - 2; // 33 - 15 - 2 = 16mm untuk info
 
 interface BarcodePrintDialogProps {
   open: boolean;
@@ -70,7 +69,6 @@ export function BarcodePrintDialog({
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [loading, setLoading] = useState(false);
   const [printing, setPrinting] = useState(false);
-  const printAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (open) {
