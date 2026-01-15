@@ -178,49 +178,49 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-6 max-w-full">
-      <div className="flex items-center gap-4">
+    <div className="flex flex-1 flex-col gap-3 sm:gap-4 p-3 sm:p-4 md:p-6 max-w-full">
+      <div className="flex items-center gap-3 sm:gap-4">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => navigate(-1)}
-          className="h-9 w-9"
+          className="h-8 w-8 sm:h-9 sm:w-9"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-lg sm:text-2xl font-semibold tracking-tight">Settings</h1>
+          <p className="text-[10px] sm:text-sm text-muted-foreground">
             Manage application preferences
           </p>
         </div>
       </div>
 
-      <div className="space-y-4 max-w-full">
+      <div className="space-y-3 sm:space-y-4 max-w-full">
         {fetching ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="flex items-center justify-center py-8 sm:py-12">
+            <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
           </div>
         ) : (
           <>
             {/* Application Settings */}
             <Card className="shadow-md">
-              <CardHeader className="border-b bg-muted/50">
-                <CardTitle className="text-base font-semibold">
+              <CardHeader className="border-b bg-muted/50 py-3 sm:py-4 px-3 sm:px-6">
+                <CardTitle className="text-sm sm:text-base font-semibold">
                   Application
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-[10px] sm:text-xs">
                   Customize application name and branding
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
+              <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="space-y-1.5 sm:space-y-2">
                     <Label
                       htmlFor="appName"
-                      className="text-xs font-medium flex items-center gap-2"
+                      className="text-[10px] sm:text-xs font-medium flex items-center gap-1.5 sm:gap-2"
                     >
-                      <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                      <Building2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground" />
                       Application Name
                     </Label>
                     <Input
@@ -228,19 +228,19 @@ export default function SettingsPage() {
                       value={appName}
                       onChange={(e) => setAppName(e.target.value)}
                       placeholder="StarterKits"
-                      className="max-w-md"
+                      className="max-w-md h-8 sm:h-9 text-xs sm:text-sm"
                     />
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">
                       This name will appear in the sidebar and page titles
                     </p>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1.5 sm:space-y-2">
                     <Label
                       htmlFor="appSubtitle"
-                      className="text-xs font-medium flex items-center gap-2"
+                      className="text-[10px] sm:text-xs font-medium flex items-center gap-1.5 sm:gap-2"
                     >
-                      <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                      <Building2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground" />
                       Application Subtitle
                     </Label>
                     <Input

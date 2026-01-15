@@ -111,47 +111,47 @@ export default function AccountPage() {
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-6 max-w-full">
-      <div className="flex items-center gap-4">
+    <div className="flex flex-1 flex-col gap-3 sm:gap-4 p-3 sm:p-4 md:p-6 max-w-full">
+      <div className="flex items-center gap-3 sm:gap-4">
         <Button 
           variant="ghost" 
           size="icon" 
           onClick={() => navigate(-1)}
-          className="h-9 w-9"
+          className="h-8 w-8 sm:h-9 sm:w-9"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Account Settings</h1>
-          <p className="text-sm text-muted-foreground">Manage your account information and security</p>
+          <h1 className="text-lg sm:text-2xl font-semibold tracking-tight">Account Settings</h1>
+          <p className="text-[10px] sm:text-sm text-muted-foreground">Manage your account information and security</p>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
         {/* Profile Information */}
         <Card className="shadow-md">
-          <CardHeader className="border-b bg-muted/50">
-            <CardTitle className="text-base font-semibold">Profile Information</CardTitle>
-            <CardDescription>Update your personal information</CardDescription>
+          <CardHeader className="border-b bg-muted/50 py-3 sm:py-4 px-3 sm:px-6">
+            <CardTitle className="text-sm sm:text-base font-semibold">Profile Information</CardTitle>
+            <CardDescription className="text-[10px] sm:text-xs">Update your personal information</CardDescription>
           </CardHeader>
-          <CardContent className="pt-6">
-            <form onSubmit={handleUpdateProfile} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="full_name" className="text-xs font-medium flex items-center gap-2">
-                  <User className="h-3.5 w-3.5 text-muted-foreground" />
+          <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
+            <form onSubmit={handleUpdateProfile} className="space-y-4 sm:space-y-5">
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label htmlFor="full_name" className="text-[10px] sm:text-xs font-medium flex items-center gap-1.5 sm:gap-2">
+                  <User className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground" />
                   Full Name
                 </Label>
                 <Input
                   id="full_name"
                   value={formData.full_name}
                   onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                  className="h-9 text-sm"
+                  className="h-8 sm:h-9 text-xs sm:text-sm"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-xs font-medium flex items-center gap-2">
-                  <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label htmlFor="email" className="text-[10px] sm:text-xs font-medium flex items-center gap-1.5 sm:gap-2">
+                  <Mail className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground" />
                   Email
                 </Label>
                 <Input
@@ -159,17 +159,17 @@ export default function AccountPage() {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="h-9 text-sm"
+                  className="h-8 sm:h-9 text-xs sm:text-sm"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-xs font-medium flex items-center gap-2">
-                  <Shield className="h-3.5 w-3.5 text-muted-foreground" />
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label className="text-[10px] sm:text-xs font-medium flex items-center gap-1.5 sm:gap-2">
+                  <Shield className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground" />
                   Role
                 </Label>
                 <div>
-                  <Badge variant="outline" className="font-normal">
+                  <Badge variant="outline" className="font-normal text-[10px] sm:text-xs">
                     {user?.role?.name || 'N/A'}
                   </Badge>
                 </div>
@@ -178,9 +178,9 @@ export default function AccountPage() {
               <Button 
                 type="submit" 
                 disabled={loading}
-                className="w-full h-9 text-sm"
+                className="w-full h-8 sm:h-9 text-xs sm:text-sm"
               >
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {loading && <Loader2 className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />}
                 Update Profile
               </Button>
             </form>
@@ -189,15 +189,15 @@ export default function AccountPage() {
 
         {/* Change Password */}
         <Card className="shadow-md">
-          <CardHeader className="border-b bg-muted/50">
-            <CardTitle className="text-base font-semibold">Change Password</CardTitle>
-            <CardDescription>Update your password to keep your account secure</CardDescription>
+          <CardHeader className="border-b bg-muted/50 py-3 sm:py-4 px-3 sm:px-6">
+            <CardTitle className="text-sm sm:text-base font-semibold">Change Password</CardTitle>
+            <CardDescription className="text-[10px] sm:text-xs">Update your password to keep your account secure</CardDescription>
           </CardHeader>
-          <CardContent className="pt-6">
-            <form onSubmit={handleChangePassword} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="current_password" className="text-xs font-medium flex items-center gap-2">
-                  <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+          <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
+            <form onSubmit={handleChangePassword} className="space-y-4 sm:space-y-5">
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label htmlFor="current_password" className="text-[10px] sm:text-xs font-medium flex items-center gap-1.5 sm:gap-2">
+                  <Lock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground" />
                   Current Password
                 </Label>
                 <Input

@@ -85,58 +85,58 @@ export default function RawMaterialsPage() {
   };
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
       {/* Stats Cards */}
       {stats && (
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-2 sm:gap-4 grid-cols-3">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Item</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 p-3 sm:p-6">
+              <CardTitle className="text-[10px] sm:text-sm font-medium">Total Item</CardTitle>
+              <Package className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground hidden sm:block" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total_count}</div>
-              <p className="text-xs text-muted-foreground">Bahan baku tersedia</p>
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+              <div className="text-base sm:text-2xl font-bold">{stats.total_count}</div>
+              <p className="text-[8px] sm:text-xs text-muted-foreground">Bahan baku</p>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Berat</CardTitle>
-              <Scale className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 p-3 sm:p-6">
+              <CardTitle className="text-[10px] sm:text-sm font-medium">Total Berat</CardTitle>
+              <Scale className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground hidden sm:block" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total_weight.toFixed(2)} gram</div>
-              <p className="text-xs text-muted-foreground">Emas tersimpan</p>
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+              <div className="text-base sm:text-2xl font-bold">{stats.total_weight.toFixed(2)}<span className="text-xs sm:text-base">g</span></div>
+              <p className="text-[8px] sm:text-xs text-muted-foreground">Tersimpan</p>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Nilai</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 p-3 sm:p-6">
+              <CardTitle className="text-[10px] sm:text-sm font-medium">Total Nilai</CardTitle>
+              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground hidden sm:block" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(stats.total_value)}</div>
-              <p className="text-xs text-muted-foreground">Nilai pembelian</p>
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+              <div className="text-base sm:text-2xl font-bold truncate">{formatCurrency(stats.total_value)}</div>
+              <p className="text-[8px] sm:text-xs text-muted-foreground">Pembelian</p>
             </CardContent>
           </Card>
         </div>
       )}
 
       <Card className="shadow-md">
-        <CardHeader className="border-b bg-muted/50 py-4">
-          <div className="flex items-center justify-between">
+        <CardHeader className="border-b bg-muted/50 py-3 sm:py-4 px-3 sm:px-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between">
             <div>
-              <CardTitle className="text-base font-semibold">Bahan Baku (Raw Material)</CardTitle>
-              <CardDescription className="text-xs">
-                Bahan baku emas dari setor emas pelanggan atau supplier
+              <CardTitle className="text-sm sm:text-base font-semibold">Bahan Baku</CardTitle>
+              <CardDescription className="text-[10px] sm:text-xs">
+                Emas dari setor pelanggan atau supplier
               </CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-6">
+        <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
           {loading ? (
-            <div className="flex items-center justify-center py-10">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="flex items-center justify-center py-8 sm:py-10">
+              <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
             </div>
           ) : (
             <DataTable

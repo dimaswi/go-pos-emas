@@ -125,51 +125,52 @@ export default function StorageBoxesPage() {
   };
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
       <Card className="shadow-md">
-        <CardHeader className="border-b bg-muted/50 py-4">
-          <div className="flex items-center justify-between">
+        <CardHeader className="border-b bg-muted/50 py-3 sm:py-4 px-3 sm:px-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
               <div>
-                <CardTitle className="text-base font-semibold">Kotak Penyimpanan</CardTitle>
-                <CardDescription className="text-xs">
+                <CardTitle className="text-sm sm:text-base font-semibold">Kotak Penyimpanan</CardTitle>
+                <CardDescription className="text-[10px] sm:text-xs">
                   Kelola rak, kotak, dan tempat penyimpanan perhiasan
                 </CardDescription>
               </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <Button 
                 variant={isFilterActive ? "secondary" : "outline"} 
                 size="sm"
                 onClick={() => setFilterOpen(!filterOpen)}
-                className="relative"
+                className="relative h-8 sm:h-9 text-xs sm:text-sm"
               >
-                <Filter className="h-4 w-4 mr-2" />
-                Filter
+                <Filter className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline">Filter</span>
                 {isFilterActive && (
-                  <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                  <Badge variant="destructive" className="ml-1 sm:ml-2 h-4 w-4 sm:h-5 sm:w-5 p-0 flex items-center justify-center text-[10px] sm:text-xs">
                     1
                   </Badge>
                 )}
-                <ChevronDown className={`h-4 w-4 ml-1 transition-transform ${filterOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`h-3 w-3 sm:h-4 sm:w-4 ml-0.5 sm:ml-1 transition-transform ${filterOpen ? 'rotate-180' : ''}`} />
               </Button>
               {hasPermission('locations.create') && (
-                <Button size="sm" onClick={() => navigate('/storage-boxes/create')}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Tambah Kotak
+                <Button size="sm" className="h-8 sm:h-9 text-xs sm:text-sm" onClick={() => navigate('/storage-boxes/create')}>
+                  <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="hidden xs:inline">Tambah Kotak</span>
+                  <span className="xs:hidden">Tambah</span>
                 </Button>
               )}
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-4">
+        <CardContent className="pt-3 sm:pt-4 px-3 sm:px-6">
           {/* Collapsible Filter Section */}
           <Collapsible open={filterOpen} onOpenChange={setFilterOpen}>
             <CollapsibleContent>
-              <Card className="mb-4 border-dashed">
-                <CardContent className="py-3 px-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Lokasi:</span>
+              <Card className="mb-3 sm:mb-4 border-dashed">
+                <CardContent className="py-2 sm:py-3 px-3 sm:px-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+                    <div className="flex items-center gap-2 sm:gap-3 flex-1">
+                      <div className="flex items-center gap-1.5 sm:gap-2 flex-1">
+                        <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Lokasi:</span>
                         <SearchableSelect
                           options={locationOptions}
                           value={filterLocationId}
@@ -177,7 +178,7 @@ export default function StorageBoxesPage() {
                           placeholder="Semua Lokasi"
                           searchPlaceholder="Cari lokasi..."
                           emptyMessage="Lokasi tidak ditemukan."
-                          className="w-[250px]"
+                          className="w-full sm:w-[250px]"
                           size="sm"
                         />
                       </div>
@@ -187,9 +188,9 @@ export default function StorageBoxesPage() {
                         variant="ghost" 
                         size="sm"
                         onClick={() => setFilterLocationId('all')}
-                        className="h-8 text-muted-foreground hover:text-foreground"
+                        className="h-7 sm:h-8 text-[10px] sm:text-xs text-muted-foreground hover:text-foreground"
                       >
-                        <X className="h-4 w-4 mr-1" />
+                        <X className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
                         Reset
                       </Button>
                     )}

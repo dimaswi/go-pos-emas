@@ -414,24 +414,25 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-6">
+    <div className="flex flex-1 flex-col gap-3 sm:gap-4 p-3 sm:p-6">
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Selamat datang kembali, {user?.full_name}!
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <Button
             variant="outline"
             size="sm"
             onClick={handleRefresh}
             disabled={refreshing}
+            className="flex-1 sm:flex-none"
           >
             <RefreshCw className={cn("h-4 w-4 mr-2", refreshing && "animate-spin")} />
-            Refresh
+            <span className="sm:inline">Refresh</span>
           </Button>
           <Badge variant="outline" className="hidden sm:flex">
             <Clock className="h-3 w-3 mr-1" />
@@ -441,20 +442,20 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Links */}
-      <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
+      <div className="grid gap-2 sm:gap-3 grid-cols-2 md:grid-cols-4">
         {quickLinks.map((link) => {
           const Icon = link.icon;
           return (
             <Link key={link.title} to={link.href} className="group">
               <Card className="shadow-sm hover:shadow-md transition-all duration-200 hover:border-primary/50 cursor-pointer">
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className={cn(link.bgColor, "p-2.5 rounded-lg group-hover:scale-110 transition-transform")}>
-                    <Icon className={cn("h-5 w-5", link.color)} />
+                <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+                  <div className={cn(link.bgColor, "p-2 sm:p-2.5 rounded-lg group-hover:scale-110 transition-transform")}>
+                    <Icon className={cn("h-4 w-4 sm:h-5 sm:w-5", link.color)} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{link.title}</p>
+                    <p className="text-xs sm:text-sm font-medium truncate">{link.title}</p>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform hidden sm:block" />
                 </CardContent>
               </Card>
             </Link>
@@ -463,79 +464,79 @@ export default function DashboardPage() {
       </div>
 
       {/* Financial Summary Cards - Row 1 */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         {/* Total Penjualan Semua Waktu */}
         <Card className="shadow-sm hover:shadow-md transition-shadow border-l-4 border-l-green-500">
-          <CardContent className="pt-4">
+          <CardContent className="pt-3 sm:pt-4 px-3 sm:px-6 pb-3 sm:pb-6">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Total Penjualan</span>
-              <div className="p-2 rounded-lg bg-green-50 dark:bg-green-950">
-                <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <span className="text-xs sm:text-sm font-medium text-muted-foreground">Total Penjualan</span>
+              <div className="p-1.5 sm:p-2 rounded-lg bg-green-50 dark:bg-green-950">
+                <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 dark:text-green-400" />
               </div>
             </div>
-            <div className="mt-2 space-y-1">
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+            <div className="mt-1 sm:mt-2 space-y-0.5 sm:space-y-1">
+              <div className="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400">
                 {formatCompactCurrency(stats.totalSalesAllTime)}
               </div>
-              <p className="text-xs text-muted-foreground">Seluruh waktu</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Seluruh waktu</p>
             </div>
           </CardContent>
         </Card>
 
         {/* Total Pembelian/Setor Emas */}
         <Card className="shadow-sm hover:shadow-md transition-shadow border-l-4 border-l-blue-500">
-          <CardContent className="pt-4">
+          <CardContent className="pt-3 sm:pt-4 px-3 sm:px-6 pb-3 sm:pb-6">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Total Setor Emas</span>
-              <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950">
-                <TrendingDown className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <span className="text-xs sm:text-sm font-medium text-muted-foreground">Total Setor Emas</span>
+              <div className="p-1.5 sm:p-2 rounded-lg bg-blue-50 dark:bg-blue-950">
+                <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 dark:text-blue-400" />
               </div>
             </div>
-            <div className="mt-2 space-y-1">
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            <div className="mt-1 sm:mt-2 space-y-0.5 sm:space-y-1">
+              <div className="text-lg sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {formatCompactCurrency(stats.totalPurchasesAllTime)}
               </div>
-              <p className="text-xs text-muted-foreground">Seluruh waktu</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Seluruh waktu</p>
             </div>
           </CardContent>
         </Card>
 
         {/* Pendapatan Bersih */}
         <Card className="shadow-sm hover:shadow-md transition-shadow border-l-4 border-l-yellow-500">
-          <CardContent className="pt-4">
+          <CardContent className="pt-3 sm:pt-4 px-3 sm:px-6 pb-3 sm:pb-6">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Pendapatan Bersih</span>
-              <div className="p-2 rounded-lg bg-yellow-50 dark:bg-yellow-950">
-                <DollarSign className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+              <span className="text-xs sm:text-sm font-medium text-muted-foreground">Pendapatan Bersih</span>
+              <div className="p-1.5 sm:p-2 rounded-lg bg-yellow-50 dark:bg-yellow-950">
+                <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600 dark:text-yellow-400" />
               </div>
             </div>
-            <div className="mt-2 space-y-1">
-              <div className={cn("text-2xl font-bold", stats.totalProfit >= 0 ? "text-yellow-600 dark:text-yellow-400" : "text-red-600")}>
+            <div className="mt-1 sm:mt-2 space-y-0.5 sm:space-y-1">
+              <div className={cn("text-lg sm:text-2xl font-bold", stats.totalProfit >= 0 ? "text-yellow-600 dark:text-yellow-400" : "text-red-600")}>
                 {stats.totalProfit >= 0 ? '+' : ''}{formatCompactCurrency(stats.totalProfit)}
               </div>
-              <p className="text-xs text-muted-foreground">Penjualan - Setor Emas</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Penjualan - Setor</p>
             </div>
           </CardContent>
         </Card>
 
         {/* Stok Tersedia */}
         <Card className="shadow-sm hover:shadow-md transition-shadow border-l-4 border-l-purple-500">
-          <CardContent className="pt-4">
+          <CardContent className="pt-3 sm:pt-4 px-3 sm:px-6 pb-3 sm:pb-6">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Stok Tersedia</span>
-              <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-950">
-                <Package className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+              <span className="text-xs sm:text-sm font-medium text-muted-foreground">Stok Tersedia</span>
+              <div className="p-1.5 sm:p-2 rounded-lg bg-purple-50 dark:bg-purple-950">
+                <Package className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600 dark:text-purple-400" />
               </div>
             </div>
-            <div className="mt-2 space-y-1">
-              <div className="text-2xl font-bold">{formatNumber(stats.availableStocks)}</div>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="text-xs">
-                  dari {formatNumber(stats.totalStocks)} total
+            <div className="mt-1 sm:mt-2 space-y-0.5 sm:space-y-1">
+              <div className="text-lg sm:text-2xl font-bold">{formatNumber(stats.availableStocks)}</div>
+              <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                <Badge variant="secondary" className="text-[10px] sm:text-xs">
+                  dari {formatNumber(stats.totalStocks)}
                 </Badge>
                 <Progress
                   value={stats.totalStocks > 0 ? (stats.availableStocks / stats.totalStocks) * 100 : 0}
-                  className="h-1.5 w-16"
+                  className="h-1 sm:h-1.5 w-10 sm:w-16"
                 />
               </div>
             </div>
@@ -544,20 +545,20 @@ export default function DashboardPage() {
       </div>
 
       {/* Daily Stats Cards - Row 2 */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         {/* Penjualan Hari Ini */}
         <Card className="shadow-sm hover:shadow-md transition-shadow bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/50 dark:to-green-900/30 border-green-200 dark:border-green-800">
-          <CardContent className="pt-4">
+          <CardContent className="pt-3 sm:pt-4 px-3 sm:px-6 pb-3 sm:pb-6">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-green-700 dark:text-green-300">Penjualan Hari Ini</span>
-              <ArrowUpRight className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <span className="text-xs sm:text-sm font-medium text-green-700 dark:text-green-300">Jual Hari Ini</span>
+              <ArrowUpRight className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" />
             </div>
-            <div className="mt-2 space-y-1">
-              <div className="text-2xl font-bold text-green-700 dark:text-green-300">
-                {formatCurrency(stats.dailySummary?.sales_amount || 0)}
+            <div className="mt-1 sm:mt-2 space-y-0.5 sm:space-y-1">
+              <div className="text-lg sm:text-2xl font-bold text-green-700 dark:text-green-300">
+                {formatCompactCurrency(stats.dailySummary?.sales_amount || 0)}
               </div>
-              <Badge className="bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200">
-                {stats.dailySummary?.sales_count || 0} transaksi
+              <Badge className="bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200 text-[10px] sm:text-xs">
+                {stats.dailySummary?.sales_count || 0} trx
               </Badge>
             </div>
           </CardContent>
@@ -565,17 +566,17 @@ export default function DashboardPage() {
 
         {/* Pembelian Hari Ini */}
         <Card className="shadow-sm hover:shadow-md transition-shadow bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/50 dark:to-blue-900/30 border-blue-200 dark:border-blue-800">
-          <CardContent className="pt-4">
+          <CardContent className="pt-3 sm:pt-4 px-3 sm:px-6 pb-3 sm:pb-6">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Setor Emas Hari Ini</span>
-              <ArrowDownRight className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <span className="text-xs sm:text-sm font-medium text-blue-700 dark:text-blue-300">Setor Hari Ini</span>
+              <ArrowDownRight className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400" />
             </div>
-            <div className="mt-2 space-y-1">
-              <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
-                {formatCurrency(stats.dailySummary?.purchases_amount || 0)}
+            <div className="mt-1 sm:mt-2 space-y-0.5 sm:space-y-1">
+              <div className="text-lg sm:text-2xl font-bold text-blue-700 dark:text-blue-300">
+                {formatCompactCurrency(stats.dailySummary?.purchases_amount || 0)}
               </div>
-              <Badge className="bg-blue-200 text-blue-800 dark:bg-blue-800 dark:text-blue-200">
-                {stats.dailySummary?.purchases_count || 0} transaksi
+              <Badge className="bg-blue-200 text-blue-800 dark:bg-blue-800 dark:text-blue-200 text-[10px] sm:text-xs">
+                {stats.dailySummary?.purchases_count || 0} trx
               </Badge>
             </div>
           </CardContent>
@@ -583,37 +584,37 @@ export default function DashboardPage() {
 
         {/* Profit Hari Ini */}
         <Card className="shadow-sm hover:shadow-md transition-shadow bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/50 dark:to-amber-900/30 border-amber-200 dark:border-amber-800">
-          <CardContent className="pt-4">
+          <CardContent className="pt-3 sm:pt-4 px-3 sm:px-6 pb-3 sm:pb-6">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-amber-700 dark:text-amber-300">Profit Hari Ini</span>
-              <Banknote className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              <span className="text-xs sm:text-sm font-medium text-amber-700 dark:text-amber-300">Profit Hari Ini</span>
+              <Banknote className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600 dark:text-amber-400" />
             </div>
-            <div className="mt-2 space-y-1">
-              <div className={cn("text-2xl font-bold",
+            <div className="mt-1 sm:mt-2 space-y-0.5 sm:space-y-1">
+              <div className={cn("text-lg sm:text-2xl font-bold",
                 ((stats.dailySummary?.sales_amount || 0) - (stats.dailySummary?.purchases_amount || 0)) >= 0
                   ? "text-amber-700 dark:text-amber-300"
                   : "text-red-600"
               )}>
                 {((stats.dailySummary?.sales_amount || 0) - (stats.dailySummary?.purchases_amount || 0)) >= 0 ? '+' : ''}
-                {formatCurrency((stats.dailySummary?.sales_amount || 0) - (stats.dailySummary?.purchases_amount || 0))}
+                {formatCompactCurrency((stats.dailySummary?.sales_amount || 0) - (stats.dailySummary?.purchases_amount || 0))}
               </div>
-              <p className="text-xs text-amber-600 dark:text-amber-400">Penjualan - Setor Emas</p>
+              <p className="text-[10px] sm:text-xs text-amber-600 dark:text-amber-400">Jual - Setor</p>
             </div>
           </CardContent>
         </Card>
 
         {/* Total Member */}
         <Card className="shadow-sm hover:shadow-md transition-shadow bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/50 dark:to-purple-900/30 border-purple-200 dark:border-purple-800">
-          <CardContent className="pt-4">
+          <CardContent className="pt-3 sm:pt-4 px-3 sm:px-6 pb-3 sm:pb-6">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Total Member</span>
-              <UserCheck className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              <span className="text-xs sm:text-sm font-medium text-purple-700 dark:text-purple-300">Total Member</span>
+              <UserCheck className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600 dark:text-purple-400" />
             </div>
-            <div className="mt-2 space-y-1">
-              <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">{formatNumber(stats.totalMembers)}</div>
+            <div className="mt-1 sm:mt-2 space-y-0.5 sm:space-y-1">
+              <div className="text-lg sm:text-2xl font-bold text-purple-700 dark:text-purple-300">{formatNumber(stats.totalMembers)}</div>
               <div className="flex items-center gap-1 flex-wrap">
                 {stats.membersByType.slice(0, 2).map((m) => (
-                  <Badge key={m.type} variant="secondary" className="text-[10px] capitalize bg-purple-200 text-purple-800 dark:bg-purple-800 dark:text-purple-200">
+                  <Badge key={m.type} variant="secondary" className="text-[9px] sm:text-[10px] capitalize bg-purple-200 text-purple-800 dark:bg-purple-800 dark:text-purple-200">
                     {m.type}: {m.count}
                   </Badge>
                 ))}
@@ -624,55 +625,55 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts Section with Tabs */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-7">
         {/* Cash Flow Chart */}
-        <Card className="col-span-4 shadow-sm">
-          <CardHeader className="pb-2">
+        <Card className="lg:col-span-4 shadow-sm">
+          <CardHeader className="pb-2 px-3 sm:px-6">
             <Tabs defaultValue="weekly" className="w-full">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                 <div>
-                  <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <CardTitle className="text-sm sm:text-base font-semibold flex items-center gap-2">
                     <BarChart3 className="h-4 w-4" />
                     Grafik Keuangan
                   </CardTitle>
-                  <CardDescription>Uang Masuk vs Uang Keluar</CardDescription>
+                  <CardDescription className="text-xs sm:text-sm">Uang Masuk vs Uang Keluar</CardDescription>
                 </div>
-                <TabsList className="h-8">
-                  <TabsTrigger value="weekly" className="text-xs px-3">Mingguan</TabsTrigger>
-                  <TabsTrigger value="monthly" className="text-xs px-3">Bulanan</TabsTrigger>
+                <TabsList className="h-7 sm:h-8">
+                  <TabsTrigger value="weekly" className="text-[10px] sm:text-xs px-2 sm:px-3">Mingguan</TabsTrigger>
+                  <TabsTrigger value="monthly" className="text-[10px] sm:text-xs px-2 sm:px-3">Bulanan</TabsTrigger>
                 </TabsList>
               </div>
 
               <TabsContent value="weekly" className="mt-4">
-                <ChartContainer config={chartConfig} className="h-[280px] w-full">
-                  <BarChart data={stats.weeklyTransactions} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <ChartContainer config={chartConfig} className="h-[200px] sm:h-[280px] w-full">
+                  <BarChart data={stats.weeklyTransactions} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="date" className="text-xs" />
-                    <YAxis className="text-xs" tickFormatter={(value) => `${value}jt`} />
+                    <XAxis dataKey="date" className="text-[10px] sm:text-xs" tick={{ fontSize: 10 }} />
+                    <YAxis className="text-[10px] sm:text-xs" tickFormatter={(value) => `${value}jt`} tick={{ fontSize: 10 }} />
                     <ChartTooltip
                       content={<ChartTooltipContent />}
                       formatter={(value: number) => [`Rp ${value.toFixed(1)} jt`, '']}
                     />
-                    <Legend />
-                    <Bar dataKey="sales" name="Penjualan (Uang Masuk)" fill={CHART_COLORS.income} radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="purchases" name="Setor Emas (Uang Keluar)" fill={CHART_COLORS.expense} radius={[4, 4, 0, 0]} />
+                    <Legend wrapperStyle={{ fontSize: '10px' }} />
+                    <Bar dataKey="sales" name="Penjualan" fill={CHART_COLORS.income} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="purchases" name="Setor Emas" fill={CHART_COLORS.expense} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ChartContainer>
               </TabsContent>
 
               <TabsContent value="monthly" className="mt-4">
-                <ChartContainer config={chartConfig} className="h-[280px] w-full">
-                  <BarChart data={stats.monthlyCashFlow} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <ChartContainer config={chartConfig} className="h-[200px] sm:h-[280px] w-full">
+                  <BarChart data={stats.monthlyCashFlow} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="month" className="text-xs" />
-                    <YAxis className="text-xs" tickFormatter={(value) => `${value}jt`} />
+                    <XAxis dataKey="month" className="text-[10px] sm:text-xs" tick={{ fontSize: 10 }} />
+                    <YAxis className="text-[10px] sm:text-xs" tickFormatter={(value) => `${value}jt`} tick={{ fontSize: 10 }} />
                     <ChartTooltip
                       content={<ChartTooltipContent />}
                       formatter={(value: number) => [`Rp ${value.toFixed(1)} jt`, '']}
                     />
-                    <Legend />
-                    <Bar dataKey="income" name="Uang Masuk (Penjualan)" fill={CHART_COLORS.income} radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="expense" name="Uang Keluar (Setor Emas)" fill={CHART_COLORS.expense} radius={[4, 4, 0, 0]} />
+                    <Legend wrapperStyle={{ fontSize: '10px' }} />
+                    <Bar dataKey="income" name="Uang Masuk" fill={CHART_COLORS.income} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="expense" name="Uang Keluar" fill={CHART_COLORS.expense} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ChartContainer>
               </TabsContent>
@@ -681,15 +682,15 @@ export default function DashboardPage() {
         </Card>
 
         {/* Stock by Category */}
-        <Card className="col-span-3 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
+        <Card className="lg:col-span-3 shadow-sm">
+          <CardHeader className="pb-2 px-3 sm:px-6">
+            <CardTitle className="text-sm sm:text-base font-semibold flex items-center gap-2">
               <Crown className="h-4 w-4" />
               Stok per Kategori Emas
             </CardTitle>
-            <CardDescription>Top 5 kategori (tersedia)</CardDescription>
+            <CardDescription className="text-xs sm:text-sm">Top 5 kategori (tersedia)</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-3 sm:px-6">
             {stats.stocksByCategory.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Boxes className="h-10 w-10 mx-auto mb-2 opacity-50" />
@@ -746,56 +747,56 @@ export default function DashboardPage() {
       </div>
 
       {/* Bottom Section */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-3">
         {/* Recent Transactions */}
-        <Card className="col-span-2 shadow-sm">
-          <CardHeader className="pb-2">
+        <Card className="lg:col-span-2 shadow-sm">
+          <CardHeader className="pb-2 px-3 sm:px-6">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <CardTitle className="text-sm sm:text-base font-semibold flex items-center gap-2">
                   <Receipt className="h-4 w-4" />
                   Transaksi Terbaru
                 </CardTitle>
-                <CardDescription>5 transaksi terakhir</CardDescription>
+                <CardDescription className="text-xs sm:text-sm">5 transaksi terakhir</CardDescription>
               </div>
               <Link to="/pos/history">
-                <Button variant="ghost" size="sm" className="text-xs">
-                  Lihat Semua
-                  <ChevronRight className="h-3 w-3 ml-1" />
+                <Button variant="ghost" size="sm" className="text-xs h-7 sm:h-8">
+                  <span className="hidden sm:inline">Lihat Semua</span>
+                  <ChevronRight className="h-3 w-3 sm:ml-1" />
                 </Button>
               </Link>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-3 sm:px-6">
             {stats.recentTransactions.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Receipt className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Belum ada transaksi</p>
+              <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                <Receipt className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 opacity-50" />
+                <p className="text-xs sm:text-sm">Belum ada transaksi</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {stats.recentTransactions.map((transaction) => (
                   <Link
                     key={transaction.id}
                     to={`/pos/history/${transaction.id}`}
-                    className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
+                    className="flex items-center justify-between p-2 sm:p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                       <div className={cn(
-                        "p-2 rounded-lg",
+                        "p-1.5 sm:p-2 rounded-lg flex-shrink-0",
                         transaction.type === 'sale'
                           ? 'bg-green-50 dark:bg-green-950'
                           : 'bg-blue-50 dark:bg-blue-950'
                       )}>
                         {transaction.type === 'sale' ? (
-                          <ArrowUpRight className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          <ArrowUpRight className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 dark:text-green-400" />
                         ) : (
-                          <ArrowDownRight className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                          <ArrowDownRight className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 dark:text-blue-400" />
                         )}
                       </div>
-                      <div>
-                        <p className="text-sm font-medium">{transaction.transaction_code}</p>
-                        <p className="text-xs text-muted-foreground">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs sm:text-sm font-medium truncate">{transaction.transaction_code}</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
                           {transaction.customer_name || transaction.member?.name || 'Umum'} • {' '}
                           {new Date(transaction.transaction_date || transaction.created_at).toLocaleString('id-ID', {
                             day: 'numeric',
@@ -806,14 +807,14 @@ export default function DashboardPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right flex-shrink-0 ml-2">
                       <p className={cn(
-                        "text-sm font-semibold",
+                        "text-xs sm:text-sm font-semibold",
                         transaction.type === 'sale' ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'
                       )}>
-                        {transaction.type === 'sale' ? '+' : '-'}{formatCurrency(transaction.grand_total || 0)}
+                        {transaction.type === 'sale' ? '+' : '-'}{formatCompactCurrency(transaction.grand_total || 0)}
                       </p>
-                      <Badge variant="outline" className={cn("text-[10px]", getTransactionStatusColor(transaction.status))}>
+                      <Badge variant="outline" className={cn("text-[8px] sm:text-[10px]", getTransactionStatusColor(transaction.status))}>
                         {transaction.status}
                       </Badge>
                     </div>
@@ -826,50 +827,50 @@ export default function DashboardPage() {
 
         {/* System Info & Member Stats */}
         <Card className="shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
+          <CardHeader className="pb-2 px-3 sm:px-6">
+            <CardTitle className="text-sm sm:text-base font-semibold flex items-center gap-2">
               <Activity className="h-4 w-4" />
               Ringkasan Sistem
             </CardTitle>
-            <CardDescription>Informasi cepat</CardDescription>
+            <CardDescription className="text-xs sm:text-sm">Informasi cepat</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6">
             {/* System Stats */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+            <div className="space-y-2 sm:space-y-3">
+              <div className="flex items-center justify-between p-2 sm:p-3 rounded-lg border bg-card">
                 <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm">Pengguna Aktif</span>
+                  <Users className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
+                  <span className="text-xs sm:text-sm">Pengguna Aktif</span>
                 </div>
-                <Badge variant="secondary">{stats.activeUsers}/{stats.totalUsers}</Badge>
+                <Badge variant="secondary" className="text-[10px] sm:text-xs">{stats.activeUsers}/{stats.totalUsers}</Badge>
               </div>
-              <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+              <div className="flex items-center justify-between p-2 sm:p-3 rounded-lg border bg-card">
                 <div className="flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-green-600" />
-                  <span className="text-sm">Role</span>
+                  <Shield className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
+                  <span className="text-xs sm:text-sm">Role</span>
                 </div>
-                <Badge variant="secondary">{stats.totalRoles}</Badge>
+                <Badge variant="secondary" className="text-[10px] sm:text-xs">{stats.totalRoles}</Badge>
               </div>
-              <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+              <div className="flex items-center justify-between p-2 sm:p-3 rounded-lg border bg-card">
                 <div className="flex items-center gap-2">
-                  <Package className="h-4 w-4 text-purple-600" />
-                  <span className="text-sm">Produk</span>
+                  <Package className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600" />
+                  <span className="text-xs sm:text-sm">Produk</span>
                 </div>
-                <Badge variant="secondary">{stats.totalProducts}</Badge>
+                <Badge variant="secondary" className="text-[10px] sm:text-xs">{stats.totalProducts}</Badge>
               </div>
-              <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+              <div className="flex items-center justify-between p-2 sm:p-3 rounded-lg border bg-card">
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-orange-600" />
-                  <span className="text-sm">Lokasi</span>
+                  <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
+                  <span className="text-xs sm:text-sm">Lokasi</span>
                 </div>
-                <Badge variant="secondary">{stats.totalLocations}</Badge>
+                <Badge variant="secondary" className="text-[10px] sm:text-xs">{stats.totalLocations}</Badge>
               </div>
-              <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+              <div className="flex items-center justify-between p-2 sm:p-3 rounded-lg border bg-card">
                 <div className="flex items-center gap-2">
-                  <Coins className="h-4 w-4 text-yellow-600" />
-                  <span className="text-sm">Kategori Emas</span>
+                  <Coins className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600" />
+                  <span className="text-xs sm:text-sm">Kategori Emas</span>
                 </div>
-                <Badge variant="secondary">{stats.totalGoldCategories}</Badge>
+                <Badge variant="secondary" className="text-[10px] sm:text-xs">{stats.totalGoldCategories}</Badge>
               </div>
             </div>
 
@@ -877,17 +878,17 @@ export default function DashboardPage() {
 
             {/* Member Types Distribution */}
             <div>
-              <p className="text-sm font-medium mb-3 flex items-center gap-2">
-                <Crown className="h-4 w-4" />
+              <p className="text-xs sm:text-sm font-medium mb-2 sm:mb-3 flex items-center gap-2">
+                <Crown className="h-3 w-3 sm:h-4 sm:w-4" />
                 Tipe Member
               </p>
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 {stats.membersByType.map((item) => (
                   <div key={item.type} className="flex items-center justify-between">
-                    <Badge className={cn("capitalize", getMemberTypeColor(item.type))}>
+                    <Badge className={cn("capitalize text-[10px] sm:text-xs", getMemberTypeColor(item.type))}>
                       {item.type}
                     </Badge>
-                    <span className="text-sm font-medium">{item.count}</span>
+                    <span className="text-xs sm:text-sm font-medium">{item.count}</span>
                   </div>
                 ))}
               </div>
@@ -898,29 +899,29 @@ export default function DashboardPage() {
 
       {/* User Profile Card */}
       <Card className="shadow-sm">
-        <CardHeader className="pb-2 border-b bg-muted/50">
-          <CardTitle className="text-base font-semibold">Profil Anda</CardTitle>
-          <CardDescription>Informasi akun</CardDescription>
+        <CardHeader className="pb-2 border-b bg-muted/50 px-3 sm:px-6">
+          <CardTitle className="text-sm sm:text-base font-semibold">Profil Anda</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">Informasi akun</CardDescription>
         </CardHeader>
-        <CardContent className="pt-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/60 text-primary-foreground flex items-center justify-center text-2xl font-bold shadow-lg">
+        <CardContent className="pt-3 sm:pt-4 px-3 sm:px-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-primary to-primary/60 text-primary-foreground flex items-center justify-center text-xl sm:text-2xl font-bold shadow-lg">
               {user?.full_name?.charAt(0) || 'U'}
             </div>
-            <div className="flex-1">
-              <p className="font-semibold text-lg">{user?.full_name}</p>
-              <p className="text-sm text-muted-foreground">{user?.email}</p>
-              <div className="flex items-center gap-2 mt-2">
-                <Badge variant="outline">{user?.role?.name || 'N/A'}</Badge>
-                <Badge className={user?.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700'}>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-base sm:text-lg truncate">{user?.full_name}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">{user?.email}</p>
+              <div className="flex items-center gap-1 sm:gap-2 mt-1.5 sm:mt-2 flex-wrap">
+                <Badge variant="outline" className="text-[10px] sm:text-xs">{user?.role?.name || 'N/A'}</Badge>
+                <Badge className={cn("text-[10px] sm:text-xs", user?.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700')}>
                   {user?.is_active ? 'Aktif' : 'Nonaktif'}
                 </Badge>
               </div>
             </div>
-            <Link to="/account">
-              <Button variant="outline" size="sm">
+            <Link to="/account" className="w-full sm:w-auto">
+              <Button variant="outline" size="sm" className="w-full sm:w-auto text-xs sm:text-sm">
                 Edit Profil
-                <ChevronRight className="h-4 w-4 ml-1" />
+                <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
               </Button>
             </Link>
           </div>

@@ -92,31 +92,33 @@ export default function RoleShow() {
   }
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
       <Card className="shadow-md">
-        <CardHeader className="border-b bg-muted/50 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+        <CardHeader className="border-b bg-muted/50 py-3 sm:py-4 px-3 sm:px-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+            <div className="flex items-center gap-2 sm:gap-3">
               <Button 
                 variant="outline" 
                 size="sm"
+                className="h-8 w-8 sm:h-9 sm:w-9 p-0"
                 onClick={() => navigate('/roles')}
               >
-                <ArrowLeft/>
+                <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
               <div>
-                <CardTitle className="text-base font-semibold">Detail Role</CardTitle>
-                <CardDescription className="text-xs">Lihat detail informasi role</CardDescription>
+                <CardTitle className="text-sm sm:text-base font-semibold">Detail Role</CardTitle>
+                <CardDescription className="text-[10px] sm:text-xs">Lihat detail informasi role</CardDescription>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-1.5 sm:gap-2">
               {hasPermission('roles.update') && (
                 <Button 
                   variant="outline"
                   size="sm"
+                  className="h-8 sm:h-9 text-xs sm:text-sm flex-1 sm:flex-none"
                   onClick={() => navigate(`/roles/${id}/edit`)}
                 >
-                  <Edit className="h-4 w-4 mr-2" />
+                  <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                   Edit
                 </Button>
               )}
@@ -124,6 +126,7 @@ export default function RoleShow() {
                 <Button 
                   variant="destructive"
                   size="sm"
+                  className="h-8 sm:h-9 text-xs sm:text-sm flex-1 sm:flex-none"
                   onClick={handleDelete}
                   disabled={deleting}
                 >

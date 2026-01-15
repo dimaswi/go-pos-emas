@@ -94,40 +94,40 @@ export default function ShowRawMaterialPage() {
   const conditionCfg = conditionConfig[rawMaterial.condition] || { label: rawMaterial.condition, variant: 'outline' };
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
       <Card className="shadow-md">
-        <CardHeader className="border-b bg-muted/50 py-4">
-          <div className="flex items-center justify-between">
+        <CardHeader className="border-b bg-muted/50 py-3 sm:py-4 px-3 sm:px-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
             <div>
-              <CardTitle className="text-base font-semibold">Detail Bahan Baku</CardTitle>
-              <CardDescription className="text-xs">
+              <CardTitle className="text-sm sm:text-base font-semibold">Detail Bahan Baku</CardTitle>
+              <CardDescription className="text-[10px] sm:text-xs">
                 Informasi lengkap bahan baku
               </CardDescription>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => navigate('/raw-materials')}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
+            <div className="flex gap-1.5 sm:gap-2">
+              <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm flex-1 sm:flex-none" onClick={() => navigate('/raw-materials')}>
+                <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 Kembali
               </Button>
               {hasPermission('raw-materials.update') && rawMaterial.status === 'available' && (
-                <Button onClick={() => navigate(`/raw-materials/${id}/edit`)}>
-                  <Edit className="h-4 w-4 mr-2" />
+                <Button size="sm" className="h-8 sm:h-9 text-xs sm:text-sm flex-1 sm:flex-none" onClick={() => navigate(`/raw-materials/${id}/edit`)}>
+                  <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                   Edit
                 </Button>
               )}
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-6">
-          <div className="space-y-6">
+        <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Header Info */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <h2 className="text-2xl font-bold font-mono">{rawMaterial.code}</h2>
-                <p className="text-muted-foreground">Kode Bahan Baku</p>
+                <h2 className="text-lg sm:text-2xl font-bold font-mono">{rawMaterial.code}</h2>
+                <p className="text-[10px] sm:text-sm text-muted-foreground">Kode Bahan Baku</p>
               </div>
-              <div className="flex gap-2">
-                <Badge variant={statusCfg.variant}>{statusCfg.label}</Badge>
+              <div className="flex gap-1.5 sm:gap-2">
+                <Badge variant={statusCfg.variant} className="text-[10px] sm:text-xs">{statusCfg.label}</Badge>
                 <Badge variant={conditionCfg.variant}>{conditionCfg.label}</Badge>
               </div>
             </div>

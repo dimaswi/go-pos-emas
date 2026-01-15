@@ -74,28 +74,28 @@ export default function LocationsPage() {
   };
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
       <Card className="shadow-md">
-        <CardHeader className="border-b bg-muted/50 py-4">
-          <div className="flex items-center justify-between">
+        <CardHeader className="border-b bg-muted/50 py-3 sm:py-4 px-3 sm:px-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
             <div>
-              <CardTitle className='text-base font-semibold'>Lokasi</CardTitle>
-              <CardDescription className='text-xs'>
+              <CardTitle className='text-sm sm:text-base font-semibold'>Lokasi</CardTitle>
+              <CardDescription className='text-[10px] sm:text-xs'>
                 Kelola lokasi gudang dan toko
               </CardDescription>
             </div>
             {hasPermission('locations.create') && (
-              <Button onClick={() => navigate('/locations/create')}>
-                <Plus className="h-4 w-4 mr-2" />
+              <Button size="sm" className="h-8 sm:h-9 text-xs sm:text-sm w-full sm:w-auto" onClick={() => navigate('/locations/create')}>
+                <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                 Tambah Lokasi
               </Button>
             )}
           </div>
         </CardHeader>
-        <CardContent className="pt-6">
+        <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
           {loading ? (
-            <div className="flex items-center justify-center py-10">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="flex items-center justify-center py-8 sm:py-10">
+              <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
             </div>
           ) : (
             <DataTable

@@ -30,7 +30,14 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { goldCategoriesApi, locationsApi, api, type Member, type GoldCategory, type Location } from "@/lib/api";
+import {
+  goldCategoriesApi,
+  locationsApi,
+  api,
+  type Member,
+  type GoldCategory,
+  type Location,
+} from "@/lib/api";
 import { generateUUID } from "@/lib/utils";
 
 interface DepositItem {
@@ -53,7 +60,10 @@ type PaymentMethod = "cash" | "transfer" | "card";
 type DepositMode = "standard" | "custom";
 type GoldCondition = "new" | "like_new" | "scratched" | "dented" | "damaged";
 
-const CONDITION_OPTIONS: Record<GoldCondition, { label: string; color: string; shrinkage: number }> = {
+const CONDITION_OPTIONS: Record<
+  GoldCondition,
+  { label: string; color: string; shrinkage: number }
+> = {
   new: { label: "Baru/Segel", color: "bg-green-500", shrinkage: 1 },
   like_new: { label: "Mulus", color: "bg-emerald-500", shrinkage: 2 },
   scratched: { label: "Ada Goresan", color: "bg-amber-500", shrinkage: 3 },
@@ -62,7 +72,12 @@ const CONDITION_OPTIONS: Record<GoldCondition, { label: string; color: string; s
 };
 
 const formatCurrency = (n: number) =>
-  new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
+  new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(n);
 
 export default function SetorEmasPage() {
   const navigate = useNavigate();
@@ -86,14 +101,16 @@ export default function SetorEmasPage() {
   const [standardShrinkage, setStandardShrinkage] = useState<string>(""); // Susut %
   const [standardBuyPrice, setStandardBuyPrice] = useState<string>(""); // Harga beli kita ke penjual
   const [standardNotes, setStandardNotes] = useState<string>("");
-  const [standardCondition, setStandardCondition] = useState<GoldCondition>("like_new");
+  const [standardCondition, setStandardCondition] =
+    useState<GoldCondition>("like_new");
   const [customWeight, setCustomWeight] = useState<string>(""); // Berat kotor
   const [customShrinkage, setCustomShrinkage] = useState<string>(""); // Susut %
   const [customPurity, setCustomPurity] = useState<string>("");
   const [customPricePerGram, setCustomPricePerGram] = useState<string>("");
   const [customBuyPrice, setCustomBuyPrice] = useState<string>(""); // Harga beli kita ke penjual
   const [customNotes, setCustomNotes] = useState<string>("");
-  const [customCondition, setCustomCondition] = useState<GoldCondition>("like_new");
+  const [customCondition, setCustomCondition] =
+    useState<GoldCondition>("like_new");
 
   useEffect(() => {
     fetchData();
@@ -122,10 +139,12 @@ export default function SetorEmasPage() {
         const savedState = JSON.parse(storedCart);
         if (savedState.depositItems) setDepositItems(savedState.depositItems);
         // locationId is restored in fetchData, no need to set here
-        if (savedState.paymentMethod) setPaymentMethod(savedState.paymentMethod);
+        if (savedState.paymentMethod)
+          setPaymentMethod(savedState.paymentMethod);
         if (savedState.notes) setNotes(savedState.notes);
         if (savedState.depositMode) setDepositMode(savedState.depositMode);
-        if (savedState.saveAsRawMaterial !== undefined) setSaveAsRawMaterial(savedState.saveAsRawMaterial);
+        if (savedState.saveAsRawMaterial !== undefined)
+          setSaveAsRawMaterial(savedState.saveAsRawMaterial);
       } catch {
         // ignore
       }
@@ -138,7 +157,9 @@ export default function SetorEmasPage() {
     try {
       // Read sessionStorage BEFORE any async operation
       const storedCart = sessionStorage.getItem("setor_emas_cart");
-      const savedLocationId = storedCart ? JSON.parse(storedCart).locationId : null;
+      const savedLocationId = storedCart
+        ? JSON.parse(storedCart).locationId
+        : null;
 
       const [catRes, locRes] = await Promise.all([
         goldCategoriesApi.getAll({ page_size: 100 }),
@@ -172,7 +193,10 @@ export default function SetorEmasPage() {
   }, [goldCategories, selectedCategoryId]);
 
   const totals = useMemo(() => {
-    const totalWeightGross = depositItems.reduce((s, i) => s + i.weight_gross, 0);
+    const totalWeightGross = depositItems.reduce(
+      (s, i) => s + i.weight_gross,
+      0
+    );
     const totalWeight = depositItems.reduce((s, i) => s + i.weight_grams, 0);
     const totalAmount = depositItems.reduce((s, i) => s + i.subtotal, 0);
     return { totalWeightGross, totalWeight, totalAmount };
@@ -211,10 +235,12 @@ export default function SetorEmasPage() {
       return;
     }
     // Susut: gunakan input manual atau default dari kondisi
-    const shrinkage = standardShrinkage ? parseFloat(standardShrinkage) : CONDITION_OPTIONS[standardCondition].shrinkage;
+    const shrinkage = standardShrinkage
+      ? parseFloat(standardShrinkage)
+      : CONDITION_OPTIONS[standardCondition].shrinkage;
     const weightNet = weightGross * (1 - shrinkage / 100);
     const originalPrice = selectedCategory.buy_price; // Harga surat/referensi
-    
+
     setDepositItems([
       ...depositItems,
       {
@@ -228,7 +254,7 @@ export default function SetorEmasPage() {
         original_price_per_gram: originalPrice,
         price_per_gram: buyPrice, // Harga beli kita yang diinput manual
         condition: standardCondition,
-        subtotal: Math.round(weightNet * 100) / 100 * buyPrice,
+        subtotal: (Math.round(weightNet * 100) / 100) * buyPrice,
         notes: standardNotes,
         item_type: "standard",
       },
@@ -263,9 +289,11 @@ export default function SetorEmasPage() {
       return;
     }
     // Susut: gunakan input manual atau default dari kondisi
-    const shrinkage = customShrinkage ? parseFloat(customShrinkage) : CONDITION_OPTIONS[customCondition].shrinkage;
+    const shrinkage = customShrinkage
+      ? parseFloat(customShrinkage)
+      : CONDITION_OPTIONS[customCondition].shrinkage;
     const weightNet = weightGross * (1 - shrinkage / 100);
-    
+
     setDepositItems([
       ...depositItems,
       {
@@ -277,7 +305,7 @@ export default function SetorEmasPage() {
         original_price_per_gram: price, // Harga surat
         price_per_gram: buyPrice, // Harga beli kita yang diinput manual
         condition: customCondition,
-        subtotal: Math.round(weightNet * 100) / 100 * buyPrice,
+        subtotal: (Math.round(weightNet * 100) / 100) * buyPrice,
         notes: customNotes || `Emas ${purity}%`,
         item_type: "custom",
       },
@@ -297,9 +325,18 @@ export default function SetorEmasPage() {
       depositItems
         .map((i) => {
           if (i.id === id) {
-            const wGross = Math.max(0.1, Math.round((i.weight_gross + delta) * 100) / 100);
-            const wNet = Math.round(wGross * (1 - i.shrinkage_percent / 100) * 100) / 100;
-            return { ...i, weight_gross: wGross, weight_grams: wNet, subtotal: wNet * i.price_per_gram };
+            const wGross = Math.max(
+              0.1,
+              Math.round((i.weight_gross + delta) * 100) / 100
+            );
+            const wNet =
+              Math.round(wGross * (1 - i.shrinkage_percent / 100) * 100) / 100;
+            return {
+              ...i,
+              weight_gross: wGross,
+              weight_grams: wNet,
+              subtotal: wNet * i.price_per_gram,
+            };
           }
           return i;
         })
@@ -307,7 +344,8 @@ export default function SetorEmasPage() {
     );
   };
 
-  const removeItem = (id: string) => setDepositItems(depositItems.filter((i) => i.id !== id));
+  const removeItem = (id: string) =>
+    setDepositItems(depositItems.filter((i) => i.id !== id));
 
   const clearAll = () => {
     setDepositItems([]);
@@ -361,16 +399,17 @@ export default function SetorEmasPage() {
         if (withPrint) {
           // Print receipt with 80mm layout
           const receiptData: ReceiptData = {
-            type: 'deposit',
-            storeName: selectedLocationName || 'TOKO EMAS',
-            storeAddress: 'Alamat Toko',
-            storePhone: '',
-            transactionCode: res.data.data?.transaction_code || '',
+            type: "deposit",
+            storeName: selectedLocationName || "TOKO EMAS",
+            storeAddress: "Alamat Toko",
+            storePhone: "",
+            transactionCode: res.data.data?.transaction_code || "",
             date: new Date(),
             locationName: selectedLocationName,
             customerName: selectedMember?.name || undefined,
-            memberCode: selectedMember?.code || selectedMember?.member_code || undefined,
-            items: depositItems.map(item => ({
+            memberCode:
+              selectedMember?.code || selectedMember?.member_code || undefined,
+            items: depositItems.map((item) => ({
               name: item.gold_category_name || `Emas ${item.purity}%`,
               weight: item.weight_grams,
               price: item.subtotal,
@@ -397,7 +436,9 @@ export default function SetorEmasPage() {
   };
 
   const selectedLocationName = useMemo(() => {
-    return locations.find(l => l.id.toString() === selectedLocationId)?.name || "";
+    return (
+      locations.find((l) => l.id.toString() === selectedLocationId)?.name || ""
+    );
   }, [locations, selectedLocationId]);
 
   if (isLoading) {
@@ -409,36 +450,57 @@ export default function SetorEmasPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-muted/30">
+    <div className="min-h-screen flex flex-col bg-muted/30">
       {/* Header */}
-      <header className="h-12 border-b bg-background flex items-center justify-between px-4 shrink-0">
-        <div className="flex items-center gap-3">
+      <header className="h-auto min-h-12 border-b bg-background flex flex-col sm:flex-row items-start sm:items-center justify-between px-2 sm:px-4 py-2 sm:py-0 gap-2 sm:gap-0 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto">
           <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded bg-amber-500 flex items-center justify-center">
-              <Scale className="h-3.5 w-3.5 text-white" />
+            <div className="h-6 w-6 sm:h-7 sm:w-7 rounded bg-amber-500 flex items-center justify-center">
+              <Scale className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-white" />
             </div>
-            <span className="font-bold">Setor Emas</span>
+            <span className="font-bold text-sm sm:text-base">Setor Emas</span>
           </div>
-          <div className="h-5 w-px bg-border" />
+          <div className="h-5 w-px bg-border hidden sm:block" />
           <div className="flex gap-1 bg-muted p-0.5 rounded">
-            <Button variant="ghost" size="sm" className="h-7 text-xs px-3" onClick={() => navigate("/pos")}>
-              <ShoppingCart className="h-3 w-3 mr-1.5" />
-              Penjualan
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 sm:h-7 text-[10px] sm:text-xs px-2 sm:px-3"
+              onClick={() => navigate("/pos")}
+            >
+              <ShoppingCart className="h-3 w-3 mr-1" />
+              <span className="hidden xs:inline">Penjualan</span>
             </Button>
-            <Button size="sm" className="h-7 text-xs px-3">
-              <Scale className="h-3 w-3 mr-1.5" />
-              Setor Emas
+            <Button
+              size="sm"
+              className="h-6 sm:h-7 text-[10px] sm:text-xs px-2 sm:px-3"
+            >
+              <Scale className="h-3 w-3 mr-1" />
+              <span className="hidden xs:inline">Setor</span>
             </Button>
           </div>
-          <div className="h-5 w-px bg-border" />
-          <Tabs value={depositMode} onValueChange={(v) => setDepositMode(v as DepositMode)}>
-            <TabsList className="h-7">
-              <TabsTrigger value="standard" className="text-xs px-2 h-5">Standar</TabsTrigger>
-              <TabsTrigger value="custom" className="text-xs px-2 h-5">Custom</TabsTrigger>
+          <div className="h-5 w-px bg-border hidden sm:block" />
+          <Tabs
+            value={depositMode}
+            onValueChange={(v) => setDepositMode(v as DepositMode)}
+          >
+            <TabsList className="h-6 sm:h-7">
+              <TabsTrigger
+                value="standard"
+                className="text-[10px] sm:text-xs px-1.5 sm:px-2 h-4 sm:h-5"
+              >
+                Standar
+              </TabsTrigger>
+              <TabsTrigger
+                value="custom"
+                className="text-[10px] sm:text-xs px-1.5 sm:px-2 h-4 sm:h-5"
+              >
+                Custom
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto">
           <SearchableSelect
             options={locationOptions}
             value={selectedLocationId}
@@ -446,31 +508,45 @@ export default function SetorEmasPage() {
             placeholder="Lokasi"
             searchPlaceholder="Cari lokasi..."
             emptyMessage="Lokasi tidak ditemukan"
-            triggerClassName="w-[400px] h-8 text-sm"
+            triggerClassName="flex-1 sm:w-[200px] lg:w-[300px] h-7 sm:h-8 text-xs sm:text-sm"
             size="sm"
           />
-          <Button variant="outline" size="sm" className="h-8" onClick={() => navigate("/pos/history?return=/setor-emas&type=purchase")}>
-            <Clock className="h-3.5 w-3.5 mr-1.5" />
-            Riwayat
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 sm:h-8 px-2 sm:px-3"
+            onClick={() =>
+              navigate("/pos/history?return=/setor-emas&type=purchase")
+            }
+          >
+            <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            <span className="hidden sm:inline ml-1.5">Riwayat</span>
           </Button>
-          <Button variant="outline" size="sm" className="h-8" onClick={() => navigate("/dashboard")}>
-            <LayoutDashboard className="h-3.5 w-3.5 mr-1.5" />
-            Dashboard
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 sm:h-8 px-2 sm:px-3"
+            onClick={() => navigate("/dashboard")}
+          >
+            <LayoutDashboard className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            <span className="hidden sm:inline ml-1.5">Dashboard</span>
           </Button>
         </div>
       </header>
 
       {/* Main */}
-      <div className="flex-1 flex min-h-0">
+      <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-auto lg:overflow-hidden">
         {/* Left */}
-        <div className="flex-1 flex flex-col p-3 gap-3 min-w-0">
+        <div className="flex-1 flex flex-col p-2 sm:p-3 gap-2 sm:gap-3 min-w-0">
           {/* Form */}
-          <div className="bg-background rounded-lg border p-3">
+          <div className="bg-background rounded-lg border p-2 sm:p-3">
             {depositMode === "standard" ? (
-              <div className="space-y-3">
-                <div className="flex gap-2 items-end flex-wrap">
-                  <div className="flex-1 min-w-[150px]">
-                    <Label className="text-xs text-muted-foreground mb-1 block">Kategori Emas</Label>
+              <div className="space-y-2 sm:space-y-3">
+                <div className="flex gap-1.5 sm:gap-2 items-end flex-wrap">
+                  <div className="flex-1 min-w-[120px] sm:min-w-[150px]">
+                    <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
+                      Kategori Emas
+                    </Label>
                     <SearchableSelect
                       options={goldCategoryOptions}
                       value={selectedCategoryId}
@@ -480,65 +556,85 @@ export default function SetorEmasPage() {
                       emptyMessage="Kategori tidak ditemukan"
                     />
                   </div>
-                  <div className="w-24">
-                    <Label className="text-xs text-muted-foreground mb-1 block">Berat Kotor (g)</Label>
+                  <div className="w-16 sm:w-24">
+                    <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
+                      Berat (g)
+                    </Label>
                     <Input
                       type="number"
                       step="0.01"
                       value={standardWeight}
                       onChange={(e) => setStandardWeight(e.target.value)}
                       placeholder="0.00"
-                      className="h-9"
+                      className="h-8 sm:h-9 text-xs sm:text-sm"
                     />
                   </div>
-                  <div className="w-20">
-                    <Label className="text-xs text-muted-foreground mb-1 block">Susut %</Label>
+                  <div className="w-14 sm:w-20">
+                    <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
+                      Susut %
+                    </Label>
                     <Input
                       type="number"
                       step="0.1"
                       value={standardShrinkage}
                       onChange={(e) => setStandardShrinkage(e.target.value)}
-                      placeholder={CONDITION_OPTIONS[standardCondition].shrinkage.toString()}
-                      className="h-9"
+                      placeholder={CONDITION_OPTIONS[
+                        standardCondition
+                      ].shrinkage.toString()}
+                      className="h-8 sm:h-9 text-xs sm:text-sm"
                     />
                   </div>
-                  <div className="w-28">
-                    <Label className="text-xs text-muted-foreground mb-1 block">Harga Beli/g <span className="text-destructive">*</span></Label>
+                  <div className="w-20 sm:w-28">
+                    <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
+                      Harga/g <span className="text-destructive">*</span>
+                    </Label>
                     <Input
                       type="number"
                       value={standardBuyPrice}
                       onChange={(e) => setStandardBuyPrice(e.target.value)}
                       placeholder="0"
-                      className="h-9"
+                      className="h-8 sm:h-9 text-xs sm:text-sm"
                     />
                   </div>
-                  <div className="w-28">
-                    <Label className="text-xs text-muted-foreground mb-1 block">Catatan</Label>
+                  <div className="flex-1 min-w-[80px] sm:min-w-[100px]">
+                    <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
+                      Catatan
+                    </Label>
                     <Input
-                      value={standardNotes}
-                      onChange={(e) => setStandardNotes(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && addStandardItem()}
-                      placeholder="Opsional"
-                      className="h-9"
+                      value={customNotes}
+                      onChange={(e) => setCustomNotes(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && addCustomItem()}
+                      placeholder="Deskripsi"
+                      className="h-8 sm:h-9 text-xs sm:text-sm"
                     />
                   </div>
-                  <Button onClick={addStandardItem} className="h-9">
-                    <Plus className="h-4 w-4 mr-1" />
-                    Tambah
+                  <Button
+                    onClick={addStandardItem}
+                    className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3"
+                  >
+                    <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
+                    <span className="hidden sm:inline">Tambah</span>
                   </Button>
                 </div>
                 {/* Kondisi Fisik Emas */}
-                <div className="flex items-center gap-2">
-                  <Label className="text-xs text-muted-foreground shrink-0">Kondisi Fisik:</Label>
-                  <div className="flex gap-1 flex-wrap">
-                    {(Object.entries(CONDITION_OPTIONS) as [GoldCondition, typeof CONDITION_OPTIONS[GoldCondition]][]).map(([key, val]) => (
+                <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                  <Label className="text-[10px] sm:text-xs text-muted-foreground shrink-0">
+                    Kondisi:
+                  </Label>
+                  <div className="flex gap-0.5 sm:gap-1 flex-wrap">
+                    {(
+                      Object.entries(CONDITION_OPTIONS) as [
+                        GoldCondition,
+                        (typeof CONDITION_OPTIONS)[GoldCondition]
+                      ][]
+                    ).map(([key, val]) => (
                       <button
                         key={key}
                         onClick={() => {
                           setStandardCondition(key);
                           if (!standardShrinkage) setStandardShrinkage(""); // Reset agar pakai default
                         }}
-                        className={`px-2.5 py-1 text-xs rounded-full border transition-all ${
+                        className={`px-1.5 sm:px-2.5 py-0.5 sm:py-1 text-[9px] sm:text-xs rounded-full border transition-all ${
                           standardCondition === key
                             ? `${val.color} text-white border-transparent`
                             : "hover:border-primary/50"
@@ -551,49 +647,112 @@ export default function SetorEmasPage() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-3">
-                <div className="flex gap-2 items-end flex-wrap">
-                  <div className="w-24">
-                    <Label className="text-xs text-muted-foreground mb-1 block">Berat Kotor (g)</Label>
-                    <Input type="number" step="0.01" value={customWeight} onChange={(e) => setCustomWeight(e.target.value)} placeholder="0.00" className="h-9" />
+              <div className="space-y-2 sm:space-y-3">
+                <div className="flex gap-1.5 sm:gap-2 items-end flex-wrap">
+                  <div className="w-16 sm:w-24">
+                    <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
+                      Berat (g)
+                    </Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={customWeight}
+                      onChange={(e) => setCustomWeight(e.target.value)}
+                      placeholder="0.00"
+                      className="h-8 sm:h-9 text-xs sm:text-sm"
+                    />
                   </div>
-                  <div className="w-20">
-                    <Label className="text-xs text-muted-foreground mb-1 block">Susut %</Label>
-                    <Input type="number" step="0.1" value={customShrinkage} onChange={(e) => setCustomShrinkage(e.target.value)} placeholder={CONDITION_OPTIONS[customCondition].shrinkage.toString()} className="h-9" />
+                  <div className="w-14 sm:w-20">
+                    <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
+                      Susut %
+                    </Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={customShrinkage}
+                      onChange={(e) => setCustomShrinkage(e.target.value)}
+                      placeholder={CONDITION_OPTIONS[
+                        customCondition
+                      ].shrinkage.toString()}
+                      className="h-8 sm:h-9 text-xs sm:text-sm"
+                    />
                   </div>
-                  <div className="w-20">
-                    <Label className="text-xs text-muted-foreground mb-1 block">Kadar (%)</Label>
-                    <Input type="number" step="0.1" value={customPurity} onChange={(e) => setCustomPurity(e.target.value)} placeholder="99.9" className="h-9" />
+                  <div className="w-14 sm:w-20">
+                    <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
+                      Kadar (%)
+                    </Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={customPurity}
+                      onChange={(e) => setCustomPurity(e.target.value)}
+                      placeholder="99.9"
+                      className="h-8 sm:h-9 text-xs sm:text-sm"
+                    />
                   </div>
-                  <div className="w-28">
-                    <Label className="text-xs text-muted-foreground mb-1 block">Harga Surat/g</Label>
-                    <Input type="number" value={customPricePerGram} onChange={(e) => setCustomPricePerGram(e.target.value)} placeholder="0" className="h-9" />
+                  <div className="w-20 sm:w-28">
+                    <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
+                      Harga Surat/g
+                    </Label>
+                    <Input
+                      type="number"
+                      value={customPricePerGram}
+                      onChange={(e) => setCustomPricePerGram(e.target.value)}
+                      placeholder="0"
+                      className="h-8 sm:h-9 text-xs sm:text-sm"
+                    />
                   </div>
-                  <div className="w-28">
-                    <Label className="text-xs text-muted-foreground mb-1 block">Harga Beli/g <span className="text-destructive">*</span></Label>
-                    <Input type="number" value={customBuyPrice} onChange={(e) => setCustomBuyPrice(e.target.value)} placeholder="0" className="h-9" />
+                  <div className="w-20 sm:w-28">
+                    <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
+                      Harga Beli/g <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      type="number"
+                      value={customBuyPrice}
+                      onChange={(e) => setCustomBuyPrice(e.target.value)}
+                      placeholder="0"
+                      className="h-8 sm:h-9 text-xs sm:text-sm"
+                    />
                   </div>
-                  <div className="flex-1 min-w-[100px]">
-                    <Label className="text-xs text-muted-foreground mb-1 block">Catatan</Label>
-                    <Input value={customNotes} onChange={(e) => setCustomNotes(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addCustomItem()} placeholder="Deskripsi" className="h-9" />
+                  <div className="flex-1 min-w-[80px] sm:min-w-[100px]">
+                    <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
+                      Catatan
+                    </Label>
+                    <Input
+                      value={customNotes}
+                      onChange={(e) => setCustomNotes(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && addCustomItem()}
+                      placeholder="Deskripsi"
+                      className="h-8 sm:h-9 text-xs sm:text-sm"
+                    />
                   </div>
-                  <Button onClick={addCustomItem} className="h-9">
-                    <Plus className="h-4 w-4 mr-1" />
-                    Tambah
+                  <Button
+                    onClick={addCustomItem}
+                    className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3"
+                  >
+                    <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
+                    <span className="hidden sm:inline">Tambah</span>
                   </Button>
                 </div>
                 {/* Kondisi Fisik Emas */}
-                <div className="flex items-center gap-2">
-                  <Label className="text-xs text-muted-foreground shrink-0">Kondisi Fisik:</Label>
-                  <div className="flex gap-1 flex-wrap">
-                    {(Object.entries(CONDITION_OPTIONS) as [GoldCondition, typeof CONDITION_OPTIONS[GoldCondition]][]).map(([key, val]) => (
+                <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                  <Label className="text-[10px] sm:text-xs text-muted-foreground shrink-0">
+                    Kondisi:
+                  </Label>
+                  <div className="flex gap-0.5 sm:gap-1 flex-wrap">
+                    {(
+                      Object.entries(CONDITION_OPTIONS) as [
+                        GoldCondition,
+                        (typeof CONDITION_OPTIONS)[GoldCondition]
+                      ][]
+                    ).map(([key, val]) => (
                       <button
                         key={key}
                         onClick={() => {
                           setCustomCondition(key);
                           if (!customShrinkage) setCustomShrinkage("");
                         }}
-                        className={`px-2.5 py-1 text-xs rounded-full border transition-all ${
+                        className={`px-1.5 sm:px-2.5 py-0.5 sm:py-1 text-[9px] sm:text-xs rounded-full border transition-all ${
                           customCondition === key
                             ? `${val.color} text-white border-transparent`
                             : "hover:border-primary/50"
@@ -608,104 +767,187 @@ export default function SetorEmasPage() {
             )}
 
             {selectedCategory && depositMode === "standard" && (
-              <div className="mt-3 pt-3 border-t">
-                <div className="flex items-center gap-4 text-sm flex-wrap">
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">Harga Referensi:</span>
-                    <span className="font-medium">{formatCurrency(selectedCategory.buy_price)}/g</span>
+              <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t">
+                <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm flex-wrap">
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <span className="text-muted-foreground">Ref:</span>
+                    <span className="font-medium">
+                      {formatCurrency(selectedCategory.buy_price)}/g
+                    </span>
                   </div>
-                  <Badge variant="outline" className="text-xs">{selectedCategory.purity}%</Badge>
+                  <Badge variant="outline" className="text-[10px] sm:text-xs">
+                    {selectedCategory.purity}%
+                  </Badge>
                   {standardWeight && parseFloat(standardWeight) > 0 && (
                     <>
-                      <span className="text-muted-foreground">|</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">Berat Kotor:</span>
-                        <span className="font-medium">{parseFloat(standardWeight).toFixed(2)}g</span>
+                      <span className="text-muted-foreground hidden sm:inline">
+                        |
+                      </span>
+                      <div className="flex items-center gap-1 sm:gap-2">
+                        <span className="text-muted-foreground">Kotor:</span>
+                        <span className="font-medium">
+                          {parseFloat(standardWeight).toFixed(2)}g
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">Susut {standardShrinkage || CONDITION_OPTIONS[standardCondition].shrinkage}%:</span>
+                      <div className="flex items-center gap-1 sm:gap-2">
+                        <span className="text-muted-foreground">Susut:</span>
                         <span className="text-orange-600 font-medium">
-                          -{(parseFloat(standardWeight) * (parseFloat(standardShrinkage) || CONDITION_OPTIONS[standardCondition].shrinkage) / 100).toFixed(2)}g
+                          -
+                          {(
+                            (parseFloat(standardWeight) *
+                              (parseFloat(standardShrinkage) ||
+                                CONDITION_OPTIONS[standardCondition]
+                                  .shrinkage)) /
+                            100
+                          ).toFixed(2)}
+                          g
                         </span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">Berat Bersih:</span>
+                      <div className="flex items-center gap-1 sm:gap-2">
+                        <span className="text-muted-foreground">Bersih:</span>
                         <span className="font-bold text-primary">
-                          {(parseFloat(standardWeight) * (1 - (parseFloat(standardShrinkage) || CONDITION_OPTIONS[standardCondition].shrinkage) / 100)).toFixed(2)}g
+                          {(
+                            parseFloat(standardWeight) *
+                            (1 -
+                              (parseFloat(standardShrinkage) ||
+                                CONDITION_OPTIONS[standardCondition]
+                                  .shrinkage) /
+                                100)
+                          ).toFixed(2)}
+                          g
                         </span>
                       </div>
                     </>
                   )}
-                  {standardBuyPrice && parseFloat(standardBuyPrice) > 0 && standardWeight && parseFloat(standardWeight) > 0 && (
-                    <>
-                      <span className="text-muted-foreground">|</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">Total Bayar:</span>
-                        <span className="font-bold text-green-600">
-                          {formatCurrency(
-                            (parseFloat(standardWeight) * (1 - (parseFloat(standardShrinkage) || CONDITION_OPTIONS[standardCondition].shrinkage) / 100)) * parseFloat(standardBuyPrice)
-                          )}
+                  {standardBuyPrice &&
+                    parseFloat(standardBuyPrice) > 0 &&
+                    standardWeight &&
+                    parseFloat(standardWeight) > 0 && (
+                      <>
+                        <span className="text-muted-foreground hidden sm:inline">
+                          |
                         </span>
-                      </div>
-                    </>
-                  )}
+                        <div className="flex items-center gap-1 sm:gap-2">
+                          <span className="text-muted-foreground">Total:</span>
+                          <span className="font-bold text-green-600">
+                            {formatCurrency(
+                              parseFloat(standardWeight) *
+                                (1 -
+                                  (parseFloat(standardShrinkage) ||
+                                    CONDITION_OPTIONS[standardCondition]
+                                      .shrinkage) /
+                                    100) *
+                                parseFloat(standardBuyPrice)
+                            )}
+                          </span>
+                        </div>
+                      </>
+                    )}
                 </div>
               </div>
             )}
           </div>
 
           {/* Items */}
-          <div className="flex-1 bg-background rounded-lg border flex flex-col min-h-0">
-            <div className="h-10 px-3 border-b flex items-center justify-between shrink-0">
-              <span className="text-sm font-medium">Item Setor ({depositItems.length})</span>
+          <div className="flex-1 bg-background rounded-lg border flex flex-col min-h-[200px] lg:min-h-0">
+            <div className="h-9 sm:h-10 px-2 sm:px-3 border-b flex items-center justify-between shrink-0">
+              <span className="text-xs sm:text-sm font-medium">
+                Item Setor ({depositItems.length})
+              </span>
               {depositItems.length > 0 && (
-                <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive hover:text-destructive" onClick={clearAll}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 sm:h-7 text-[10px] sm:text-xs text-destructive hover:text-destructive px-2"
+                  onClick={clearAll}
+                >
                   <Trash2 className="h-3 w-3 mr-1" />
-                  Hapus Semua
+                  Hapus
                 </Button>
               )}
             </div>
-            <ScrollArea className="flex-1">
+            <ScrollArea className="flex-1 max-h-[200px] lg:max-h-none">
               {depositItems.length === 0 ? (
-                <div className="p-8 text-center text-muted-foreground">
-                  <Scale className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">Belum ada item</p>
+                <div className="p-4 sm:p-8 text-center text-muted-foreground">
+                  <Scale className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 opacity-30" />
+                  <p className="text-xs sm:text-sm">Belum ada item</p>
                 </div>
               ) : (
-                <div className="p-2 space-y-1">
+                <div className="p-1.5 sm:p-2 space-y-1">
                   {depositItems.map((item) => (
-                    <div key={item.id} className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 group">
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-1.5 sm:gap-3 p-1.5 sm:p-2 rounded hover:bg-muted/50 group"
+                    >
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium truncate">{item.gold_category_name || `Emas ${item.purity}%`}</span>
-                          {item.item_type === "custom" && <Badge variant="secondary" className="text-[10px]">Custom</Badge>}
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full text-white ${CONDITION_OPTIONS[item.condition].color}`}>
+                        <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                          <span className="text-xs sm:text-sm font-medium truncate">
+                            {item.gold_category_name || `Emas ${item.purity}%`}
+                          </span>
+                          {item.item_type === "custom" && (
+                            <Badge
+                              variant="secondary"
+                              className="text-[8px] sm:text-[10px]"
+                            >
+                              Custom
+                            </Badge>
+                          )}
+                          <span
+                            className={`text-[8px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 rounded-full text-white ${
+                              CONDITION_OPTIONS[item.condition].color
+                            }`}
+                          >
                             {CONDITION_OPTIONS[item.condition].label}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs text-muted-foreground flex-wrap">
                           <span>{item.weight_gross.toFixed(2)}g</span>
-                          <span className="text-orange-500">-{item.shrinkage_percent}%</span>
+                          <span className="text-orange-500">
+                            -{item.shrinkage_percent}%
+                          </span>
                           <span>→</span>
-                          <span className="text-primary font-medium">{item.weight_grams.toFixed(2)}g bersih</span>
+                          <span className="text-primary font-medium">
+                            {item.weight_grams.toFixed(2)}g
+                          </span>
                           <span>×</span>
-                          <span className="text-green-600 font-medium">{formatCurrency(item.price_per_gram)}/g</span>
+                          <span className="text-green-600 font-medium">
+                            {formatCurrency(item.price_per_gram)}/g
+                          </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateWeight(item.id, -0.1)}>
-                          <Minus className="h-3 w-3" />
+                      <div className="flex items-center gap-0.5 sm:gap-1">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-6 w-6 sm:h-7 sm:w-7"
+                          onClick={() => updateWeight(item.id, -0.1)}
+                        >
+                          <Minus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                         </Button>
-                        <div className="w-16 text-center">
-                          <span className="text-sm">{item.weight_gross.toFixed(2)}g</span>
+                        <div className="w-12 sm:w-16 text-center">
+                          <span className="text-[10px] sm:text-sm">
+                            {item.weight_gross.toFixed(2)}g
+                          </span>
                         </div>
-                        <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateWeight(item.id, 0.1)}>
-                          <Plus className="h-3 w-3" />
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-6 w-6 sm:h-7 sm:w-7"
+                          onClick={() => updateWeight(item.id, 0.1)}
+                        >
+                          <Plus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                         </Button>
                       </div>
-                      <div className="w-24 text-right text-sm font-medium">{formatCurrency(item.subtotal)}</div>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive" onClick={() => removeItem(item.id)}>
-                        <Trash2 className="h-3 w-3" />
+                      <div className="w-16 sm:w-24 text-right text-[10px] sm:text-sm font-medium">
+                        {formatCurrency(item.subtotal)}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 sm:h-7 sm:w-7 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 text-muted-foreground hover:text-destructive"
+                        onClick={() => removeItem(item.id)}
+                      >
+                        <Trash2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                       </Button>
                     </div>
                   ))}
@@ -716,50 +958,77 @@ export default function SetorEmasPage() {
         </div>
 
         {/* Right */}
-        <div className="w-80 border-l bg-background flex flex-col shrink-0">
+        <div className="w-full lg:w-72 xl:w-80 border-t lg:border-t-0 lg:border-l bg-background flex flex-col shrink-0">
           {/* Member */}
-          <div className="p-3 border-b">
-            <Label className="text-xs text-muted-foreground mb-1.5 block">Penyetor</Label>
+          <div className="p-2 sm:p-3 border-b">
+            <Label className="text-[10px] sm:text-xs text-muted-foreground mb-1 sm:mb-1.5 block">
+              Penyetor
+            </Label>
             {selectedMember ? (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 p-2 rounded border bg-muted/30">
-                  <User className="h-4 w-4 text-muted-foreground shrink-0" />
+              <div className="space-y-1.5 sm:space-y-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded border bg-muted/30">
+                  <User className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{selectedMember.name}</p>
-                    <p className="text-xs text-muted-foreground">{selectedMember.code || selectedMember.member_code}</p>
+                    <p className="text-xs sm:text-sm font-medium truncate">
+                      {selectedMember.name}
+                    </p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">
+                      {selectedMember.code || selectedMember.member_code}
+                    </p>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setSelectedMember(null)}>
-                    <X className="h-3 w-3" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-5 w-5 sm:h-6 sm:w-6 shrink-0"
+                    onClick={() => setSelectedMember(null)}
+                  >
+                    <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                   </Button>
                 </div>
-                <div className="text-xs flex items-center justify-between px-1">
-                  <span className="text-muted-foreground">Poin: <span className="font-medium text-yellow-600">{selectedMember.points?.toLocaleString() || 0}</span></span>
-                  <span className="text-muted-foreground">+{Math.floor(totals.totalAmount / 200000)} poin</span>
+                <div className="text-[10px] sm:text-xs flex items-center justify-between px-0.5 sm:px-1">
+                  <span className="text-muted-foreground">
+                    Poin:{" "}
+                    <span className="font-medium text-yellow-600">
+                      {selectedMember.points?.toLocaleString() || 0}
+                    </span>
+                  </span>
+                  <span className="text-muted-foreground">
+                    +{Math.floor(totals.totalAmount / 200000)} poin
+                  </span>
                 </div>
               </div>
             ) : (
-              <Button variant="outline" className="w-full justify-start h-9" onClick={() => {
-                // Save cart state before navigating
-                sessionStorage.setItem("setor_emas_cart", JSON.stringify({
-                  depositItems,
-                  locationId: selectedLocationId,
-                  paymentMethod,
-                  notes,
-                  depositMode,
-                  saveAsRawMaterial
-                }));
-                navigate("/members/select?return=/setor-emas");
-              }}>
-                <User className="h-4 w-4 mr-2" />
+              <Button
+                variant="outline"
+                className="w-full justify-start h-8 sm:h-9 text-xs sm:text-sm"
+                onClick={() => {
+                  // Save cart state before navigating
+                  sessionStorage.setItem(
+                    "setor_emas_cart",
+                    JSON.stringify({
+                      depositItems,
+                      locationId: selectedLocationId,
+                      paymentMethod,
+                      notes,
+                      depositMode,
+                      saveAsRawMaterial,
+                    })
+                  );
+                  navigate("/members/select?return=/setor-emas");
+                }}
+              >
+                <User className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                 Pilih Member
               </Button>
             )}
           </div>
 
           {/* Payment */}
-          <div className="p-3 border-b">
-            <Label className="text-xs text-muted-foreground mb-1.5 block">Pembayaran</Label>
-            <div className="grid grid-cols-3 gap-1.5">
+          <div className="p-2 sm:p-3 border-b">
+            <Label className="text-[10px] sm:text-xs text-muted-foreground mb-1 sm:mb-1.5 block">
+              Pembayaran
+            </Label>
+            <div className="grid grid-cols-3 gap-1 sm:gap-1.5">
               {[
                 { value: "cash", label: "Tunai", icon: Banknote },
                 { value: "transfer", label: "Transfer", icon: Wallet },
@@ -768,9 +1037,13 @@ export default function SetorEmasPage() {
                 <button
                   key={m.value}
                   onClick={() => setPaymentMethod(m.value as PaymentMethod)}
-                  className={`flex flex-col items-center gap-1 p-2 rounded border text-xs transition-colors ${paymentMethod === m.value ? "border-primary bg-primary/5 text-primary" : "hover:border-primary/50"}`}
+                  className={`flex flex-col items-center gap-0.5 sm:gap-1 p-1.5 sm:p-2 rounded border text-[10px] sm:text-xs transition-colors ${
+                    paymentMethod === m.value
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "hover:border-primary/50"
+                  }`}
                 >
-                  <m.icon className="h-4 w-4" />
+                  <m.icon className="h-3 w-3 sm:h-4 sm:w-4" />
                   {m.label}
                 </button>
               ))}
@@ -778,71 +1051,98 @@ export default function SetorEmasPage() {
           </div>
 
           {/* Notes */}
-          <div className="p-3 border-b">
-            <Label className="text-xs text-muted-foreground mb-1 block">Catatan</Label>
-            <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Opsional" className="h-8 text-sm" />
+          <div className="p-2 sm:p-3 border-b">
+            <Label className="text-[10px] sm:text-xs text-muted-foreground mb-1 block">
+              Catatan
+            </Label>
+            <Input
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Opsional"
+              className="h-7 sm:h-8 text-xs sm:text-sm"
+            />
           </div>
 
           {/* Simpan sebagai Raw Material */}
-          <div className="p-3 border-b">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Package className="h-4 w-4 text-muted-foreground" />
+          <div className="p-2 sm:p-3 border-b">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Package className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
                 <div>
-                  <Label className="text-sm font-medium">Simpan sebagai Bahan Baku</Label>
-                  <p className="text-xs text-muted-foreground">Untuk dilebur/diproses nanti</p>
+                  <Label className="text-xs sm:text-sm font-medium">
+                    Simpan Bahan Baku
+                  </Label>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">
+                    Untuk dilebur nanti
+                  </p>
                 </div>
               </div>
-              <Switch checked={saveAsRawMaterial} onCheckedChange={setSaveAsRawMaterial} />
+              <Switch
+                checked={saveAsRawMaterial}
+                onCheckedChange={setSaveAsRawMaterial}
+              />
             </div>
             {saveAsRawMaterial && (
-              <div className="mt-2 p-2 rounded bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                <p className="text-xs text-amber-700 dark:text-amber-400">
-                  Emas akan disimpan ke inventory bahan baku (selain dicatat sebagai transaksi).
+              <div className="mt-1.5 sm:mt-2 p-1.5 sm:p-2 rounded bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                <p className="text-[10px] sm:text-xs text-amber-700 dark:text-amber-400">
+                  Emas akan disimpan ke inventory bahan baku.
                 </p>
               </div>
             )}
           </div>
 
           {/* Summary */}
-          <div className="flex-1 p-3 flex flex-col">
-            <div className="space-y-1.5 text-sm">
+          <div className="flex-1 p-2 sm:p-3 flex flex-col">
+            <div className="space-y-1 sm:space-y-1.5 text-xs sm:text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Berat Kotor</span>
-                <span className="font-medium">{totals.totalWeightGross.toFixed(2)} gram</span>
+                <span className="font-medium">
+                  {totals.totalWeightGross.toFixed(2)} g
+                </span>
               </div>
               <div className="flex justify-between text-amber-600 dark:text-amber-400">
                 <span>Susut (avg)</span>
                 <span>
-                  -{depositItems.length > 0 
-                    ? ((1 - totals.totalWeight / totals.totalWeightGross) * 100).toFixed(1) 
-                    : 0}%
+                  -
+                  {depositItems.length > 0
+                    ? (
+                        (1 - totals.totalWeight / totals.totalWeightGross) *
+                        100
+                      ).toFixed(1)
+                    : 0}
+                  %
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Berat Bersih</span>
-                <span className="font-semibold">{totals.totalWeight.toFixed(2)} gram</span>
+                <span className="font-semibold">
+                  {totals.totalWeight.toFixed(2)} g
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Jumlah Item</span>
                 <span>{depositItems.length} item</span>
               </div>
             </div>
-            <div className="border-t my-2" />
+            <div className="border-t my-1.5 sm:my-2" />
             <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Total Bayar</span>
-              <span className="text-xl font-bold text-green-600">{formatCurrency(totals.totalAmount)}</span>
+              <span className="text-xs sm:text-sm text-muted-foreground">
+                Total Bayar
+              </span>
+              <span className="text-lg sm:text-xl font-bold text-green-600">
+                {formatCurrency(totals.totalAmount)}
+              </span>
             </div>
           </div>
 
           {/* Actions */}
-          <div className="p-3 border-t space-y-2">
+          <div className="p-2 sm:p-3 border-t space-y-1.5 sm:space-y-2">
             <Button
-              className="w-full h-11 bg-blue-600 hover:bg-blue-700"
+              className="w-full h-9 sm:h-11 bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm"
               disabled={depositItems.length === 0 || isSubmitting}
               onClick={handlePaymentClick}
             >
-              <CheckCircle2 className="h-4 w-4 mr-2" />
+              <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
               Proses Pembayaran
             </Button>
           </div>

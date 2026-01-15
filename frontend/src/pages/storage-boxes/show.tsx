@@ -98,36 +98,37 @@ export default function StorageBoxShow() {
   }
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
       {/* Header Card */}
       <Card className="shadow-md">
-        <CardHeader className="border-b bg-muted/50 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+        <CardHeader className="border-b bg-muted/50 py-3 sm:py-4 px-3 sm:px-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+            <div className="flex items-center gap-2 sm:gap-3">
               <Button 
                 variant="outline" 
                 size="sm"
+                className="h-8 w-8 sm:h-9 sm:w-9 p-0"
                 onClick={() => navigate('/storage-boxes')}
               >
-                <ArrowLeft />
+                <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
-              <Box className="h-5 w-5 text-primary" />
+              <Box className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               <div>
-                <CardTitle className="text-base font-semibold">Detail Kotak Penyimpanan</CardTitle>
-                <CardDescription className="text-xs">{storageBox.code} - {storageBox.name}</CardDescription>
+                <CardTitle className="text-sm sm:text-base font-semibold">Detail Kotak Penyimpanan</CardTitle>
+                <CardDescription className="text-[10px] sm:text-xs">{storageBox.code} - {storageBox.name}</CardDescription>
               </div>
             </div>
             {hasPermission('locations.update') && (
-              <Button onClick={() => navigate(`/storage-boxes/${id}/edit`)}>
-                <Edit className="h-4 w-4 mr-2" />
+              <Button size="sm" className="h-8 sm:h-9 text-xs sm:text-sm w-full sm:w-auto" onClick={() => navigate(`/storage-boxes/${id}/edit`)}>
+                <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 Edit
               </Button>
             )}
           </div>
         </CardHeader>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Kode */}
+        <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {/* Kode */}}
             <div className="flex items-start gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
                 <Hash className="h-5 w-5 text-primary" />

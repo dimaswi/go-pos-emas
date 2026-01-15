@@ -129,33 +129,35 @@ export default function StocksPage() {
   }, []);
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
       <Card className="shadow-md">
-        <CardHeader className="border-b bg-muted/50 py-4">
-          <div className="flex items-center justify-between">
+        <CardHeader className="border-b bg-muted/50 py-3 sm:py-4 px-3 sm:px-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
             <div>
-              <CardTitle className="text-base font-semibold">Stok</CardTitle>
-              <CardDescription className="text-xs">
+              <CardTitle className="text-sm sm:text-base font-semibold">Stok</CardTitle>
+              <CardDescription className="text-[10px] sm:text-xs">
                 Kelola stok produk di gudang dan toko
               </CardDescription>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
               {hasPermission('stocks.view') && (
-                <Button variant="outline" onClick={() => navigate('/stocks/location-monitor')}>
-                  <MapPin className="h-4 w-4 mr-2" />
-                  Monitor Lokasi
+                <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm" onClick={() => navigate('/stocks/location-monitor')}>
+                  <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="hidden xs:inline">Monitor Lokasi</span>
+                  <span className="xs:hidden">Monitor</span>
                 </Button>
               )}
               {hasPermission('stocks.transfer') && (
-                <Button variant="outline" onClick={() => navigate('/stocks/transfer')}>
-                  <ArrowLeftRight className="h-4 w-4 mr-2" />
-                  Transfer Stok
+                <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm" onClick={() => navigate('/stocks/transfer')}>
+                  <ArrowLeftRight className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="hidden xs:inline">Transfer Stok</span>
+                  <span className="xs:hidden">Transfer</span>
                 </Button>
               )}
               {hasPermission('stocks.create') && (
-                <Button onClick={() => navigate('/stocks/create')}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Tambah Stok
+                <Button size="sm" className="h-8 sm:h-9 text-xs sm:text-sm" onClick={() => navigate('/stocks/create')}>
+                  <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  Tambah
                 </Button>
               )}
             </div>
@@ -164,36 +166,36 @@ export default function StocksPage() {
         
         {/* Selection Action Bar */}
         {selectedStocks.length > 0 && (
-          <div className="bg-primary/5 border-b px-6 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="font-medium">
-                {selectedStocks.length} item dipilih
+          <div className="bg-primary/5 border-b px-3 sm:px-6 py-2 sm:py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <Badge variant="secondary" className="font-medium text-[10px] sm:text-xs">
+                {selectedStocks.length} dipilih
               </Badge>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setSelectedStocks([])}
-                className="text-muted-foreground"
+                className="text-muted-foreground h-7 sm:h-8 text-[10px] sm:text-xs"
               >
-                <X className="h-4 w-4 mr-1" />
-                Batal Pilih
+                <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                Batal
               </Button>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-1.5 sm:gap-2">
               {hasPermission('stocks.view') && (
-                <Button size="sm" onClick={handlePrintSelectedBarcodes}>
-                  <Printer className="h-4 w-4 mr-2" />
-                  Cetak Barcode ({selectedStocks.length})
+                <Button size="sm" className="h-7 sm:h-8 text-[10px] sm:text-xs" onClick={handlePrintSelectedBarcodes}>
+                  <Printer className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  Cetak ({selectedStocks.length})
                 </Button>
               )}
             </div>
           </div>
         )}
         
-        <CardContent className="pt-6">
+        <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
           {loading ? (
-            <div className="flex items-center justify-center py-10">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="flex items-center justify-center py-8 sm:py-10">
+              <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
             </div>
           ) : (
             <DataTable

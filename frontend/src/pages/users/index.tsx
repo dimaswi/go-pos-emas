@@ -103,25 +103,25 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
       <Card className="shadow-md">
-        <CardHeader className="border-b bg-muted/50 py-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <CardTitle className="text-base font-semibold">Users</CardTitle>
-              <CardDescription className="text-xs">
+        <CardHeader className="border-b bg-muted/50 py-3 sm:py-4 px-3 sm:px-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+            <div className="space-y-0.5 sm:space-y-1">
+              <CardTitle className="text-sm sm:text-base font-semibold">Users</CardTitle>
+              <CardDescription className="text-[10px] sm:text-xs">
                 Manage system users and their permissions
               </CardDescription>
             </div>
             {hasPermission("users.create") && (
-              <Button onClick={() => navigate("/users/create")} size="sm">
-                <Plus className="mr-2 h-4 w-4" />
+              <Button onClick={() => navigate("/users/create")} size="sm" className="h-8 sm:h-9 text-xs sm:text-sm w-full sm:w-auto">
+                <Plus className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                 Add User
               </Button>
             )}
           </div>
         </CardHeader>
-        <CardContent className="pt-6">
+        <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
           <DataTable
             columns={columns}
             data={users}
