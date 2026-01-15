@@ -500,7 +500,7 @@ export default function POSPage() {
             </div>
 
             {/* Cart */}
-            <div className="w-full lg:w-72 xl:w-80 bg-background rounded-lg border flex flex-col min-h-[200px] lg:min-h-0 shrink-0">
+            <div className="w-full lg:w-72 xl:w-80 bg-background rounded-lg border flex flex-col shrink-0">
               <div className="h-9 sm:h-10 px-2 sm:px-3 border-b flex items-center justify-between shrink-0">
                 <span className="text-xs sm:text-sm font-medium flex items-center gap-1 sm:gap-2">
                   <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -513,7 +513,7 @@ export default function POSPage() {
                   </Button>
                 )}
               </div>
-              <ScrollArea className="flex-1 max-h-[200px] lg:max-h-none">
+              <ScrollArea className="flex-1 h-[180px] sm:h-[220px] lg:h-auto lg:max-h-[calc(100vh-400px)]">
                 {cart.length === 0 ? (
                   <div className="p-4 sm:p-8 text-center text-muted-foreground">
                     <ShoppingCart className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 opacity-30" />
@@ -626,13 +626,13 @@ export default function POSPage() {
             <div className="p-2 sm:p-3 border-b">
               <Label className="text-[10px] sm:text-xs text-muted-foreground mb-1 sm:mb-1.5 block">Jumlah Bayar</Label>
               <Input type="number" placeholder="0" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} className="h-8 sm:h-9 text-right font-medium text-sm" />
-              <div className="flex gap-1 mt-1.5 sm:mt-2 flex-wrap">
+              <div className="flex gap-1.5 sm:gap-1 mt-2 sm:mt-2 flex-wrap">
                 {quickAmounts.map((amt) => (
-                  <Button key={amt} variant="outline" size="sm" className="h-5 sm:h-6 text-[10px] sm:text-xs px-1.5 sm:px-2" onClick={() => setPaidAmount(amt.toString())}>
+                  <Button key={amt} variant="outline" size="sm" className="h-7 sm:h-6 text-xs sm:text-xs px-2.5 sm:px-2" onClick={() => setPaidAmount(amt.toString())}>
                     {amt >= 1000000 ? `${amt / 1000000}jt` : `${amt / 1000}rb`}
                   </Button>
                 ))}
-                <Button variant="outline" size="sm" className="h-5 sm:h-6 text-[10px] sm:text-xs px-1.5 sm:px-2" onClick={() => setPaidAmount(grandTotal.toString())}>Pas</Button>
+                <Button variant="outline" size="sm" className="h-7 sm:h-6 text-xs sm:text-xs px-2.5 sm:px-2" onClick={() => setPaidAmount(grandTotal.toString())}>Pas</Button>
               </div>
             </div>
           )}

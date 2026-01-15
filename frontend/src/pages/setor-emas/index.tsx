@@ -849,7 +849,7 @@ export default function SetorEmasPage() {
           </div>
 
           {/* Items */}
-          <div className="flex-1 bg-background rounded-lg border flex flex-col min-h-[200px] lg:min-h-0">
+          <div className="flex-1 bg-background rounded-lg border flex flex-col shrink-0">
             <div className="h-9 sm:h-10 px-2 sm:px-3 border-b flex items-center justify-between shrink-0">
               <span className="text-xs sm:text-sm font-medium">
                 Item Setor ({depositItems.length})
@@ -866,7 +866,7 @@ export default function SetorEmasPage() {
                 </Button>
               )}
             </div>
-            <ScrollArea className="flex-1 max-h-[200px] lg:max-h-none">
+            <ScrollArea className="flex-1 h-[180px] sm:h-[220px] lg:h-auto lg:max-h-[calc(100vh-400px)]">
               {depositItems.length === 0 ? (
                 <div className="p-4 sm:p-8 text-center text-muted-foreground">
                   <Scale className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 opacity-30" />

@@ -128,7 +128,7 @@ export default function StorageBoxShow() {
         </CardHeader>
         <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {/* Kode */}}
+            {/* Kode */}
             <div className="flex items-start gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
                 <Hash className="h-5 w-5 text-primary" />

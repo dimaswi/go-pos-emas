@@ -255,9 +255,9 @@ export default function POSHistoryPage() {
     const config = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
     const StatusIcon = config.icon;
     return (
-      <Badge className={cn(config.bgColor, config.color, "gap-1")}>
-        <StatusIcon className="h-3 w-3" />
-        {config.label}
+      <Badge className={cn(config.bgColor, config.color, "gap-0.5 sm:gap-1 text-[9px] sm:text-xs px-1.5 sm:px-2 py-0.5")}>
+        <StatusIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+        <span className="hidden xs:inline">{config.label}</span>
       </Badge>
     );
   };
@@ -273,110 +273,108 @@ export default function POSHistoryPage() {
   return (
     <div className="h-screen flex flex-col bg-muted/30">
       {/* Header */}
-      <header className="h-12 border-b bg-background flex items-center justify-between px-4 shrink-0">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" className="h-8" onClick={() => navigate(returnUrl)}>
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Kembali
+      <header className="h-auto min-h-12 border-b bg-background flex flex-col sm:flex-row items-start sm:items-center justify-between px-2 sm:px-4 py-2 sm:py-0 gap-2 sm:gap-0 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+          <Button variant="ghost" size="sm" className="h-7 sm:h-8 px-2 sm:px-3" onClick={() => navigate(returnUrl)}>
+            <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="hidden xs:inline ml-1">Kembali</span>
           </Button>
-          <div className="h-5 w-px bg-border" />
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded bg-primary flex items-center justify-center">
-              <Receipt className="h-3.5 w-3.5 text-primary-foreground" />
+          <div className="h-5 w-px bg-border hidden sm:block" />
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="h-6 w-6 sm:h-7 sm:w-7 rounded bg-primary flex items-center justify-center">
+              <Receipt className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary-foreground" />
             </div>
-            <span className="font-bold">Riwayat Transaksi</span>
+            <span className="font-bold text-sm sm:text-base">Riwayat</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="h-8" onClick={() => navigate("/pos")}>
-            <ShoppingCart className="h-3.5 w-3.5 mr-1.5" />
-            POS
+        <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto">
+          <Button variant="outline" size="sm" className="h-7 sm:h-8 px-2 sm:px-3 flex-1 sm:flex-none" onClick={() => navigate("/pos")}>
+            <ShoppingCart className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            <span className="hidden sm:inline ml-1.5">POS</span>
           </Button>
-          <Button variant="outline" size="sm" className="h-8" onClick={() => navigate("/setor-emas")}>
-            <Scale className="h-3.5 w-3.5 mr-1.5" />
-            Setor Emas
+          <Button variant="outline" size="sm" className="h-7 sm:h-8 px-2 sm:px-3 flex-1 sm:flex-none" onClick={() => navigate("/setor-emas")}>
+            <Scale className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            <span className="hidden sm:inline ml-1.5">Setor</span>
           </Button>
-          <Button variant="outline" size="sm" className="h-8" onClick={() => navigate("/dashboard")}>
-            <LayoutDashboard className="h-3.5 w-3.5 mr-1.5" />
-            Dashboard
+          <Button variant="outline" size="sm" className="h-7 sm:h-8 px-2 sm:px-3 flex-1 sm:flex-none" onClick={() => navigate("/dashboard")}>
+            <LayoutDashboard className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            <span className="hidden sm:inline ml-1.5">Dashboard</span>
           </Button>
         </div>
       </header>
 
       {/* Summary Bar */}
-      <div className="h-12 border-b bg-background/80 flex items-center justify-between px-4 shrink-0">
-        <div className="flex items-center gap-6 text-sm">
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Total:</span>
-            <Badge variant="secondary">{transactions.length} transaksi</Badge>
+      <div className="border-b bg-background/80 px-2 sm:px-4 py-2 sm:py-0 sm:h-12 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <Badge variant="secondary" className="text-[10px] sm:text-xs">{transactions.length}</Badge>
+            <span className="text-muted-foreground hidden xs:inline">transaksi</span>
           </div>
-          <div className="h-4 w-px bg-border" />
-          <div className="flex items-center gap-2">
-            <ArrowUpRight className="h-4 w-4 text-green-600" />
-            <span className="text-muted-foreground">Penjualan:</span>
-            <span className="font-semibold text-green-600">{formatCurrency(totalSales)}</span>
+          <div className="h-4 w-px bg-border hidden sm:block" />
+          <div className="flex items-center gap-1 sm:gap-2">
+            <ArrowUpRight className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
+            <span className="font-semibold text-green-600 text-[11px] sm:text-sm">{formatCurrency(totalSales)}</span>
           </div>
-          <div className="h-4 w-px bg-border" />
-          <div className="flex items-center gap-2">
-            <ArrowDownRight className="h-4 w-4 text-blue-600" />
-            <span className="text-muted-foreground">Setor Emas:</span>
-            <span className="font-semibold text-blue-600">{formatCurrency(totalPurchases)}</span>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <ArrowDownRight className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
+            <span className="font-semibold text-blue-600 text-[11px] sm:text-sm">{formatCurrency(totalPurchases)}</span>
           </div>
-          <div className="h-4 w-px bg-border" />
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Profit:</span>
-            <span className={cn("font-semibold", totalSales - totalPurchases >= 0 ? "text-amber-600" : "text-red-600")}>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <span className="text-muted-foreground text-[10px] sm:text-sm">Net:</span>
+            <span className={cn("font-semibold text-[11px] sm:text-sm", totalSales - totalPurchases >= 0 ? "text-amber-600" : "text-red-600")}>
               {totalSales - totalPurchases >= 0 ? "+" : ""}{formatCurrency(totalSales - totalPurchases)}
             </span>
           </div>
+          <Badge variant="outline" className="text-[9px] sm:text-xs ml-auto hidden sm:flex">
+            <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
+            {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+          </Badge>
         </div>
-        <Badge variant="outline" className="text-xs">
-          <Clock className="h-3 w-3 mr-1" />
-          {new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-        </Badge>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col p-4 gap-4 min-h-0">
+      <div className="flex-1 flex flex-col p-2 sm:p-4 gap-2 sm:gap-4 min-h-0">
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
             <Input
-              placeholder="Cari kode transaksi, nama pelanggan..."
+              placeholder="Cari transaksi..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="pl-8 sm:pl-9 h-8 sm:h-10 text-xs sm:text-sm"
             />
           </div>
-          <Tabs value={filterType} onValueChange={(v) => setFilterType(v as typeof filterType)}>
-            <TabsList>
-              <TabsTrigger value="all">Semua</TabsTrigger>
-              <TabsTrigger value="sale" className="gap-1">
-                <ArrowUpRight className="h-3 w-3" />
-                Penjualan
-              </TabsTrigger>
-              <TabsTrigger value="purchase" className="gap-1">
-                <ArrowDownRight className="h-3 w-3" />
-                Setor Emas
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <Button variant="outline" size="icon" onClick={fetchTransactions}>
-            <RotateCcw className="h-4 w-4" />
-          </Button>
+          <div className="flex gap-1.5 sm:gap-2">
+            <Tabs value={filterType} onValueChange={(v) => setFilterType(v as typeof filterType)} className="flex-1 sm:flex-none">
+              <TabsList className="h-8 sm:h-10 w-full sm:w-auto">
+                <TabsTrigger value="all" className="text-[10px] sm:text-sm px-2 sm:px-3 h-6 sm:h-8 flex-1 sm:flex-none">Semua</TabsTrigger>
+                <TabsTrigger value="sale" className="gap-0.5 sm:gap-1 text-[10px] sm:text-sm px-2 sm:px-3 h-6 sm:h-8 flex-1 sm:flex-none">
+                  <ArrowUpRight className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                  <span className="hidden xs:inline">Jual</span>
+                </TabsTrigger>
+                <TabsTrigger value="purchase" className="gap-0.5 sm:gap-1 text-[10px] sm:text-sm px-2 sm:px-3 h-6 sm:h-8 flex-1 sm:flex-none">
+                  <ArrowDownRight className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                  <span className="hidden xs:inline">Setor</span>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <Button variant="outline" size="icon" className="h-8 w-8 sm:h-10 sm:w-10 shrink-0" onClick={fetchTransactions}>
+              <RotateCcw className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Transaction Grid */}
         <ScrollArea className="flex-1">
           {filteredTransactions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-              <Receipt className="h-12 w-12 mb-4 opacity-30" />
-              <p className="text-lg font-medium">Tidak ada transaksi</p>
-              <p className="text-sm">Coba ubah filter atau kata kunci pencarian</p>
+            <div className="flex flex-col items-center justify-center h-48 sm:h-64 text-muted-foreground">
+              <Receipt className="h-8 w-8 sm:h-12 sm:w-12 mb-2 sm:mb-4 opacity-30" />
+              <p className="text-sm sm:text-lg font-medium">Tidak ada transaksi</p>
+              <p className="text-xs sm:text-sm">Coba ubah filter pencarian</p>
             </div>
           ) : (
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filteredTransactions.map((transaction) => {
                 const isSale = transaction.type === "sale";
                 const PaymentIcon = PAYMENT_METHODS[transaction.payment_method]?.icon || Banknote;
@@ -390,22 +388,22 @@ export default function POSHistoryPage() {
                     )}
                     onClick={() => handleViewDetail(transaction)}
                   >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-2 mb-3">
-                        <div className="flex items-center gap-2">
+                    <CardContent className="p-2.5 sm:p-4">
+                      <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
+                        <div className="flex items-center gap-1.5 sm:gap-2">
                           <div className={cn(
-                            "p-2 rounded-lg",
+                            "p-1.5 sm:p-2 rounded-lg",
                             isSale ? "bg-green-100 dark:bg-green-900/30" : "bg-blue-100 dark:bg-blue-900/30"
                           )}>
                             {isSale ? (
-                              <ArrowUpRight className="h-4 w-4 text-green-600 dark:text-green-400" />
+                              <ArrowUpRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 dark:text-green-400" />
                             ) : (
-                              <ArrowDownRight className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                              <ArrowDownRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600 dark:text-blue-400" />
                             )}
                           </div>
                           <div>
-                            <p className="text-sm font-mono font-bold">{transaction.transaction_code}</p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs sm:text-sm font-mono font-bold">{transaction.transaction_code}</p>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground">
                               {new Date(transaction.transaction_date || transaction.created_at).toLocaleString("id-ID", {
                                 day: "numeric",
                                 month: "short",
@@ -418,29 +416,29 @@ export default function POSHistoryPage() {
                         {getStatusBadge(transaction.status)}
                       </div>
 
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm">
-                          <User className="h-3.5 w-3.5 text-muted-foreground" />
+                      <div className="space-y-1 sm:space-y-2">
+                        <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                          <User className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground shrink-0" />
                           <span className="truncate">
                             {transaction.customer_name || transaction.member?.name || "Umum"}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                        <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                          <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground shrink-0" />
                           <span className="truncate">{transaction.location?.name || "-"}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <PaymentIcon className={cn("h-3.5 w-3.5", PAYMENT_METHODS[transaction.payment_method]?.color)} />
+                        <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                          <PaymentIcon className={cn("h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0", PAYMENT_METHODS[transaction.payment_method]?.color)} />
                           <span>{PAYMENT_METHODS[transaction.payment_method]?.label || transaction.payment_method}</span>
                         </div>
                       </div>
 
-                      <Separator className="my-3" />
+                      <Separator className="my-2 sm:my-3" />
 
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Total</span>
+                        <span className="text-xs sm:text-sm text-muted-foreground">Total</span>
                         <span className={cn(
-                          "text-lg font-bold",
+                          "text-sm sm:text-lg font-bold",
                           isSale ? "text-green-600 dark:text-green-400" : "text-blue-600 dark:text-blue-400"
                         )}>
                           {isSale ? "+" : "-"}{formatCurrency(transaction.grand_total || 0)}
@@ -457,49 +455,49 @@ export default function POSHistoryPage() {
 
       {/* Detail Modal */}
       <Dialog open={showDetail} onOpenChange={(open) => !open && handleCloseDetail()}>
-        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0">
+        <DialogContent className="w-full h-full sm:h-auto sm:max-h-[90vh] max-w-full sm:max-w-2xl flex flex-col p-0 sm:rounded-lg rounded-none">
           {selectedTransaction && (
             <>
-              <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gradient-to-r from-primary/10 to-primary/5">
+              <DialogHeader className="px-3 sm:px-6 pt-3 sm:pt-6 pb-2 sm:pb-4 border-b bg-gradient-to-r from-primary/10 to-primary/5 shrink-0">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3">
                     <div className={cn(
-                      "p-3 rounded-full",
+                      "p-2 sm:p-3 rounded-full",
                       selectedTransaction.type === "sale"
                         ? "bg-green-100 dark:bg-green-900/50"
                         : "bg-blue-100 dark:bg-blue-900/50"
                     )}>
                       {selectedTransaction.type === "sale" ? (
-                        <ArrowUpRight className="h-6 w-6 text-green-600 dark:text-green-400" />
+                        <ArrowUpRight className="h-4 w-4 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
                       ) : (
-                        <ArrowDownRight className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                        <ArrowDownRight className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
                       )}
                     </div>
                     <div>
-                      <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                        {selectedTransaction.transaction_code}
+                      <DialogTitle className="text-sm sm:text-xl font-bold flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                        <span className="font-mono">{selectedTransaction.transaction_code}</span>
                         {getStatusBadge(selectedTransaction.status)}
                       </DialogTitle>
-                      <p className="text-sm text-muted-foreground mt-0.5">
-                        {selectedTransaction.type === "sale" ? "Transaksi Penjualan" : "Transaksi Setor Emas"}
+                      <p className="text-[10px] sm:text-sm text-muted-foreground mt-0.5">
+                        {selectedTransaction.type === "sale" ? "Penjualan" : "Setor Emas"}
                       </p>
                     </div>
                   </div>
                 </div>
               </DialogHeader>
 
-              <ScrollArea className="flex-1 px-6">
-                <div id="receipt-content" className="py-4 space-y-4">
+              <ScrollArea className="flex-1 px-3 sm:px-6">
+                <div id="receipt-content" className="py-3 sm:py-4 space-y-3 sm:space-y-4">
                   {/* Transaction Info Grid */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Tanggal</p>
-                        <p className="text-sm font-medium">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                    <div className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-3 rounded-lg bg-muted/50 border">
+                      <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">Tanggal</p>
+                        <p className="text-[11px] sm:text-sm font-medium truncate">
                           {new Date(selectedTransaction.transaction_date || selectedTransaction.created_at).toLocaleString("id-ID", {
                             day: "numeric",
-                            month: "long",
+                            month: "short",
                             year: "numeric",
                             hour: "2-digit",
                             minute: "2-digit",
@@ -507,24 +505,24 @@ export default function POSHistoryPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Lokasi</p>
-                        <p className="text-sm font-medium">{selectedTransaction.location?.name || "-"}</p>
+                    <div className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-3 rounded-lg bg-muted/50 border">
+                      <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">Lokasi</p>
+                        <p className="text-[11px] sm:text-sm font-medium truncate">{selectedTransaction.location?.name || "-"}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-3 rounded-lg bg-muted/50 border">
+                      <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">
                           {selectedTransaction.type === "sale" ? "Pelanggan" : "Penyetor"}
                         </p>
-                        <p className="text-sm font-medium">
+                        <p className="text-[11px] sm:text-sm font-medium truncate">
                           {selectedTransaction.member ? (
-                            <span className="flex items-center gap-1">
-                              {selectedTransaction.member.name}
-                              <Badge variant="outline" className="text-[10px] ml-1">
+                            <span className="flex items-center gap-1 flex-wrap">
+                              <span className="truncate">{selectedTransaction.member.name}</span>
+                              <Badge variant="outline" className="text-[8px] sm:text-[10px]">
                                 {selectedTransaction.member.code || selectedTransaction.member.member_code}
                               </Badge>
                             </span>
@@ -534,14 +532,14 @@ export default function POSHistoryPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border">
+                    <div className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-3 rounded-lg bg-muted/50 border">
                       {(() => {
                         const PaymentIcon = PAYMENT_METHODS[selectedTransaction.payment_method]?.icon || Banknote;
-                        return <PaymentIcon className={cn("h-4 w-4", PAYMENT_METHODS[selectedTransaction.payment_method]?.color)} />;
+                        return <PaymentIcon className={cn("h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0", PAYMENT_METHODS[selectedTransaction.payment_method]?.color)} />;
                       })()}
-                      <div>
-                        <p className="text-xs text-muted-foreground">Pembayaran</p>
-                        <p className="text-sm font-medium">
+                      <div className="min-w-0">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">Pembayaran</p>
+                        <p className="text-[11px] sm:text-sm font-medium">
                           {PAYMENT_METHODS[selectedTransaction.payment_method]?.label || selectedTransaction.payment_method}
                         </p>
                       </div>
@@ -552,41 +550,41 @@ export default function POSHistoryPage() {
                   {selectedTransaction.items && selectedTransaction.items.length > 0 && (
                     <div className="border rounded-lg overflow-hidden">
                       <div className={cn(
-                        "px-4 py-2 flex items-center gap-2",
+                        "px-2.5 sm:px-4 py-1.5 sm:py-2 flex items-center gap-1.5 sm:gap-2",
                         selectedTransaction.type === "sale"
                           ? "bg-green-50 dark:bg-green-950/50"
                           : "bg-blue-50 dark:bg-blue-950/50"
                       )}>
-                        <Package className="h-4 w-4" />
-                        <span className="text-sm font-medium">
+                        <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        <span className="text-xs sm:text-sm font-medium">
                           {selectedTransaction.type === "sale" ? "Daftar Produk" : "Daftar Item"}
                         </span>
-                        <Badge variant="secondary" className="ml-auto">
+                        <Badge variant="secondary" className="ml-auto text-[10px] sm:text-xs">
                           {selectedTransaction.items.length} item
                         </Badge>
                       </div>
-                      <div className="divide-y max-h-[200px] overflow-y-auto">
+                      <div className="divide-y">
                         {selectedTransaction.items.map((item, idx) => (
-                          <div key={item.id || idx} className="px-4 py-3 flex items-center justify-between hover:bg-muted/30">
-                            <div className="flex items-center gap-3">
-                              <span className="text-xs text-muted-foreground w-5">{idx + 1}.</span>
-                              <div>
-                                <p className="text-sm font-medium">
+                          <div key={item.id || idx} className="px-2.5 sm:px-4 py-2 sm:py-3 flex items-center justify-between hover:bg-muted/30">
+                            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                              <span className="text-[10px] sm:text-xs text-muted-foreground w-4 sm:w-5 shrink-0">{idx + 1}.</span>
+                              <div className="min-w-0">
+                                <p className="text-xs sm:text-sm font-medium truncate">
                                   {item.item_name || item.product?.name || item.stock?.product?.name || "Item"}
                                 </p>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-muted-foreground">
                                   <span>{item.weight?.toFixed(2) || "0.00"}g</span>
                                   {item.barcode && (
                                     <>
                                       <span>•</span>
-                                      <span className="font-mono">{item.barcode}</span>
+                                      <span className="font-mono truncate max-w-[60px] sm:max-w-none">{item.barcode}</span>
                                     </>
                                   )}
                                 </div>
                               </div>
                             </div>
                             <p className={cn(
-                              "text-sm font-semibold",
+                              "text-xs sm:text-sm font-semibold shrink-0 ml-2",
                               selectedTransaction.type === "sale"
                                 ? "text-green-600 dark:text-green-400"
                                 : "text-blue-600 dark:text-blue-400"
@@ -600,25 +598,25 @@ export default function POSHistoryPage() {
                   )}
 
                   {/* Summary */}
-                  <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
-                    <div className="flex justify-between text-sm">
+                  <div className="border rounded-lg p-2.5 sm:p-4 space-y-2 sm:space-y-3 bg-muted/30">
+                    <div className="flex justify-between text-xs sm:text-sm">
                       <span className="text-muted-foreground">Subtotal</span>
                       <span>{formatCurrency(selectedTransaction.sub_total || 0)}</span>
                     </div>
                     {selectedTransaction.discount > 0 && (
-                      <div className="flex justify-between text-sm text-red-600">
+                      <div className="flex justify-between text-xs sm:text-sm text-red-600">
                         <span>Diskon</span>
                         <span>-{formatCurrency(selectedTransaction.discount)}</span>
                       </div>
                     )}
                     {selectedTransaction.tax > 0 && (
-                      <div className="flex justify-between text-sm">
+                      <div className="flex justify-between text-xs sm:text-sm">
                         <span className="text-muted-foreground">Pajak</span>
                         <span>{formatCurrency(selectedTransaction.tax)}</span>
                       </div>
                     )}
                     <Separator />
-                    <div className="flex justify-between text-lg font-bold">
+                    <div className="flex justify-between text-base sm:text-lg font-bold">
                       <span>Grand Total</span>
                       <span className={cn(
                         selectedTransaction.type === "sale"
@@ -631,11 +629,11 @@ export default function POSHistoryPage() {
                     {selectedTransaction.type === "sale" && selectedTransaction.payment_method === "cash" && (
                       <>
                         <Separator />
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between text-xs sm:text-sm">
                           <span className="text-muted-foreground">Dibayar</span>
                           <span>{formatCurrency(selectedTransaction.paid_amount || 0)}</span>
                         </div>
-                        <div className="flex justify-between text-sm font-medium">
+                        <div className="flex justify-between text-xs sm:text-sm font-medium">
                           <span className="text-muted-foreground">Kembalian</span>
                           <span className="text-green-600">
                             {formatCurrency(selectedTransaction.change_amount || 0)}
@@ -647,53 +645,58 @@ export default function POSHistoryPage() {
 
                   {/* Notes */}
                   {selectedTransaction.notes && (
-                    <div className="p-3 rounded-lg bg-muted/50 border">
-                      <p className="text-xs text-muted-foreground mb-1">Catatan:</p>
-                      <p className="text-sm">{selectedTransaction.notes}</p>
+                    <div className="p-2 sm:p-3 rounded-lg bg-muted/50 border">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1">Catatan:</p>
+                      <p className="text-xs sm:text-sm">{selectedTransaction.notes}</p>
                     </div>
                   )}
 
                   {/* Cashier Info */}
                   {selectedTransaction.cashier && (
-                    <div className="p-3 rounded-lg bg-muted/50 border">
-                      <p className="text-xs text-muted-foreground mb-1">Kasir:</p>
-                      <p className="text-sm font-medium">{selectedTransaction.cashier.full_name}</p>
+                    <div className="p-2 sm:p-3 rounded-lg bg-muted/50 border">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1">Kasir:</p>
+                      <p className="text-xs sm:text-sm font-medium">{selectedTransaction.cashier.full_name}</p>
                     </div>
                   )}
                 </div>
               </ScrollArea>
 
               {/* Actions */}
-              <div className="px-6 py-4 border-t bg-muted/30 flex flex-col gap-2">
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1" onClick={handleCloseDetail}>
-                    <X className="h-4 w-4 mr-2" />
-                    Tutup
-                  </Button>
+              <div className="px-3 sm:px-6 py-3 sm:py-4 border-t bg-muted/30 flex flex-col gap-1.5 sm:gap-2 shrink-0">
+                <Button
+                  variant="outline"
+                  className="w-full h-10 text-sm"
+                  onClick={handleCloseDetail}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Tutup
+                </Button>
+                <div className="flex gap-1.5 sm:gap-2">
                   <Button
-                    className="flex-1"
+                    variant="outline"
+                    className="flex-1 h-10 text-[11px] sm:text-sm px-2 sm:px-4"
                     onClick={handlePrint}
                     disabled={isPrinting}
                   >
                     {isPrinting ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <Loader2 className="h-4 w-4 mr-1.5 sm:mr-2 animate-spin" />
                     ) : (
-                      <Printer className="h-4 w-4 mr-2" />
+                      <Printer className="h-4 w-4 mr-1.5 sm:mr-2" />
                     )}
-                    Cetak Ulang Struk
+                    Cetak Struk
                   </Button>
+                  {/* Cetak Nota button - only for sale transactions */}
+                  {selectedTransaction.type === "sale" && (
+                    <Button
+                      variant="outline"
+                      className="flex-1 h-10 text-[11px] sm:text-sm px-2 sm:px-4 border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/30"
+                      onClick={handlePrintNota}
+                    >
+                      <FileText className="h-4 w-4 mr-1.5 sm:mr-2" />
+                      Cetak Nota
+                    </Button>
+                  )}
                 </div>
-                {/* Cetak Nota button - only for sale transactions */}
-                {selectedTransaction.type === "sale" && (
-                  <Button
-                    variant="outline"
-                    className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/30"
-                    onClick={handlePrintNota}
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Cetak Nota (Pre-printed)
-                  </Button>
-                )}
               </div>
             </>
           )}
