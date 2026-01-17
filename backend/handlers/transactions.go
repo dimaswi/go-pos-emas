@@ -108,6 +108,13 @@ func CreateSale(c *gin.Context) {
 
 	// Get current user ID (cashier)
 	userID, _ := c.Get("user_id")
+	currentUserID := userID.(uint)
+
+	// Check if user is admin or has access to this location
+	if !IsAdmin(currentUserID) && !CheckUserLocationAccess(currentUserID, req.LocationID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Anda tidak memiliki akses ke lokasi ini"})
+		return
+	}
 
 	// Generate transaction code
 	txCode := generateTransactionCode("SL")
@@ -188,7 +195,7 @@ func CreateSale(c *gin.Context) {
 		Type:            models.TransactionTypeSale,
 		MemberID:        req.MemberID,
 		LocationID:      req.LocationID,
-		CashierID:       userID.(uint),
+		CashierID:       currentUserID,
 		SubTotal:        subTotal,
 		Discount:        discountAmount,
 		DiscountPercent: req.DiscountPercent,
@@ -284,6 +291,13 @@ func CreatePurchase(c *gin.Context) {
 
 	// Get current user ID (cashier)
 	userID, _ := c.Get("user_id")
+	currentUserID := userID.(uint)
+
+	// Check if user is admin or has access to this location
+	if !IsAdmin(currentUserID) && !CheckUserLocationAccess(currentUserID, req.LocationID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Anda tidak memiliki akses ke lokasi ini"})
+		return
+	}
 
 	// Generate transaction code
 	txCode := generateTransactionCode("PR")
@@ -347,7 +361,7 @@ func CreatePurchase(c *gin.Context) {
 		Type:            models.TransactionTypePurchase,
 		MemberID:        req.MemberID,
 		LocationID:      req.LocationID,
-		CashierID:       userID.(uint),
+		CashierID:       currentUserID,
 		SubTotal:        grandTotal,
 		GrandTotal:      grandTotal,
 		PaymentMethod:   models.PaymentMethod(req.PaymentMethod),
@@ -390,7 +404,6 @@ func CreatePurchase(c *gin.Context) {
 
 	// Create raw materials if flag is true
 	if req.SaveAsRawMaterial {
-		currentUserID := userID.(uint)
 		for _, item := range req.Items {
 			// Set weight gross default to weight if not provided
 			weightGross := item.WeightGross

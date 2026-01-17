@@ -32,11 +32,13 @@ import {
   stocksApi,
   locationsApi,
   transactionsApi,
+  userLocationsApi,
   type Stock,
   type Member,
   type Location,
 } from "@/lib/api";
 import { generateUUID } from "@/lib/utils";
+import { useAuthStore } from "@/lib/store";
 
 interface CartItem {
   id: string;
@@ -53,6 +55,10 @@ type PaymentMethod = "cash" | "transfer" | "card";
 export default function POSPage() {
   const navigate = useNavigate();
   const barcodeInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuthStore();
+
+  // Check if user is admin
+  const isAdmin = user?.role?.name === "admin";
 
   const [locations, setLocations] = useState<Location[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState<string>("");
@@ -127,13 +133,24 @@ export default function POSPage() {
       const storedCart = sessionStorage.getItem("pos_cart");
       const savedLocationId = storedCart ? JSON.parse(storedCart).locationId : null;
 
-      const locationsRes = await locationsApi.getAll({ type: "toko", page_size: 1000 });
-      const locs = locationsRes.data.data || [];
+      let locs: Location[] = [];
+
+      if (isAdmin) {
+        // Admin can see all toko locations
+        const locationsRes = await locationsApi.getAll({ type: "toko", page_size: 1000 });
+        locs = locationsRes.data.data || [];
+      } else {
+        // Non-admin can only see assigned locations
+        const myLocsRes = await userLocationsApi.getMyLocations();
+        // Filter only toko type locations
+        locs = (myLocsRes.data.data || []).filter(loc => loc.type === "toko");
+      }
+
       setLocations(locs);
 
       // Set location based on saved value or default
-      if (savedLocationId) {
-        // Use saved location from sessionStorage
+      if (savedLocationId && locs.some(l => l.id.toString() === savedLocationId)) {
+        // Use saved location from sessionStorage if it's still available
         setSelectedLocationId(savedLocationId);
       } else if (locs.length > 0) {
         // Only set default if no saved location
@@ -362,6 +379,25 @@ export default function POSPage() {
     return (
       <div className="h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Show message if non-admin user has no assigned locations
+  if (!isAdmin && locations.length === 0) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center gap-4 p-4">
+        <div className="text-center">
+          <Store className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Tidak Ada Akses Toko</h2>
+          <p className="text-muted-foreground max-w-md">
+            Anda belum ditugaskan ke toko manapun. Silakan hubungi admin untuk mendapatkan akses ke toko.
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => navigate("/dashboard")}>
+          <LayoutDashboard className="h-4 w-4 mr-2" />
+          Kembali ke Dashboard
+        </Button>
       </div>
     );
   }

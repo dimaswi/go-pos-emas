@@ -79,6 +79,14 @@ func main() {
 			protected.PUT("/users/:id", middleware.RequirePermission("users.update"), handlers.UpdateUser)
 			protected.DELETE("/users/:id", middleware.RequirePermission("users.delete"), handlers.DeleteUser)
 
+			// User Location Assignment routes
+			protected.GET("/users/:id/locations", middleware.RequirePermission("users.view"), handlers.GetUserLocations)
+			protected.POST("/user-locations/assign", middleware.RequirePermission("users.update"), handlers.AssignUserLocation)
+			protected.POST("/user-locations/bulk-assign", middleware.RequirePermission("users.update"), handlers.BulkAssignUserLocations)
+			protected.DELETE("/users/:id/locations/:location_id", middleware.RequirePermission("users.update"), handlers.RemoveUserLocation)
+			protected.PUT("/users/:id/locations/:location_id/default", middleware.RequirePermission("users.update"), handlers.SetDefaultLocation)
+			protected.GET("/my-locations", handlers.GetMyLocations) // No permission needed - user can see their own locations
+
 			// Roles routes (with RBAC)
 			protected.GET("/roles", middleware.RequirePermission("roles.view"), handlers.GetRoles)
 			protected.GET("/roles/:id", middleware.RequirePermission("roles.view"), handlers.GetRole)
@@ -95,23 +103,29 @@ func main() {
 			protected.DELETE("/permissions/:id", middleware.RequirePermission("permissions.delete"), handlers.DeletePermission)
 
 			// Gold Categories routes
-			protected.GET("/gold-categories", middleware.RequirePermission("gold-categories.view"), handlers.GetGoldCategories)
-			protected.GET("/gold-categories/:id", middleware.RequirePermission("gold-categories.view"), handlers.GetGoldCategory)
+			protected.GET("/gold-categories", middleware.RequireAnyPermission("gold-categories.view", "pos.view-gold-categories"), handlers.GetGoldCategories)
+			protected.GET("/gold-categories/:id", middleware.RequireAnyPermission("gold-categories.view", "pos.view-gold-categories"), handlers.GetGoldCategory)
 			protected.POST("/gold-categories", middleware.RequirePermission("gold-categories.create"), handlers.CreateGoldCategory)
 			protected.PUT("/gold-categories/:id", middleware.RequirePermission("gold-categories.update"), handlers.UpdateGoldCategory)
 			protected.DELETE("/gold-categories/:id", middleware.RequirePermission("gold-categories.delete"), handlers.DeleteGoldCategory)
 
+			// Price Update routes (daily gold price update)
+			protected.GET("/price-update/check", middleware.RequireAnyPermission("gold-categories.view", "pos.view-gold-categories"), handlers.CheckPriceUpdateNeeded)
+			protected.POST("/price-update/bulk", middleware.RequireAnyPermission("gold-categories.update", "pos.update-gold-prices"), handlers.BulkUpdatePrices)
+			protected.GET("/price-update/logs", middleware.RequireAnyPermission("gold-categories.view", "pos.view-gold-categories"), handlers.GetPriceUpdateLogs)
+			protected.GET("/price-update/logs/:id", middleware.RequireAnyPermission("gold-categories.view", "pos.view-gold-categories"), handlers.GetPriceUpdateLog)
+
 			// Products routes
-			protected.GET("/products", middleware.RequirePermission("products.view"), handlers.GetProducts)
-			protected.GET("/products/:id", middleware.RequirePermission("products.view"), handlers.GetProduct)
-			protected.GET("/products/barcode/:barcode", middleware.RequirePermission("products.view"), handlers.GetProductByBarcode)
+			protected.GET("/products", middleware.RequireAnyPermission("products.view", "pos.view-products"), handlers.GetProducts)
+			protected.GET("/products/:id", middleware.RequireAnyPermission("products.view", "pos.view-products"), handlers.GetProduct)
+			protected.GET("/products/barcode/:barcode", middleware.RequireAnyPermission("products.view", "pos.view-products"), handlers.GetProductByBarcode)
 			protected.POST("/products", middleware.RequirePermission("products.create"), handlers.CreateProduct)
 			protected.PUT("/products/:id", middleware.RequirePermission("products.update"), handlers.UpdateProduct)
 			protected.DELETE("/products/:id", middleware.RequirePermission("products.delete"), handlers.DeleteProduct)
 
 			// Locations routes (Gudang & Toko)
-			protected.GET("/locations", middleware.RequirePermission("locations.view"), handlers.GetLocations)
-			protected.GET("/locations/:id", middleware.RequirePermission("locations.view"), handlers.GetLocation)
+			protected.GET("/locations", middleware.RequireAnyPermission("locations.view", "pos.view-locations"), handlers.GetLocations)
+			protected.GET("/locations/:id", middleware.RequireAnyPermission("locations.view", "pos.view-locations"), handlers.GetLocation)
 			protected.POST("/locations", middleware.RequirePermission("locations.create"), handlers.CreateLocation)
 			protected.PUT("/locations/:id", middleware.RequirePermission("locations.update"), handlers.UpdateLocation)
 			protected.DELETE("/locations/:id", middleware.RequirePermission("locations.delete"), handlers.DeleteLocation)
@@ -134,15 +148,15 @@ func main() {
 			protected.POST("/members/recalculate-stats", middleware.RequirePermission("members.update"), handlers.RecalculateMemberStats)
 
 			// Stocks routes
-			protected.GET("/stocks", middleware.RequirePermission("stocks.view"), handlers.GetStocks)
-			protected.GET("/stocks/by-location", middleware.RequirePermission("stocks.view"), handlers.GetStocksByLocation)
+			protected.GET("/stocks", middleware.RequireAnyPermission("stocks.view", "pos.view-stocks"), handlers.GetStocks)
+			protected.GET("/stocks/by-location", middleware.RequireAnyPermission("stocks.view", "pos.view-stocks"), handlers.GetStocksByLocation)
 			protected.POST("/stocks", middleware.RequirePermission("stocks.create"), handlers.CreateStock)
-			protected.POST("/stocks-mark-printed", middleware.RequirePermission("stocks.update"), handlers.MarkStocksPrinted)
+			protected.POST("/stocks-mark-printed", middleware.RequireAnyPermission("stocks.update", "pos.update-stocks"), handlers.MarkStocksPrinted)
 			protected.POST("/stocks/transfer", middleware.RequirePermission("stocks.transfer"), handlers.TransferStock)
-			protected.GET("/stocks/serial/:serial", middleware.RequirePermission("stocks.view"), handlers.GetStockBySerial)
-			protected.GET("/stocks/box/:box_id/items", middleware.RequirePermission("stocks.view"), handlers.GetStocksByBox)
-			protected.GET("/stocks/:id", middleware.RequirePermission("stocks.view"), handlers.GetStock)
-			protected.PUT("/stocks/:id", middleware.RequirePermission("stocks.update"), handlers.UpdateStock)
+			protected.GET("/stocks/serial/:serial", middleware.RequireAnyPermission("stocks.view", "pos.view-stocks"), handlers.GetStockBySerial)
+			protected.GET("/stocks/box/:box_id/items", middleware.RequireAnyPermission("stocks.view", "pos.view-stocks"), handlers.GetStocksByBox)
+			protected.GET("/stocks/:id", middleware.RequireAnyPermission("stocks.view", "pos.view-stocks"), handlers.GetStock)
+			protected.PUT("/stocks/:id", middleware.RequireAnyPermission("stocks.update", "pos.update-stocks"), handlers.UpdateStock)
 			protected.DELETE("/stocks/:id", middleware.RequirePermission("stocks.delete"), handlers.DeleteStock)
 			protected.GET("/stock-transfers", middleware.RequirePermission("stocks.view"), handlers.GetStockTransfers)
 

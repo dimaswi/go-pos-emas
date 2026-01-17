@@ -15,6 +15,7 @@ import { usersApi, rolesApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2, User, Shield } from "lucide-react";
 import { setPageTitle } from "@/lib/page-title";
+import { UserLocationAssignment } from "@/components/user-location-assignment";
 
 export default function UserEdit() {
   const navigate = useNavigate();
@@ -202,6 +203,19 @@ export default function UserEdit() {
               </Button>
             </div>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Location Assignment Section */}
+      <Card className="shadow-md">
+        <CardHeader className="border-b bg-muted/50 py-4">
+          <CardTitle className="text-base font-semibold">Penugasan Toko</CardTitle>
+          <CardDescription className="text-xs">
+            Atur toko mana saja yang bisa diakses user ini untuk POS dan Setor Emas
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <UserLocationAssignment userId={Number(id)} userName={formData.full_name} />
         </CardContent>
       </Card>
     </div>

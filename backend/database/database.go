@@ -38,6 +38,7 @@ func Migrate() error {
 		&models.Product{},         // Products
 		&models.Location{},        // Locations (gudang/toko)
 		&models.StorageBox{},      // Storage boxes
+		&models.UserLocation{},    // User-Location assignments (employee to store)
 		&models.Member{},          // Members
 		&models.Stock{},           // Stock
 		&models.StockTransfer{},   // Stock transfers
@@ -45,6 +46,9 @@ func Migrate() error {
 		&models.Transaction{},     // Transactions
 		&models.TransactionItem{}, // Transaction items
 		&models.PurchaseItem{},    // Purchase items
+		// Price Update Tracking
+		&models.PriceUpdateLog{}, // Price update logs
+		&models.PriceDetail{},    // Price update details
 	)
 
 	if err != nil {
@@ -186,6 +190,7 @@ func createPartialUniqueIndexes() {
 		{"idx_stock_transfers_transfer_number_partial", `CREATE UNIQUE INDEX idx_stock_transfers_transfer_number_partial ON stock_transfers(transfer_number) WHERE deleted_at IS NULL`},
 		{"idx_raw_materials_code_partial", `CREATE UNIQUE INDEX idx_raw_materials_code_partial ON raw_materials(code) WHERE deleted_at IS NULL`},
 		{"idx_transactions_transaction_code_partial", `CREATE UNIQUE INDEX idx_transactions_transaction_code_partial ON transactions(transaction_code) WHERE deleted_at IS NULL`},
+		{"idx_user_locations_user_location_partial", `CREATE UNIQUE INDEX idx_user_locations_user_location_partial ON user_locations(user_id, location_id) WHERE deleted_at IS NULL`},
 	}
 
 	for _, idx := range partialIndexes {
@@ -294,6 +299,14 @@ func SeedData() error {
 		{Name: "transactions.sale", Module: "POS", Category: "Transactions", Description: "Create sale transactions (Penjualan)", Actions: `["create"]`},
 		{Name: "transactions.purchase", Module: "POS", Category: "Transactions", Description: "Create purchase/deposit transactions (Setor Emas)", Actions: `["create"]`},
 		{Name: "transactions.cancel", Module: "POS", Category: "Transactions", Description: "Cancel transactions", Actions: `["cancel"]`},
+
+		// POS View Permissions (untuk karyawan yang butuh akses POS tanpa akses master data)
+		{Name: "pos.view-products", Module: "POS", Category: "POS Access", Description: "View products for POS operations", Actions: `["read"]`},
+		{Name: "pos.view-stocks", Module: "POS", Category: "POS Access", Description: "View stocks for POS operations", Actions: `["read"]`},
+		{Name: "pos.view-gold-categories", Module: "POS", Category: "POS Access", Description: "View gold categories and prices for POS operations", Actions: `["read"]`},
+		{Name: "pos.view-locations", Module: "POS", Category: "POS Access", Description: "View locations for POS operations", Actions: `["read"]`},
+		{Name: "pos.update-gold-prices", Module: "POS", Category: "POS Access", Description: "Update daily gold prices for POS operations", Actions: `["update"]`},
+		{Name: "pos.update-stocks", Module: "POS", Category: "POS Access", Description: "Update stocks for POS operations", Actions: `["update"]`},
 	}
 
 	for _, perm := range permissions {

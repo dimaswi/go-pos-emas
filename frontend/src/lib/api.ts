@@ -167,12 +167,62 @@ export interface GoldCategory {
 }
 
 export const goldCategoriesApi = {
-  getAll: (params?: { page?: number; page_size?: number }) => 
+  getAll: (params?: { page?: number; page_size?: number }) =>
     api.get<{ data: GoldCategory[]; pagination?: { total: number; total_pages: number; page: number; page_size: number } }>('/gold-categories', { params }),
   getById: (id: number) => api.get<{ data: GoldCategory }>(`/gold-categories/${id}`),
   create: (data: Partial<GoldCategory>) => api.post<{ data: GoldCategory }>('/gold-categories', data),
   update: (id: number, data: Partial<GoldCategory>) => api.put<{ data: GoldCategory }>(`/gold-categories/${id}`, data),
   delete: (id: number) => api.delete(`/gold-categories/${id}`),
+};
+
+// Price Update Types
+export interface PriceUpdateLog {
+  id: number;
+  update_date: string;
+  updated_by_id: number;
+  updated_by?: User;
+  notes: string;
+  price_details?: PriceDetail[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PriceDetail {
+  id: number;
+  price_update_log_id: number;
+  gold_category_id: number;
+  gold_category?: GoldCategory;
+  old_buy_price: number;
+  new_buy_price: number;
+  old_sell_price: number;
+  new_sell_price: number;
+}
+
+export interface PriceUpdateCheckResponse {
+  needs_update: boolean;
+  last_update: string | null;
+  last_updated_by?: User;
+  gold_categories: GoldCategory[];
+}
+
+export interface BulkPriceUpdateRequest {
+  prices: {
+    gold_category_id: number;
+    buy_price: number;
+    sell_price: number;
+  }[];
+  notes?: string;
+}
+
+export const priceUpdateApi = {
+  checkNeeded: () =>
+    api.get<{ data: PriceUpdateCheckResponse }>('/price-update/check'),
+  bulkUpdate: (data: BulkPriceUpdateRequest) =>
+    api.post<{ data: PriceUpdateLog; message: string }>('/price-update/bulk', data),
+  getLogs: (params?: { start_date?: string; end_date?: string }) =>
+    api.get<{ data: PriceUpdateLog[] }>('/price-update/logs', { params }),
+  getLog: (id: number) =>
+    api.get<{ data: PriceUpdateLog }>(`/price-update/logs/${id}`),
 };
 
 // Product Types
@@ -507,7 +557,7 @@ export interface RawMaterialStats {
 }
 
 export const rawMaterialsApi = {
-  getAll: (params?: { location_id?: number; gold_category_id?: number; status?: string; condition?: string; search?: string; page?: number; limit?: number }) => 
+  getAll: (params?: { location_id?: number; gold_category_id?: number; status?: string; condition?: string; search?: string; page?: number; limit?: number }) =>
     api.get<{ data: RawMaterial[]; meta?: { total: number; total_pages: number; page: number; limit: number } }>('/raw-materials', { params }),
   getById: (id: number) => api.get<{ data: RawMaterial }>(`/raw-materials/${id}`),
   getStats: () => api.get<RawMaterialStats>('/raw-materials/stats'),
@@ -527,4 +577,42 @@ export const rawMaterialsApi = {
   }) => api.post<RawMaterial>('/raw-materials', data),
   update: (id: number, data: Partial<RawMaterial>) => api.put<RawMaterial>(`/raw-materials/${id}`, data),
   delete: (id: number) => api.delete(`/raw-materials/${id}`),
+};
+
+// User Location Assignment Types
+export interface UserLocation {
+  id: number;
+  user_id: number;
+  user?: User;
+  location_id: number;
+  location?: Location;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export const userLocationsApi = {
+  // Get locations assigned to a specific user
+  getUserLocations: (userId: number) =>
+    api.get<{ data: UserLocation[] }>(`/users/${userId}/locations`),
+
+  // Get locations assigned to current logged-in user
+  getMyLocations: () =>
+    api.get<{ data: Location[] }>('/my-locations'),
+
+  // Assign a single location to user
+  assign: (data: { user_id: number; location_id: number; is_default?: boolean }) =>
+    api.post<{ data: UserLocation }>('/user-locations/assign', data),
+
+  // Bulk assign locations to user (replaces all existing assignments)
+  bulkAssign: (data: { user_id: number; location_ids: number[]; default_id?: number }) =>
+    api.post<{ data: UserLocation[] }>('/user-locations/bulk-assign', data),
+
+  // Remove a location assignment from user
+  remove: (userId: number, locationId: number) =>
+    api.delete(`/users/${userId}/locations/${locationId}`),
+
+  // Set a location as default for user
+  setDefault: (userId: number, locationId: number) =>
+    api.put(`/users/${userId}/locations/${locationId}/default`),
 };

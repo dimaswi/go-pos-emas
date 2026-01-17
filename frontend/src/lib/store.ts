@@ -22,8 +22,18 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
   
   logout: () => {
+    // Get user id before clearing for sessionStorage cleanup
+    const userData = localStorage.getItem('user');
+    const userId = userData ? JSON.parse(userData)?.id : null;
+
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+
+    // Clear session-based data for this user
+    if (userId) {
+      sessionStorage.removeItem(`price_update_dismissed_${userId}`);
+    }
+
     set({ token: null, user: null, isAuthenticated: false });
   },
   

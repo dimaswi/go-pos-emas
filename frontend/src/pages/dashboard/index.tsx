@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore } from '@/lib/store';
 import {
@@ -10,10 +10,12 @@ import {
   transactionsApi,
   locationsApi,
   goldCategoriesApi,
+  priceUpdateApi,
   type Transaction,
   type Member,
   type DailySummary
 } from '@/lib/api';
+import { PriceUpdateModal } from '@/components/price-update-modal';
 import {
   Users,
   Shield,
@@ -137,6 +139,8 @@ export default function DashboardPage() {
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showPriceUpdateModal, setShowPriceUpdateModal] = useState(false);
+  const priceModalCheckedRef = useRef(false);
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
     activeUsers: 0,
@@ -160,9 +164,29 @@ export default function DashboardPage() {
     stocksByCategory: [],
   });
 
+  // Initial page load and show price update modal
   useEffect(() => {
     setPageTitle('Dashboard');
     loadDashboardData();
+
+    // Show price update modal once per login session as a reminder
+    // Use ref to ensure it only runs once even in Strict Mode
+    if (priceModalCheckedRef.current) return;
+    priceModalCheckedRef.current = true;
+
+    if (!user?.id) return;
+
+    // Check if user already dismissed the modal in this session
+    const dismissedKey = `price_update_dismissed_${user.id}`;
+    const dismissedInSession = sessionStorage.getItem(dismissedKey);
+
+    // If already dismissed in this browser session, don't show
+    if (dismissedInSession === 'true') {
+      return;
+    }
+
+    // Always show modal on first dashboard visit after login as reminder
+    setShowPriceUpdateModal(true);
   }, []);
 
   const loadDashboardData = async (isRefresh = false) => {
@@ -424,6 +448,15 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => setShowPriceUpdateModal(true)}
+            className="flex-1 sm:flex-none bg-yellow-500 hover:bg-yellow-600 text-white"
+          >
+            <Coins className="h-4 w-4 mr-2" />
+            <span className="sm:inline">Update Harga</span>
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -927,6 +960,22 @@ export default function DashboardPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Price Update Modal */}
+      <PriceUpdateModal
+        open={showPriceUpdateModal}
+        onOpenChange={(open) => {
+          setShowPriceUpdateModal(open);
+          // If closing the modal (dismissed), save to sessionStorage so it won't auto-show again in this session
+          if (!open && user?.id) {
+            const dismissedKey = `price_update_dismissed_${user.id}`;
+            sessionStorage.setItem(dismissedKey, 'true');
+          }
+        }}
+        onSuccess={() => {
+          loadDashboardData(true);
+        }}
+      />
     </div>
   );
 }

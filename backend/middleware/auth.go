@@ -108,3 +108,45 @@ func RequirePermission(permission string) gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// RequireAnyPermission checks if user has ANY of the specified permissions (OR logic)
+// Useful when an endpoint can be accessed by users with different permissions
+// e.g., master data viewer OR POS user
+func RequireAnyPermission(permissions ...string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		roleID, exists := c.Get("role_id")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			c.Abort()
+			return
+		}
+
+		var role models.Role
+		if err := database.DB.Preload("Permissions").First(&role, roleID).Error; err != nil {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Role not found"})
+			c.Abort()
+			return
+		}
+
+		hasPermission := false
+		for _, perm := range role.Permissions {
+			for _, requiredPerm := range permissions {
+				if perm.Name == requiredPerm {
+					hasPermission = true
+					break
+				}
+			}
+			if hasPermission {
+				break
+			}
+		}
+
+		if !hasPermission {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}

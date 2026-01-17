@@ -33,12 +33,14 @@ import { toast } from "sonner";
 import {
   goldCategoriesApi,
   locationsApi,
+  userLocationsApi,
   api,
   type Member,
   type GoldCategory,
   type Location,
 } from "@/lib/api";
 import { generateUUID } from "@/lib/utils";
+import { useAuthStore } from "@/lib/store";
 
 interface DepositItem {
   id: string;
@@ -81,6 +83,10 @@ const formatCurrency = (n: number) =>
 
 export default function SetorEmasPage() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+
+  // Check if user is admin
+  const isAdmin = user?.role?.name === "admin";
 
   const [locations, setLocations] = useState<Location[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState<string>("");
@@ -92,25 +98,19 @@ export default function SetorEmasPage() {
   const [depositMode, setDepositMode] = useState<DepositMode>("standard");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [saveAsRawMaterial, setSaveAsRawMaterial] = useState(false); // Hybrid: Simpan sebagai bahan baku
+  const [saveAsRawMaterial, setSaveAsRawMaterial] = useState(true); // Hybrid: Simpan sebagai bahan baku (default: true)
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   // Form fields
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [standardWeight, setStandardWeight] = useState<string>(""); // Berat kotor
-  const [standardShrinkage, setStandardShrinkage] = useState<string>(""); // Susut %
   const [standardBuyPrice, setStandardBuyPrice] = useState<string>(""); // Harga beli kita ke penjual
   const [standardNotes, setStandardNotes] = useState<string>("");
-  const [standardCondition, setStandardCondition] =
-    useState<GoldCondition>("like_new");
   const [customWeight, setCustomWeight] = useState<string>(""); // Berat kotor
-  const [customShrinkage, setCustomShrinkage] = useState<string>(""); // Susut %
   const [customPurity, setCustomPurity] = useState<string>("");
   const [customPricePerGram, setCustomPricePerGram] = useState<string>("");
   const [customBuyPrice, setCustomBuyPrice] = useState<string>(""); // Harga beli kita ke penjual
   const [customNotes, setCustomNotes] = useState<string>("");
-  const [customCondition, setCustomCondition] =
-    useState<GoldCondition>("like_new");
 
   useEffect(() => {
     fetchData();
@@ -161,20 +161,28 @@ export default function SetorEmasPage() {
         ? JSON.parse(storedCart).locationId
         : null;
 
-      const [catRes, locRes] = await Promise.all([
-        goldCategoriesApi.getAll({ page_size: 100 }),
-        locationsApi.getAll({ page_size: 100 }),
-      ]);
-
+      // Fetch gold categories
+      const catRes = await goldCategoriesApi.getAll({ page_size: 100 });
       const categories = catRes.data.data || [];
       setGoldCategories(categories.filter((c: GoldCategory) => c.is_active));
 
-      const locs = locRes.data.data || [];
-      setLocations(locs.filter((l: Location) => l.is_active));
+      // Fetch locations based on user role
+      let locs: Location[] = [];
+      if (isAdmin) {
+        // Admin can see all locations
+        const locRes = await locationsApi.getAll({ page_size: 100 });
+        locs = (locRes.data.data || []).filter((l: Location) => l.is_active);
+      } else {
+        // Non-admin can only see assigned locations
+        const myLocsRes = await userLocationsApi.getMyLocations();
+        locs = (myLocsRes.data.data || []).filter((l: Location) => l.is_active);
+      }
+
+      setLocations(locs);
 
       // Set location based on saved value or default
-      if (savedLocationId) {
-        // Use saved location from sessionStorage
+      if (savedLocationId && locs.some(l => l.id.toString() === savedLocationId)) {
+        // Use saved location from sessionStorage if still available
         setSelectedLocationId(savedLocationId);
       } else if (locs.length > 0) {
         // Only set default if no saved location
@@ -219,6 +227,15 @@ export default function SetorEmasPage() {
     }));
   }, [goldCategories]);
 
+  // Auto-fill buy price when category is selected
+  const handleCategoryChange = (categoryId: string) => {
+    setSelectedCategoryId(categoryId);
+    const category = goldCategories.find((c) => c.id.toString() === categoryId);
+    if (category) {
+      setStandardBuyPrice(category.buy_price.toString());
+    }
+  };
+
   const addStandardItem = () => {
     if (!selectedCategory) {
       toast.error("Pilih kategori emas");
@@ -234,11 +251,9 @@ export default function SetorEmasPage() {
       toast.error("Harga beli kita harus lebih dari 0");
       return;
     }
-    // Susut: gunakan input manual atau default dari kondisi
-    const shrinkage = standardShrinkage
-      ? parseFloat(standardShrinkage)
-      : CONDITION_OPTIONS[standardCondition].shrinkage;
-    const weightNet = weightGross * (1 - shrinkage / 100);
+    // Default susut 0% - akan diatur di keranjang
+    const shrinkage = 0;
+    const weightNet = weightGross;
     const originalPrice = selectedCategory.buy_price; // Harga surat/referensi
 
     setDepositItems([
@@ -253,18 +268,16 @@ export default function SetorEmasPage() {
         weight_grams: Math.round(weightNet * 100) / 100, // Berat bersih
         original_price_per_gram: originalPrice,
         price_per_gram: buyPrice, // Harga beli kita yang diinput manual
-        condition: standardCondition,
+        condition: "like_new",
         subtotal: (Math.round(weightNet * 100) / 100) * buyPrice,
         notes: standardNotes,
         item_type: "standard",
       },
     ]);
     setStandardWeight("");
-    setStandardShrinkage("");
     setStandardBuyPrice("");
     setStandardNotes("");
-    setStandardCondition("like_new");
-    toast.success("Item ditambahkan");
+    toast.success("Item ditambahkan - atur susut di keranjang");
   };
 
   const addCustomItem = () => {
@@ -288,11 +301,9 @@ export default function SetorEmasPage() {
       toast.error("Harga beli kita harus lebih dari 0");
       return;
     }
-    // Susut: gunakan input manual atau default dari kondisi
-    const shrinkage = customShrinkage
-      ? parseFloat(customShrinkage)
-      : CONDITION_OPTIONS[customCondition].shrinkage;
-    const weightNet = weightGross * (1 - shrinkage / 100);
+    // Default susut 0% - akan diatur di keranjang
+    const shrinkage = 0;
+    const weightNet = weightGross;
 
     setDepositItems([
       ...depositItems,
@@ -304,20 +315,18 @@ export default function SetorEmasPage() {
         weight_grams: Math.round(weightNet * 100) / 100, // Berat bersih
         original_price_per_gram: price, // Harga surat
         price_per_gram: buyPrice, // Harga beli kita yang diinput manual
-        condition: customCondition,
+        condition: "like_new",
         subtotal: (Math.round(weightNet * 100) / 100) * buyPrice,
         notes: customNotes || `Emas ${purity}%`,
         item_type: "custom",
       },
     ]);
     setCustomWeight("");
-    setCustomShrinkage("");
     setCustomPurity("");
     setCustomPricePerGram("");
     setCustomBuyPrice("");
     setCustomNotes("");
-    setCustomCondition("like_new");
-    toast.success("Item ditambahkan");
+    toast.success("Item ditambahkan - atur susut di keranjang");
   };
 
   const updateWeight = (id: string, delta: number) => {
@@ -326,11 +335,11 @@ export default function SetorEmasPage() {
         .map((i) => {
           if (i.id === id) {
             const wGross = Math.max(
-              0.1,
-              Math.round((i.weight_gross + delta) * 100) / 100
+              0.001,
+              Math.round((i.weight_gross + delta) * 1000) / 1000
             );
             const wNet =
-              Math.round(wGross * (1 - i.shrinkage_percent / 100) * 100) / 100;
+              Math.round(wGross * (1 - i.shrinkage_percent / 100) * 1000) / 1000;
             return {
               ...i,
               weight_gross: wGross,
@@ -340,7 +349,49 @@ export default function SetorEmasPage() {
           }
           return i;
         })
-        .filter((i) => i.weight_gross >= 0.1)
+        .filter((i) => i.weight_gross >= 0.001)
+    );
+  };
+
+  const updateWeightDirect = (id: string, weightValue: string) => {
+    const wGross = parseFloat(weightValue) || 0;
+    // Min weight 0.001g
+    const clampedWeight = Math.max(0, Math.round(wGross * 1000) / 1000);
+
+    setDepositItems(
+      depositItems.map((i) => {
+        if (i.id === id) {
+          const wNet = Math.round(clampedWeight * (1 - i.shrinkage_percent / 100) * 1000) / 1000;
+          return {
+            ...i,
+            weight_gross: clampedWeight,
+            weight_grams: wNet,
+            subtotal: wNet * i.price_per_gram,
+          };
+        }
+        return i;
+      })
+    );
+  };
+
+  const updateShrinkage = (id: string, shrinkageValue: string) => {
+    const shrinkage = parseFloat(shrinkageValue) || 0;
+    // Clamp shrinkage between 0 and 100
+    const clampedShrinkage = Math.min(100, Math.max(0, shrinkage));
+
+    setDepositItems(
+      depositItems.map((i) => {
+        if (i.id === id) {
+          const wNet = Math.round(i.weight_gross * (1 - clampedShrinkage / 100) * 1000) / 1000;
+          return {
+            ...i,
+            shrinkage_percent: clampedShrinkage,
+            weight_grams: wNet,
+            subtotal: wNet * i.price_per_gram,
+          };
+        }
+        return i;
+      })
     );
   };
 
@@ -449,6 +500,25 @@ export default function SetorEmasPage() {
     );
   }
 
+  // Show message if non-admin user has no assigned locations
+  if (!isAdmin && locations.length === 0) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center gap-4 p-4">
+        <div className="text-center">
+          <Store className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Tidak Ada Akses Lokasi</h2>
+          <p className="text-muted-foreground max-w-md">
+            Anda belum ditugaskan ke lokasi manapun. Silakan hubungi admin untuk mendapatkan akses.
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => navigate("/dashboard")}>
+          <LayoutDashboard className="h-4 w-4 mr-2" />
+          Kembali ke Dashboard
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-muted/30">
       {/* Header */}
@@ -543,20 +613,20 @@ export default function SetorEmasPage() {
             {depositMode === "standard" ? (
               <div className="space-y-2 sm:space-y-3">
                 <div className="flex gap-1.5 sm:gap-2 items-end flex-wrap">
-                  <div className="flex-1 min-w-[120px] sm:min-w-[150px]">
+                  <div className="flex-1 min-w-[120px] sm:min-w-[180px]">
                     <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
                       Kategori Emas
                     </Label>
                     <SearchableSelect
                       options={goldCategoryOptions}
                       value={selectedCategoryId}
-                      onValueChange={setSelectedCategoryId}
+                      onValueChange={handleCategoryChange}
                       placeholder="Pilih kategori"
                       searchPlaceholder="Cari kategori..."
                       emptyMessage="Kategori tidak ditemukan"
                     />
                   </div>
-                  <div className="w-16 sm:w-24">
+                  <div className="w-20 sm:w-28">
                     <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
                       Berat (g)
                     </Label>
@@ -569,24 +639,9 @@ export default function SetorEmasPage() {
                       className="h-8 sm:h-9 text-xs sm:text-sm"
                     />
                   </div>
-                  <div className="w-14 sm:w-20">
+                  <div className="w-24 sm:w-32">
                     <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
-                      Susut %
-                    </Label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      value={standardShrinkage}
-                      onChange={(e) => setStandardShrinkage(e.target.value)}
-                      placeholder={CONDITION_OPTIONS[
-                        standardCondition
-                      ].shrinkage.toString()}
-                      className="h-8 sm:h-9 text-xs sm:text-sm"
-                    />
-                  </div>
-                  <div className="w-20 sm:w-28">
-                    <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
-                      Harga/g <span className="text-destructive">*</span>
+                      Harga Beli/g <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       type="number"
@@ -596,15 +651,15 @@ export default function SetorEmasPage() {
                       className="h-8 sm:h-9 text-xs sm:text-sm"
                     />
                   </div>
-                  <div className="flex-1 min-w-[80px] sm:min-w-[100px]">
+                  <div className="flex-1 min-w-[100px] sm:min-w-[120px]">
                     <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
                       Catatan
                     </Label>
                     <Input
-                      value={customNotes}
-                      onChange={(e) => setCustomNotes(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && addCustomItem()}
-                      placeholder="Deskripsi"
+                      value={standardNotes}
+                      onChange={(e) => setStandardNotes(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && addStandardItem()}
+                      placeholder="Opsional"
                       className="h-8 sm:h-9 text-xs sm:text-sm"
                     />
                   </div>
@@ -616,40 +671,14 @@ export default function SetorEmasPage() {
                     <span className="hidden sm:inline">Tambah</span>
                   </Button>
                 </div>
-                {/* Kondisi Fisik Emas */}
-                <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
-                  <Label className="text-[10px] sm:text-xs text-muted-foreground shrink-0">
-                    Kondisi:
-                  </Label>
-                  <div className="flex gap-0.5 sm:gap-1 flex-wrap">
-                    {(
-                      Object.entries(CONDITION_OPTIONS) as [
-                        GoldCondition,
-                        (typeof CONDITION_OPTIONS)[GoldCondition]
-                      ][]
-                    ).map(([key, val]) => (
-                      <button
-                        key={key}
-                        onClick={() => {
-                          setStandardCondition(key);
-                          if (!standardShrinkage) setStandardShrinkage(""); // Reset agar pakai default
-                        }}
-                        className={`px-1.5 sm:px-2.5 py-0.5 sm:py-1 text-[9px] sm:text-xs rounded-full border transition-all ${
-                          standardCondition === key
-                            ? `${val.color} text-white border-transparent`
-                            : "hover:border-primary/50"
-                        }`}
-                      >
-                        {val.label} ({val.shrinkage}%)
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">
+                  * Susut akan diatur setelah item masuk keranjang
+                </p>
               </div>
             ) : (
               <div className="space-y-2 sm:space-y-3">
                 <div className="flex gap-1.5 sm:gap-2 items-end flex-wrap">
-                  <div className="w-16 sm:w-24">
+                  <div className="w-20 sm:w-28">
                     <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
                       Berat (g)
                     </Label>
@@ -662,22 +691,7 @@ export default function SetorEmasPage() {
                       className="h-8 sm:h-9 text-xs sm:text-sm"
                     />
                   </div>
-                  <div className="w-14 sm:w-20">
-                    <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
-                      Susut %
-                    </Label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      value={customShrinkage}
-                      onChange={(e) => setCustomShrinkage(e.target.value)}
-                      placeholder={CONDITION_OPTIONS[
-                        customCondition
-                      ].shrinkage.toString()}
-                      className="h-8 sm:h-9 text-xs sm:text-sm"
-                    />
-                  </div>
-                  <div className="w-14 sm:w-20">
+                  <div className="w-16 sm:w-20">
                     <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
                       Kadar (%)
                     </Label>
@@ -690,7 +704,7 @@ export default function SetorEmasPage() {
                       className="h-8 sm:h-9 text-xs sm:text-sm"
                     />
                   </div>
-                  <div className="w-20 sm:w-28">
+                  <div className="w-24 sm:w-28">
                     <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
                       Harga Surat/g
                     </Label>
@@ -702,7 +716,7 @@ export default function SetorEmasPage() {
                       className="h-8 sm:h-9 text-xs sm:text-sm"
                     />
                   </div>
-                  <div className="w-20 sm:w-28">
+                  <div className="w-24 sm:w-28">
                     <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
                       Harga Beli/g <span className="text-destructive">*</span>
                     </Label>
@@ -722,7 +736,7 @@ export default function SetorEmasPage() {
                       value={customNotes}
                       onChange={(e) => setCustomNotes(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && addCustomItem()}
-                      placeholder="Deskripsi"
+                      placeholder="Opsional"
                       className="h-8 sm:h-9 text-xs sm:text-sm"
                     />
                   </div>
@@ -734,35 +748,9 @@ export default function SetorEmasPage() {
                     <span className="hidden sm:inline">Tambah</span>
                   </Button>
                 </div>
-                {/* Kondisi Fisik Emas */}
-                <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
-                  <Label className="text-[10px] sm:text-xs text-muted-foreground shrink-0">
-                    Kondisi:
-                  </Label>
-                  <div className="flex gap-0.5 sm:gap-1 flex-wrap">
-                    {(
-                      Object.entries(CONDITION_OPTIONS) as [
-                        GoldCondition,
-                        (typeof CONDITION_OPTIONS)[GoldCondition]
-                      ][]
-                    ).map(([key, val]) => (
-                      <button
-                        key={key}
-                        onClick={() => {
-                          setCustomCondition(key);
-                          if (!customShrinkage) setCustomShrinkage("");
-                        }}
-                        className={`px-1.5 sm:px-2.5 py-0.5 sm:py-1 text-[9px] sm:text-xs rounded-full border transition-all ${
-                          customCondition === key
-                            ? `${val.color} text-white border-transparent`
-                            : "hover:border-primary/50"
-                        }`}
-                      >
-                        {val.label} ({val.shrinkage}%)
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">
+                  * Susut akan diatur setelah item masuk keranjang
+                </p>
               </div>
             )}
 
@@ -780,41 +768,11 @@ export default function SetorEmasPage() {
                   </Badge>
                   {standardWeight && parseFloat(standardWeight) > 0 && (
                     <>
-                      <span className="text-muted-foreground hidden sm:inline">
-                        |
-                      </span>
+                      <span className="text-muted-foreground hidden sm:inline">|</span>
                       <div className="flex items-center gap-1 sm:gap-2">
-                        <span className="text-muted-foreground">Kotor:</span>
+                        <span className="text-muted-foreground">Berat:</span>
                         <span className="font-medium">
                           {parseFloat(standardWeight).toFixed(2)}g
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 sm:gap-2">
-                        <span className="text-muted-foreground">Susut:</span>
-                        <span className="text-orange-600 font-medium">
-                          -
-                          {(
-                            (parseFloat(standardWeight) *
-                              (parseFloat(standardShrinkage) ||
-                                CONDITION_OPTIONS[standardCondition]
-                                  .shrinkage)) /
-                            100
-                          ).toFixed(2)}
-                          g
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 sm:gap-2">
-                        <span className="text-muted-foreground">Bersih:</span>
-                        <span className="font-bold text-primary">
-                          {(
-                            parseFloat(standardWeight) *
-                            (1 -
-                              (parseFloat(standardShrinkage) ||
-                                CONDITION_OPTIONS[standardCondition]
-                                  .shrinkage) /
-                                100)
-                          ).toFixed(2)}
-                          g
                         </span>
                       </div>
                     </>
@@ -824,20 +782,12 @@ export default function SetorEmasPage() {
                     standardWeight &&
                     parseFloat(standardWeight) > 0 && (
                       <>
-                        <span className="text-muted-foreground hidden sm:inline">
-                          |
-                        </span>
+                        <span className="text-muted-foreground hidden sm:inline">|</span>
                         <div className="flex items-center gap-1 sm:gap-2">
-                          <span className="text-muted-foreground">Total:</span>
+                          <span className="text-muted-foreground">Est. Total:</span>
                           <span className="font-bold text-green-600">
                             {formatCurrency(
-                              parseFloat(standardWeight) *
-                                (1 -
-                                  (parseFloat(standardShrinkage) ||
-                                    CONDITION_OPTIONS[standardCondition]
-                                      .shrinkage) /
-                                    100) *
-                                parseFloat(standardBuyPrice)
+                              parseFloat(standardWeight) * parseFloat(standardBuyPrice)
                             )}
                           </span>
                         </div>
@@ -873,14 +823,15 @@ export default function SetorEmasPage() {
                   <p className="text-xs sm:text-sm">Belum ada item</p>
                 </div>
               ) : (
-                <div className="p-1.5 sm:p-2 space-y-1">
+                <div className="p-1.5 sm:p-2 space-y-1.5">
                   {depositItems.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-center gap-1.5 sm:gap-3 p-1.5 sm:p-2 rounded hover:bg-muted/50 group"
+                      className="p-2 sm:p-3 rounded-lg border bg-card hover:shadow-sm transition-shadow"
                     >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                      {/* Row 1: Name & Delete */}
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
                           <span className="text-xs sm:text-sm font-medium truncate">
                             {item.gold_category_name || `Emas ${item.purity}%`}
                           </span>
@@ -892,63 +843,80 @@ export default function SetorEmasPage() {
                               Custom
                             </Badge>
                           )}
-                          <span
-                            className={`text-[8px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 rounded-full text-white ${
-                              CONDITION_OPTIONS[item.condition].color
-                            }`}
-                          >
-                            {CONDITION_OPTIONS[item.condition].label}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 sm:h-7 sm:w-7 text-muted-foreground hover:text-destructive shrink-0"
+                          onClick={() => removeItem(item.id)}
+                        >
+                          <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        </Button>
+                      </div>
+
+                      {/* Row 2: Weight Input, Shrinkage Input, Net Weight */}
+                      <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                        {/* Berat Kotor - Input Field */}
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] sm:text-xs text-muted-foreground">Berat:</span>
+                          <Input
+                            type="number"
+                            step="0.001"
+                            min="0.001"
+                            value={item.weight_gross || ""}
+                            onChange={(e) => updateWeightDirect(item.id, e.target.value)}
+                            placeholder="0.000"
+                            className="h-6 sm:h-7 w-20 sm:w-24 text-xs sm:text-sm text-center px-1"
+                          />
+                          <span className="text-[10px] sm:text-xs text-muted-foreground">g</span>
+                        </div>
+
+                        {/* Susut Input */}
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] sm:text-xs text-orange-500">Susut:</span>
+                          <Input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="100"
+                            value={item.shrinkage_percent || ""}
+                            onChange={(e) => updateShrinkage(item.id, e.target.value)}
+                            placeholder="0"
+                            className="h-6 sm:h-7 w-14 sm:w-16 text-xs sm:text-sm text-center px-1"
+                          />
+                          <span className="text-[10px] sm:text-xs text-muted-foreground">%</span>
+                        </div>
+
+                        {/* Arrow & Net Weight */}
+                        <div className="flex items-center gap-1">
+                          <span className="text-muted-foreground">→</span>
+                          <span className="text-xs sm:text-sm font-semibold text-primary">
+                            {item.weight_grams.toFixed(3)}g
                           </span>
                         </div>
-                        <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs text-muted-foreground flex-wrap">
-                          <span>{item.weight_gross.toFixed(2)}g</span>
-                          <span className="text-orange-500">
-                            -{item.shrinkage_percent}%
-                          </span>
-                          <span>→</span>
-                          <span className="text-primary font-medium">
-                            {item.weight_grams.toFixed(2)}g
-                          </span>
-                          <span>×</span>
-                          <span className="text-green-600 font-medium">
+
+                        {/* Price */}
+                        <div className="flex items-center gap-1 ml-auto">
+                          <span className="text-[10px] sm:text-xs text-muted-foreground">×</span>
+                          <span className="text-xs sm:text-sm text-green-600">
                             {formatCurrency(item.price_per_gram)}/g
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-0.5 sm:gap-1">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-6 w-6 sm:h-7 sm:w-7"
-                          onClick={() => updateWeight(item.id, -0.1)}
-                        >
-                          <Minus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                        </Button>
-                        <div className="w-12 sm:w-16 text-center">
-                          <span className="text-[10px] sm:text-sm">
-                            {item.weight_gross.toFixed(2)}g
-                          </span>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-6 w-6 sm:h-7 sm:w-7"
-                          onClick={() => updateWeight(item.id, 0.1)}
-                        >
-                          <Plus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                        </Button>
+
+                      {/* Row 3: Subtotal */}
+                      <div className="flex items-center justify-between mt-2 pt-2 border-t">
+                        <span className="text-[10px] sm:text-xs text-muted-foreground">
+                          {item.shrinkage_percent > 0 && (
+                            <span className="text-orange-500">
+                              Susut: -{(item.weight_gross * item.shrinkage_percent / 100).toFixed(3)}g
+                            </span>
+                          )}
+                        </span>
+                        <span className="text-sm sm:text-base font-bold text-green-600">
+                          {formatCurrency(item.subtotal)}
+                        </span>
                       </div>
-                      <div className="w-16 sm:w-24 text-right text-[10px] sm:text-sm font-medium">
-                        {formatCurrency(item.subtotal)}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 sm:h-7 sm:w-7 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 text-muted-foreground hover:text-destructive"
-                        onClick={() => removeItem(item.id)}
-                      >
-                        <Trash2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                      </Button>
                     </div>
                   ))}
                 </div>
@@ -1097,7 +1065,7 @@ export default function SetorEmasPage() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Berat Kotor</span>
                 <span className="font-medium">
-                  {totals.totalWeightGross.toFixed(2)} g
+                  {totals.totalWeightGross.toFixed(3)} g
                 </span>
               </div>
               <div className="flex justify-between text-amber-600 dark:text-amber-400">
@@ -1116,7 +1084,7 @@ export default function SetorEmasPage() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Berat Bersih</span>
                 <span className="font-semibold">
-                  {totals.totalWeight.toFixed(2)} g
+                  {totals.totalWeight.toFixed(3)} g
                 </span>
               </div>
               <div className="flex justify-between">
