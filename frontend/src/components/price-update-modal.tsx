@@ -17,8 +17,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import {
   Coins,
-  TrendingUp,
-  TrendingDown,
   Clock,
   User,
   Save,
@@ -48,15 +46,6 @@ interface PriceFormData {
   new_buy_price: string;
   new_sell_price: string;
 }
-
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-};
 
 const formatNumber = (value: number) => {
   return new Intl.NumberFormat('id-ID').format(value);
@@ -164,22 +153,6 @@ export function PriceUpdateModal({ open, onOpenChange, onSuccess }: PriceUpdateM
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const getPriceChangeIndicator = (current: number, newPrice: string) => {
-    const newValue = parseFloat(newPrice) || 0;
-    if (newValue > current) {
-      return <TrendingUp className="h-4 w-4 text-green-500" />;
-    } else if (newValue < current) {
-      return <TrendingDown className="h-4 w-4 text-red-500" />;
-    }
-    return null;
-  };
-
-  const getPercentChange = (current: number, newPrice: string) => {
-    const newValue = parseFloat(newPrice) || 0;
-    if (current === 0) return 0;
-    return ((newValue - current) / current) * 100;
   };
 
   return (

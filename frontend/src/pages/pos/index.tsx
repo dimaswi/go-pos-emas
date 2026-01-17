@@ -8,6 +8,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { TransactionConfirmationModal } from "@/components/transaction-confirmation-modal";
 import { PrintNotaOverlay, type NotaData } from "@/components/print-nota-overlay";
 import { printReceipt, type ReceiptData } from "@/lib/print-receipt";
+import { BarcodeScannerModal } from "@/components/barcode-scanner-modal";
 import {
   LayoutDashboard,
   Trash2,
@@ -26,6 +27,8 @@ import {
   Package,
   Plus,
   CheckCircle2,
+  Camera,
+  Usb,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -76,6 +79,20 @@ export default function POSPage() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showNotaOverlay, setShowNotaOverlay] = useState(false);
   const [notaData, setNotaData] = useState<NotaData | null>(null);
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [scannerReady, setScannerReady] = useState(false);
+  const lastInputTimeRef = useRef<number>(0);
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   useEffect(() => {
     fetchLocations();
@@ -122,9 +139,75 @@ export default function POSPage() {
     }
   }, [locations]); // Run after locations are loaded
 
+  // Auto focus barcode input - enhanced for mobile
   useEffect(() => {
-    barcodeInputRef.current?.focus();
-  }, [cart]);
+    // Auto focus on desktop, but not on mobile (to avoid keyboard popup)
+    if (!isMobile) {
+      barcodeInputRef.current?.focus();
+    }
+  }, [cart, isMobile]);
+
+  // Focus on barcode input when stocks loaded (initial load)
+  useEffect(() => {
+    if (stocks.length > 0 && !isMobile) {
+      barcodeInputRef.current?.focus();
+    }
+  }, [stocks, isMobile]);
+
+  // USB Scanner detection for desktop
+  // USB barcode scanners act like keyboards - they type characters quickly and end with Enter
+  useEffect(() => {
+    if (isMobile) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only process if no input/textarea is focused OR barcode input is focused
+      const activeElement = document.activeElement;
+      const isInputFocused = activeElement?.tagName === 'INPUT' || activeElement?.tagName === 'TEXTAREA';
+      const isBarcodeInput = activeElement === barcodeInputRef.current;
+
+      // If another input is focused (not barcode), don't intercept
+      if (isInputFocused && !isBarcodeInput) return;
+
+      // Focus barcode input if not focused and it's a printable character
+      if (!isBarcodeInput && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        barcodeInputRef.current?.focus();
+        setScannerReady(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMobile]);
+
+  // Track scanner activity - detect rapid input (USB scanner types fast)
+  const handleBarcodeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const now = Date.now();
+    const timeSinceLastInput = now - lastInputTimeRef.current;
+    lastInputTimeRef.current = now;
+
+    // If input is coming very fast (< 50ms between chars), it's likely a scanner
+    if (timeSinceLastInput < 50 && e.target.value.length > 1) {
+      setScannerReady(true);
+    }
+
+    setSearchBarcode(e.target.value);
+  };
+
+  // Handle barcode input focus
+  const handleBarcodeInputFocus = () => {
+    if (!isMobile) {
+      setScannerReady(true);
+    }
+  };
+
+  const handleBarcodeInputBlur = () => {
+    // Small delay to allow for re-focus
+    setTimeout(() => {
+      if (document.activeElement !== barcodeInputRef.current) {
+        setScannerReady(false);
+      }
+    }, 100);
+  };
 
   const fetchLocations = async () => {
     setIsLoading(true);
@@ -203,35 +286,45 @@ export default function POSPage() {
     }));
   }, [locations]);
 
-  const handleSearchBarcode = () => {
-    if (!searchBarcode.trim()) return;
-    
+  const handleSearchBarcode = (barcodeValue?: string) => {
+    const barcode = barcodeValue || searchBarcode;
+    if (!barcode.trim()) return;
+
     // Find available stock that's not already in cart
     const stock = stocks.find(
       (s) =>
         !cart.some(item => item.stock_id === s.id) && // Not already in cart
-        (s.product?.barcode.toLowerCase() === searchBarcode.toLowerCase() ||
-        s.serial_number?.toLowerCase() === searchBarcode.toLowerCase())
+        (s.product?.barcode.toLowerCase() === barcode.toLowerCase() ||
+        s.serial_number?.toLowerCase() === barcode.toLowerCase())
     );
-    
+
     if (stock && stock.product) {
       addToCart(stock);
       setSearchBarcode("");
+      toast.success(`${stock.product.name} ditambahkan ke keranjang`);
     } else {
       // Check if item exists but already in cart
       const existingStock = stocks.find(
         (s) =>
-          s.product?.barcode.toLowerCase() === searchBarcode.toLowerCase() ||
-          s.serial_number?.toLowerCase() === searchBarcode.toLowerCase()
+          s.product?.barcode.toLowerCase() === barcode.toLowerCase() ||
+          s.serial_number?.toLowerCase() === barcode.toLowerCase()
       );
-      
+
       if (existingStock && cart.some(item => item.stock_id === existingStock.id)) {
         toast.error("Item sudah ada di keranjang");
       } else {
         toast.error("Produk tidak ditemukan di toko ini");
       }
     }
-    barcodeInputRef.current?.focus();
+    if (!isMobile) {
+      barcodeInputRef.current?.focus();
+    }
+  };
+
+  // Handle barcode scan from camera
+  const handleCameraScan = (barcode: string) => {
+    setSearchBarcode(barcode);
+    handleSearchBarcode(barcode);
   };
 
   const addToCart = (stock: Stock) => {
@@ -460,19 +553,55 @@ export default function POSPage() {
                 <Barcode className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                 <Input
                   ref={barcodeInputRef}
-                  placeholder="Scan barcode/SN..."
+                  placeholder={isMobile ? "Ketik barcode/SN..." : "Scan atau ketik barcode/SN..."}
                   value={searchBarcode}
-                  onChange={(e) => setSearchBarcode(e.target.value)}
+                  onChange={handleBarcodeInputChange}
                   onKeyDown={(e) => e.key === "Enter" && handleSearchBarcode()}
-                  className="pl-7 sm:pl-9 h-8 sm:h-10 text-sm"
-                  autoFocus
+                  onFocus={handleBarcodeInputFocus}
+                  onBlur={handleBarcodeInputBlur}
+                  className={`pl-7 sm:pl-9 h-8 sm:h-10 text-sm ${!isMobile && scannerReady ? "ring-2 ring-green-500 border-green-500" : ""}`}
+                  autoFocus={!isMobile}
                 />
+                {/* USB Scanner status indicator - desktop only */}
+                {!isMobile && scannerReady && (
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
+                  </div>
+                )}
               </div>
-              <Button onClick={handleSearchBarcode} className="h-8 sm:h-10 px-3 sm:px-4">
+              {/* Camera scan button - only show on mobile */}
+              {isMobile && (
+                <Button
+                  variant="default"
+                  onClick={() => setShowBarcodeScanner(true)}
+                  className="h-8 sm:h-10 px-3 bg-blue-600 hover:bg-blue-700"
+                  title="Scan dengan kamera"
+                >
+                  <Camera className="h-4 w-4" />
+                  <span className="ml-1.5 text-xs">Scan</span>
+                </Button>
+              )}
+              <Button onClick={() => handleSearchBarcode()} className="h-8 sm:h-10 px-3 sm:px-4">
                 <Search className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline ml-1.5">Cari</span>
               </Button>
             </div>
+            {/* Status indicator */}
+            {isMobile ? (
+              <p className="text-[10px] text-muted-foreground mt-1.5 text-center">
+                Tekan tombol <Camera className="inline h-3 w-3" /> untuk scan barcode dengan kamera
+              </p>
+            ) : (
+              <div className="flex items-center justify-center gap-2 mt-1.5">
+                <div className={`flex items-center gap-1.5 text-[10px] ${scannerReady ? "text-green-600" : "text-muted-foreground"}`}>
+                  <Usb className="h-3 w-3" />
+                  <span>{scannerReady ? "Scanner siap - silakan scan barcode" : "Klik field untuk mengaktifkan scanner"}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Products List & Cart Container */}
@@ -761,6 +890,13 @@ export default function POSPage() {
           }}
         />
       )}
+
+      {/* Barcode Scanner Modal */}
+      <BarcodeScannerModal
+        open={showBarcodeScanner}
+        onOpenChange={setShowBarcodeScanner}
+        onScan={handleCameraScan}
+      />
     </div>
   );
 }

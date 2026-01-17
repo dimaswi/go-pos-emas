@@ -307,6 +307,10 @@ func SeedData() error {
 		{Name: "pos.view-locations", Module: "POS", Category: "POS Access", Description: "View locations for POS operations", Actions: `["read"]`},
 		{Name: "pos.update-gold-prices", Module: "POS", Category: "POS Access", Description: "Update daily gold prices for POS operations", Actions: `["update"]`},
 		{Name: "pos.update-stocks", Module: "POS", Category: "POS Access", Description: "Update stocks for POS operations", Actions: `["update"]`},
+
+		// Reports (Laporan)
+		{Name: "reports.view", Module: "Reports", Category: "Reports", Description: "View all reports (transactions, inventory, financial, members, prices)", Actions: `["read"]`},
+		{Name: "reports.export", Module: "Reports", Category: "Reports", Description: "Export reports to PDF/Excel", Actions: `["export"]`},
 	}
 
 	for _, perm := range permissions {

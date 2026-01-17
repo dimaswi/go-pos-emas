@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,10 +10,10 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Switch } from "@/components/ui/switch";
 import { TransactionConfirmationModal } from "@/components/transaction-confirmation-modal";
 import { printReceipt, type ReceiptData } from "@/lib/print-receipt";
+import { BarcodeScannerModal } from "@/components/barcode-scanner-modal";
 import {
   LayoutDashboard,
   Plus,
-  Minus,
   Trash2,
   Scale,
   Banknote,
@@ -28,12 +28,17 @@ import {
   Coins,
   Package,
   CheckCircle2,
+  Camera,
+  Barcode,
+  Search,
+  Usb,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   goldCategoriesApi,
   locationsApi,
   userLocationsApi,
+  membersApi,
   api,
   type Member,
   type GoldCategory,
@@ -62,17 +67,6 @@ type PaymentMethod = "cash" | "transfer" | "card";
 type DepositMode = "standard" | "custom";
 type GoldCondition = "new" | "like_new" | "scratched" | "dented" | "damaged";
 
-const CONDITION_OPTIONS: Record<
-  GoldCondition,
-  { label: string; color: string; shrinkage: number }
-> = {
-  new: { label: "Baru/Segel", color: "bg-green-500", shrinkage: 1 },
-  like_new: { label: "Mulus", color: "bg-emerald-500", shrinkage: 2 },
-  scratched: { label: "Ada Goresan", color: "bg-amber-500", shrinkage: 3 },
-  dented: { label: "Penyok", color: "bg-orange-500", shrinkage: 4 },
-  damaged: { label: "Rusak", color: "bg-red-500", shrinkage: 5 },
-};
-
 const formatCurrency = (n: number) =>
   new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -84,6 +78,7 @@ const formatCurrency = (n: number) =>
 export default function SetorEmasPage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const memberSearchRef = useRef<HTMLInputElement>(null);
 
   // Check if user is admin
   const isAdmin = user?.role?.name === "admin";
@@ -100,6 +95,11 @@ export default function SetorEmasPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [saveAsRawMaterial, setSaveAsRawMaterial] = useState(true); // Hybrid: Simpan sebagai bahan baku (default: true)
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [memberSearchCode, setMemberSearchCode] = useState("");
+  const [scannerReady, setScannerReady] = useState(false);
+  const lastInputTimeRef = useRef<number>(0);
 
   // Form fields
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
@@ -111,6 +111,16 @@ export default function SetorEmasPage() {
   const [customPricePerGram, setCustomPricePerGram] = useState<string>("");
   const [customBuyPrice, setCustomBuyPrice] = useState<string>(""); // Harga beli kita ke penjual
   const [customNotes, setCustomNotes] = useState<string>("");
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -236,6 +246,88 @@ export default function SetorEmasPage() {
     }
   };
 
+  // Search member by code (barcode/QR)
+  const handleSearchMember = async (codeValue?: string) => {
+    const code = codeValue || memberSearchCode;
+    if (!code.trim()) return;
+
+    try {
+      const res = await membersApi.getAll({ search: code, page_size: 10 });
+      const members = res.data.data || [];
+
+      // Find exact match by member_code or code
+      const member = members.find(
+        (m: Member) =>
+          m.member_code?.toLowerCase() === code.toLowerCase() ||
+          m.code?.toLowerCase() === code.toLowerCase()
+      );
+
+      if (member) {
+        setSelectedMember(member);
+        setMemberSearchCode("");
+        toast.success(`Member ${member.name} dipilih`);
+      } else {
+        toast.error("Member tidak ditemukan");
+      }
+    } catch {
+      toast.error("Gagal mencari member");
+    }
+  };
+
+  // Handle barcode scan from camera
+  const handleCameraScan = (barcode: string) => {
+    setMemberSearchCode(barcode);
+    handleSearchMember(barcode);
+  };
+
+  // USB Scanner detection for desktop
+  useEffect(() => {
+    if (isMobile || selectedMember) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeElement = document.activeElement;
+      const isInputFocused = activeElement?.tagName === 'INPUT' || activeElement?.tagName === 'TEXTAREA';
+      const isMemberInput = activeElement === memberSearchRef.current;
+
+      if (isInputFocused && !isMemberInput) return;
+
+      if (!isMemberInput && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        memberSearchRef.current?.focus();
+        setScannerReady(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMobile, selectedMember]);
+
+  // Track scanner activity
+  const handleMemberInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const now = Date.now();
+    const timeSinceLastInput = now - lastInputTimeRef.current;
+    lastInputTimeRef.current = now;
+
+    if (timeSinceLastInput < 50 && e.target.value.length > 1) {
+      setScannerReady(true);
+    }
+
+    setMemberSearchCode(e.target.value);
+  };
+
+  const handleMemberInputFocus = () => {
+    if (!isMobile) {
+      setScannerReady(true);
+    }
+  };
+
+  const handleMemberInputBlur = () => {
+    setTimeout(() => {
+      if (document.activeElement !== memberSearchRef.current) {
+        setScannerReady(false);
+      }
+    }, 100);
+  };
+
   const addStandardItem = () => {
     if (!selectedCategory) {
       toast.error("Pilih kategori emas");
@@ -327,30 +419,6 @@ export default function SetorEmasPage() {
     setCustomBuyPrice("");
     setCustomNotes("");
     toast.success("Item ditambahkan - atur susut di keranjang");
-  };
-
-  const updateWeight = (id: string, delta: number) => {
-    setDepositItems(
-      depositItems
-        .map((i) => {
-          if (i.id === id) {
-            const wGross = Math.max(
-              0.001,
-              Math.round((i.weight_gross + delta) * 1000) / 1000
-            );
-            const wNet =
-              Math.round(wGross * (1 - i.shrinkage_percent / 100) * 1000) / 1000;
-            return {
-              ...i,
-              weight_gross: wGross,
-              weight_grams: wNet,
-              subtotal: wNet * i.price_per_gram,
-            };
-          }
-          return i;
-        })
-        .filter((i) => i.weight_gross >= 0.001)
-    );
   };
 
   const updateWeightDirect = (id: string, weightValue: string) => {
@@ -966,28 +1034,87 @@ export default function SetorEmasPage() {
                 </div>
               </div>
             ) : (
-              <Button
-                variant="outline"
-                className="w-full justify-start h-8 sm:h-9 text-xs sm:text-sm"
-                onClick={() => {
-                  // Save cart state before navigating
-                  sessionStorage.setItem(
-                    "setor_emas_cart",
-                    JSON.stringify({
-                      depositItems,
-                      locationId: selectedLocationId,
-                      paymentMethod,
-                      notes,
-                      depositMode,
-                      saveAsRawMaterial,
-                    })
-                  );
-                  navigate("/members/select?return=/setor-emas");
-                }}
-              >
-                <User className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
-                Pilih Member
-              </Button>
+              <div className="space-y-2">
+                {/* Quick search by code/barcode */}
+                <div className="flex gap-1.5">
+                  <div className="flex-1 relative">
+                    <Barcode className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                    <Input
+                      ref={memberSearchRef}
+                      placeholder={isMobile ? "Ketik kode member..." : "Scan atau ketik kode member..."}
+                      value={memberSearchCode}
+                      onChange={handleMemberInputChange}
+                      onKeyDown={(e) => e.key === "Enter" && handleSearchMember()}
+                      onFocus={handleMemberInputFocus}
+                      onBlur={handleMemberInputBlur}
+                      className={`pl-7 h-8 text-xs ${!isMobile && scannerReady ? "ring-2 ring-green-500 border-green-500" : ""}`}
+                      autoFocus={!isMobile}
+                    />
+                    {/* USB Scanner status indicator - desktop only */}
+                    {!isMobile && scannerReady && (
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  {/* Camera scan button - only show on mobile */}
+                  {isMobile && (
+                    <Button
+                      variant="default"
+                      size="icon"
+                      onClick={() => setShowBarcodeScanner(true)}
+                      className="h-8 w-8 bg-blue-600 hover:bg-blue-700"
+                      title="Scan dengan kamera"
+                    >
+                      <Camera className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleSearchMember()}
+                    className="h-8 w-8"
+                  >
+                    <Search className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                {/* Status indicator */}
+                {isMobile ? (
+                  <p className="text-[10px] text-muted-foreground text-center">
+                    Tekan <Camera className="inline h-3 w-3" /> untuk scan kartu member
+                  </p>
+                ) : (
+                  <div className={`flex items-center justify-center gap-1.5 text-[10px] ${scannerReady ? "text-green-600" : "text-muted-foreground"}`}>
+                    <Usb className="h-3 w-3" />
+                    <span>{scannerReady ? "Scanner siap" : "Klik untuk scan"}</span>
+                  </div>
+                )}
+                <Button
+                  variant="outline"
+                  className="w-full justify-start h-8 sm:h-9 text-xs sm:text-sm"
+                  onClick={() => {
+                    // Save cart state before navigating
+                    sessionStorage.setItem(
+                      "setor_emas_cart",
+                      JSON.stringify({
+                        depositItems,
+                        locationId: selectedLocationId,
+                        paymentMethod,
+                        notes,
+                        depositMode,
+                        saveAsRawMaterial,
+                      })
+                    );
+                    navigate("/members/select?return=/setor-emas");
+                  }}
+                >
+                  <User className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                  Cari di Daftar Member
+                </Button>
+              </div>
             )}
           </div>
 
@@ -1133,6 +1260,13 @@ export default function SetorEmasPage() {
         saveAsRawMaterial={saveAsRawMaterial}
         isSubmitting={isSubmitting}
         onConfirm={submit}
+      />
+
+      {/* Barcode Scanner Modal */}
+      <BarcodeScannerModal
+        open={showBarcodeScanner}
+        onOpenChange={setShowBarcodeScanner}
+        onScan={handleCameraScan}
       />
     </div>
   );

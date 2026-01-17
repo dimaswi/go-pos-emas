@@ -616,3 +616,309 @@ export const userLocationsApi = {
   setDefault: (userId: number, locationId: number) =>
     api.put(`/users/${userId}/locations/${locationId}/default`),
 };
+
+// ==================== REPORTS API ====================
+
+// Report Types
+export interface TransactionReportSummary {
+  period: string;
+  total_transactions: number;
+  total_sales: number;
+  total_purchases: number;
+  total_sales_amount: number;
+  total_purchase_amount: number;
+  net_amount: number;
+  average_transaction: number;
+}
+
+export interface TransactionDetail {
+  id: number;
+  transaction_code: string;
+  type: string;
+  transaction_date: string;
+  location_name: string;
+  cashier_name: string;
+  member_name: string;
+  customer_name: string;
+  grand_total: number;
+  payment_method: string;
+  status: string;
+  item_count: number;
+}
+
+export interface CashierReport {
+  cashier_id: number;
+  cashier_name: string;
+  total_transactions: number;
+  total_sales: number;
+  total_purchases: number;
+  sale_count: number;
+  purchase_count: number;
+}
+
+export interface LocationReport {
+  location_id: number;
+  location_name: string;
+  location_type: string;
+  total_transactions: number;
+  total_sales: number;
+  total_purchases: number;
+  sale_count: number;
+  purchase_count: number;
+  net_revenue: number;
+}
+
+export interface StockLocationReport {
+  location_id: number;
+  location_name: string;
+  location_type: string;
+  total_stock: number;
+  available_stock: number;
+  sold_stock: number;
+  reserved_stock: number;
+  total_weight: number;
+  total_buy_value: number;
+  total_sell_value: number;
+}
+
+export interface StockCategoryReport {
+  category_id: number;
+  category_code: string;
+  category_name: string;
+  total_stock: number;
+  available_stock: number;
+  sold_stock: number;
+  total_weight: number;
+  avg_buy_price: number;
+  avg_sell_price: number;
+  total_buy_value: number;
+  total_sell_value: number;
+}
+
+export interface StockTransferReport {
+  id: number;
+  transfer_number: string;
+  stock_serial: string;
+  product_name: string;
+  from_location_name: string;
+  to_location_name: string;
+  transferred_by_name: string;
+  transferred_at: string;
+  status: string;
+  notes: string;
+}
+
+export interface SoldStockReport {
+  id: number;
+  serial_number: string;
+  product_name: string;
+  category_name: string;
+  weight: number;
+  buy_price: number;
+  sell_price: number;
+  profit: number;
+  location_name: string;
+  transaction_code: string;
+  sold_at: string;
+  customer_name: string;
+}
+
+export interface RawMaterialReport {
+  id: number;
+  code: string;
+  category_name: string;
+  location_name: string;
+  weight_gross: number;
+  shrinkage_percent: number;
+  weight_grams: number;
+  purity: number;
+  buy_price_per_gram: number;
+  total_buy_price: number;
+  condition: string;
+  status: string;
+  supplier_name: string;
+  member_name: string;
+  received_at: string;
+  received_by_name: string;
+}
+
+export interface FinancialSummary {
+  period: string;
+  total_income: number;
+  total_expenses: number;
+  net_profit: number;
+  gross_profit: number;
+  cash_payments: number;
+  transfer_payments: number;
+  card_payments: number;
+  mixed_payments: number;
+}
+
+export interface LocationRevenue {
+  location_id: number;
+  location_name: string;
+  location_type: string;
+  total_sales: number;
+  total_purchases: number;
+  net_revenue: number;
+  sale_count: number;
+  purchase_count: number;
+}
+
+export interface PaymentMethodReport {
+  payment_method: string;
+  transaction_count: number;
+  total_amount: number;
+  percentage: number;
+}
+
+export interface MemberTransactionReport {
+  member_id: number;
+  member_code: string;
+  member_name: string;
+  member_type: string;
+  phone: string;
+  transaction_count: number;
+  total_purchase: number;
+  total_sell: number;
+  points: number;
+}
+
+export interface MemberPointsReport {
+  member_id: number;
+  member_code: string;
+  member_name: string;
+  member_type: string;
+  phone: string;
+  current_points: number;
+  total_purchase: number;
+  join_date: string;
+}
+
+export interface TopMemberReport {
+  rank: number;
+  member_id: number;
+  member_code: string;
+  member_name: string;
+  member_type: string;
+  phone: string;
+  total_amount: number;
+  transaction_count: number;
+}
+
+export interface PriceHistoryDetail {
+  category_code: string;
+  category_name: string;
+  old_buy_price: number;
+  new_buy_price: number;
+  buy_price_change: number;
+  old_sell_price: number;
+  new_sell_price: number;
+  sell_price_change: number;
+}
+
+export interface PriceHistoryReport {
+  id: number;
+  update_date: string;
+  updated_by_name: string;
+  notes: string;
+  details: PriceHistoryDetail[];
+}
+
+export interface DailyPriceReport {
+  date: string;
+  category_code: string;
+  category_name: string;
+  buy_price: number;
+  sell_price: number;
+  buy_change: number;
+  sell_change: number;
+}
+
+export interface CurrentPriceReport {
+  category_id: number;
+  category_code: string;
+  category_name: string;
+  purity: number | null;
+  buy_price: number;
+  sell_price: number;
+  last_updated: string;
+}
+
+export interface DashboardSummary {
+  today_sales: number;
+  today_purchases: number;
+  today_transactions: number;
+  month_sales: number;
+  month_purchases: number;
+  month_transactions: number;
+  total_stock: number;
+  available_stock: number;
+  stock_value: number;
+  total_members: number;
+  active_members: number;
+  total_locations: number;
+}
+
+export const reportsApi = {
+  // Dashboard Summary
+  getDashboardSummary: () =>
+    api.get<{ data: DashboardSummary }>('/reports/dashboard'),
+
+  // Transaction Reports
+  getTransactionReport: (params?: { period?: string; start_date?: string; end_date?: string; location_id?: number; type?: string }) =>
+    api.get<{ summary: TransactionReportSummary; transactions: TransactionDetail[] }>('/reports/transactions', { params }),
+  
+  getCashierReport: (params?: { start_date?: string; end_date?: string; location_id?: number }) =>
+    api.get<{ data: CashierReport[] }>('/reports/transactions/cashier', { params }),
+  
+  getLocationReport: (params?: { start_date?: string; end_date?: string }) =>
+    api.get<{ data: LocationReport[] }>('/reports/transactions/location', { params }),
+
+  // Inventory/Stock Reports
+  getStockLocationReport: () =>
+    api.get<{ data: StockLocationReport[] }>('/reports/stocks/location'),
+  
+  getStockCategoryReport: (params?: { location_id?: number }) =>
+    api.get<{ data: StockCategoryReport[] }>('/reports/stocks/category', { params }),
+  
+  getStockTransferReport: (params?: { start_date?: string; end_date?: string; from_location_id?: number; to_location_id?: number }) =>
+    api.get<{ data: StockTransferReport[] }>('/reports/stocks/transfer', { params }),
+  
+  getSoldStockReport: (params?: { start_date?: string; end_date?: string; location_id?: number; category_id?: number }) =>
+    api.get<{ data: SoldStockReport[]; summary: { total_items: number; total_sales: number; total_profit: number } }>('/reports/stocks/sold', { params }),
+  
+  getRawMaterialReport: (params?: { status?: string; location_id?: number; category_id?: number }) =>
+    api.get<{ data: RawMaterialReport[]; summary: { total_items: number; total_available_weight: number; total_available_value: number } }>('/reports/raw-materials', { params }),
+
+  // Financial Reports
+  getFinancialSummary: (params?: { start_date?: string; end_date?: string; location_id?: number }) =>
+    api.get<{ data: FinancialSummary }>('/reports/financial/summary', { params }),
+  
+  getLocationRevenue: (params?: { start_date?: string; end_date?: string }) =>
+    api.get<{ data: LocationRevenue[] }>('/reports/financial/revenue', { params }),
+  
+  getPaymentMethodReport: (params?: { start_date?: string; end_date?: string; location_id?: number }) =>
+    api.get<{ data: PaymentMethodReport[]; grand_total: number }>('/reports/financial/payment-methods', { params }),
+
+  // Member Reports
+  getMemberTransactionReport: (params?: { start_date?: string; end_date?: string; member_id?: number }) =>
+    api.get<{ data: MemberTransactionReport[] }>('/reports/members/transactions', { params }),
+  
+  getMemberPointsReport: (params?: { type?: string; min_points?: number }) =>
+    api.get<{ data: MemberPointsReport[] }>('/reports/members/points', { params }),
+  
+  getTopMembersReport: (params?: { start_date?: string; end_date?: string; sort_by?: 'purchase' | 'sell'; limit?: number }) =>
+    api.get<{ data: TopMemberReport[] }>('/reports/members/top', { params }),
+
+  // Gold Price Reports
+  getPriceHistoryReport: (params?: { start_date?: string; end_date?: string; category_id?: number }) =>
+    api.get<{ data: PriceHistoryReport[] }>('/reports/prices/history', { params }),
+  
+  getDailyPriceReport: (params?: { days?: number }) =>
+    api.get<{ data: DailyPriceReport[] }>('/reports/prices/daily', { params }),
+  
+  getCurrentPriceReport: () =>
+    api.get<{ data: CurrentPriceReport[] }>('/reports/prices/current'),
+};
+

@@ -19,6 +19,7 @@ import {
   Computer,
   Box,
   Scale,
+  FileBarChart,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import { usePermission } from '@/hooks/usePermission';
@@ -88,6 +89,12 @@ const menuItems = [
     label: 'Transaksi', 
     icon: ShoppingCart,
     permission: 'transactions.view',
+  },
+  { 
+    path: '/reports', 
+    label: 'Laporan', 
+    icon: FileBarChart,
+    permission: 'reports.view',
   },
   { 
     path: '/users', 

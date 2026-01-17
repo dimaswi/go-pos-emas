@@ -84,6 +84,9 @@ const POSHistoryPage = lazy(() => import('./pages/pos/history'));
 const SetorEmasPage = lazy(() => import('./pages/setor-emas/index'));
 const MemberSelectPage = lazy(() => import('./pages/members/select'));
 
+// Reports
+const ReportsPage = lazy(() => import('./pages/reports/index'));
+
 function LoadingFallback() {
   return (
     <div className="flex items-center justify-center h-screen">
@@ -347,6 +350,15 @@ function App() {
             <AuthOnly>
               <MemberSelectPage />
             </AuthOnly>
+          } />
+          
+          {/* Reports */}
+          <Route path="/reports" element={
+            <ProtectedRoute>
+              <PermissionGuard permission="reports.view">
+                <ReportsPage />
+              </PermissionGuard>
+            </ProtectedRoute>
           } />
           
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

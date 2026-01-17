@@ -176,6 +176,40 @@ func main() {
 			protected.POST("/raw-materials", middleware.RequirePermission("raw-materials.create"), handlers.CreateRawMaterial)
 			protected.PUT("/raw-materials/:id", middleware.RequirePermission("raw-materials.update"), handlers.UpdateRawMaterial)
 			protected.DELETE("/raw-materials/:id", middleware.RequirePermission("raw-materials.delete"), handlers.DeleteRawMaterial)
+
+			// Reports routes
+			reports := protected.Group("/reports")
+			{
+				// Dashboard Summary
+				reports.GET("/dashboard", middleware.RequirePermission("reports.view"), handlers.GetDashboardSummary)
+
+				// Transaction Reports
+				reports.GET("/transactions", middleware.RequirePermission("reports.view"), handlers.GetTransactionReport)
+				reports.GET("/transactions/cashier", middleware.RequirePermission("reports.view"), handlers.GetCashierReport)
+				reports.GET("/transactions/location", middleware.RequirePermission("reports.view"), handlers.GetLocationReport)
+
+				// Inventory/Stock Reports
+				reports.GET("/stocks/location", middleware.RequirePermission("reports.view"), handlers.GetStockLocationReport)
+				reports.GET("/stocks/category", middleware.RequirePermission("reports.view"), handlers.GetStockCategoryReport)
+				reports.GET("/stocks/transfer", middleware.RequirePermission("reports.view"), handlers.GetStockTransferReport)
+				reports.GET("/stocks/sold", middleware.RequirePermission("reports.view"), handlers.GetSoldStockReport)
+				reports.GET("/raw-materials", middleware.RequirePermission("reports.view"), handlers.GetRawMaterialReport)
+
+				// Financial Reports
+				reports.GET("/financial/summary", middleware.RequirePermission("reports.view"), handlers.GetFinancialSummary)
+				reports.GET("/financial/revenue", middleware.RequirePermission("reports.view"), handlers.GetLocationRevenue)
+				reports.GET("/financial/payment-methods", middleware.RequirePermission("reports.view"), handlers.GetPaymentMethodReport)
+
+				// Member Reports
+				reports.GET("/members/transactions", middleware.RequirePermission("reports.view"), handlers.GetMemberTransactionReport)
+				reports.GET("/members/points", middleware.RequirePermission("reports.view"), handlers.GetMemberPointsReport)
+				reports.GET("/members/top", middleware.RequirePermission("reports.view"), handlers.GetTopMembersReport)
+
+				// Gold Price Reports
+				reports.GET("/prices/history", middleware.RequirePermission("reports.view"), handlers.GetPriceHistoryReport)
+				reports.GET("/prices/daily", middleware.RequirePermission("reports.view"), handlers.GetDailyPriceReport)
+				reports.GET("/prices/current", middleware.RequirePermission("reports.view"), handlers.GetCurrentPriceReport)
+			}
 		}
 	}
 

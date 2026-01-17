@@ -10,7 +10,6 @@ import {
   transactionsApi,
   locationsApi,
   goldCategoriesApi,
-  priceUpdateApi,
   type Transaction,
   type Member,
   type DailySummary
