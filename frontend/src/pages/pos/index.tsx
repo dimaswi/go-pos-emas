@@ -403,15 +403,25 @@ export default function POSPage() {
             items: cart.map(item => {
               // Find the stock to get gold category info
               const stock = stocks.find(s => s.id === item.stock_id);
+              const goldCategory = stock?.product?.gold_category;
               return {
                 qty: 1,
                 name: item.product_name,
-                karat: stock?.product?.gold_category?.name || '-',
+                karat: goldCategory?.name || '-',
+                karatCode: goldCategory?.code,
+                purity: goldCategory?.purity,
                 weight: item.weight,
                 price: item.price,
               };
             }),
             validationUrl: `${window.location.origin}/validate/${response.data.data.transaction_code}`,
+            // Payment details
+            subtotal: subtotal,
+            discount: discountAmount > 0 ? discountAmount : undefined,
+            grandTotal: grandTotal,
+            paidAmount: paidAmountNum,
+            changeAmount: changeAmount > 0 ? changeAmount : undefined,
+            paymentMethod: paymentMethod,
           };
           setNotaData(notaDataToShow);
           setShowNotaOverlay(true);

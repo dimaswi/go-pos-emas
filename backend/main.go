@@ -138,15 +138,14 @@ func main() {
 			protected.DELETE("/storage-boxes/:id", middleware.RequirePermission("locations.delete"), handlers.DeleteStorageBox)
 
 			// Members routes
-			protected.GET("/members", middleware.RequirePermission("members.view"), handlers.GetMembers)
-			protected.GET("/members/:id", middleware.RequirePermission("members.view"), handlers.GetMember)
-			protected.GET("/members/code/:code", middleware.RequirePermission("members.view"), handlers.GetMemberByCode)
-			protected.POST("/members", middleware.RequirePermission("members.create"), handlers.CreateMember)
-			protected.PUT("/members/:id", middleware.RequirePermission("members.update"), handlers.UpdateMember)
-			protected.DELETE("/members/:id", middleware.RequirePermission("members.delete"), handlers.DeleteMember)
-			protected.POST("/members/:id/points", middleware.RequirePermission("members.update"), handlers.AddMemberPoints)
-			protected.POST("/members/recalculate-stats", middleware.RequirePermission("members.update"), handlers.RecalculateMemberStats)
-
+			protected.GET("/members", middleware.RequireAnyPermission("members.view", "pos.view-members"), handlers.GetMembers)
+			protected.GET("/members/:id", middleware.RequireAnyPermission("members.view", "pos.view-members"), handlers.GetMember)
+			protected.GET("/members/code/:code", middleware.RequireAnyPermission("members.view", "pos.view-members"), handlers.GetMemberByCode)
+			protected.POST("/members", middleware.RequireAnyPermission("members.create", "pos.create-members"), handlers.CreateMember)
+			protected.PUT("/members/:id", middleware.RequireAnyPermission("members.update", "pos.update-members"), handlers.UpdateMember)
+			protected.DELETE("/members/:id", middleware.RequireAnyPermission("members.delete", "pos.delete-members"), handlers.DeleteMember)
+			protected.POST("/members/:id/points", middleware.RequireAnyPermission("members.update", "pos.update-members"), handlers.AddMemberPoints)
+			protected.POST("/members/recalculate-stats", middleware.RequireAnyPermission("members.update", "pos.update-members"), handlers.RecalculateMemberStats)
 			// Stocks routes
 			protected.GET("/stocks", middleware.RequireAnyPermission("stocks.view", "pos.view-stocks"), handlers.GetStocks)
 			protected.GET("/stocks/by-location", middleware.RequireAnyPermission("stocks.view", "pos.view-stocks"), handlers.GetStocksByLocation)
@@ -162,12 +161,16 @@ func main() {
 
 			// Transactions routes (POS)
 			protected.GET("/transactions", middleware.RequirePermission("transactions.view"), handlers.GetTransactions)
+			protected.GET("/transactions/my", handlers.GetMyTransactions) // Filtered by user's assigned locations
 			protected.GET("/transactions/:id", middleware.RequirePermission("transactions.view"), handlers.GetTransaction)
 			protected.GET("/transactions/code/:code", middleware.RequirePermission("transactions.view"), handlers.GetTransactionByCode)
 			protected.POST("/transactions/sale", middleware.RequirePermission("transactions.sale"), handlers.CreateSale)
 			protected.POST("/transactions/purchase", middleware.RequirePermission("transactions.purchase"), handlers.CreatePurchase)
 			protected.PUT("/transactions/:id/cancel", middleware.RequirePermission("transactions.cancel"), handlers.CancelTransaction)
 			protected.GET("/transactions/daily-summary", middleware.RequirePermission("transactions.view"), handlers.GetDailySummary)
+
+			// Dashboard - accessible by all logged in users (filtered by their assigned locations)
+			protected.GET("/dashboard", handlers.GetUserDashboard)
 
 			// Raw Materials routes
 			protected.GET("/raw-materials", middleware.RequirePermission("raw-materials.view"), handlers.GetRawMaterials)

@@ -19,14 +19,15 @@ type CheckPriceUpdateNeededResponse struct {
 
 // CheckPriceUpdateNeeded checks if gold price update is needed for today
 func CheckPriceUpdateNeeded(c *gin.Context) {
-	// Get today's date (start of day)
+	// Get today's date range
 	now := time.Now()
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	endOfDay := startOfDay.Add(24 * time.Hour)
 
 	// Check if there's a price update for today
 	var lastUpdate models.PriceUpdateLog
 	result := database.DB.Preload("UpdatedBy").
-		Where("DATE(update_date) = DATE(?)", today).
+		Where("created_at >= ? AND created_at < ?", startOfDay, endOfDay).
 		Order("created_at DESC").
 		First(&lastUpdate)
 
@@ -40,13 +41,13 @@ func CheckPriceUpdateNeeded(c *gin.Context) {
 	}
 
 	if result.Error == nil {
-		response.LastUpdate = &lastUpdate.UpdateDate
+		response.LastUpdate = &lastUpdate.CreatedAt
 		response.LastUpdatedBy = lastUpdate.UpdatedBy
 	} else {
 		// Get the most recent update (any day)
 		var latestUpdate models.PriceUpdateLog
-		if err := database.DB.Preload("UpdatedBy").Order("update_date DESC, created_at DESC").First(&latestUpdate).Error; err == nil {
-			response.LastUpdate = &latestUpdate.UpdateDate
+		if err := database.DB.Preload("UpdatedBy").Order("created_at DESC").First(&latestUpdate).Error; err == nil {
+			response.LastUpdate = &latestUpdate.CreatedAt
 			response.LastUpdatedBy = latestUpdate.UpdatedBy
 		}
 	}

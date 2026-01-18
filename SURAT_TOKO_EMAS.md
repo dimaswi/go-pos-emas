@@ -67,7 +67,32 @@ Kolom **MAS** berisi kadar kemurnian emas:
 - **16K** = 66.6% - Code: 666
 - **9K** = 37.5% - Code: 375
 
-Data karat diambil dari `gold_category.name` di database.
+Data karat diambil dari `gold_category.name` dan `gold_category.code` di database.
+
+## Fitur Nota
+
+### Pagination
+- Maksimal 3 item per halaman
+- Jika lebih dari 3 item, akan otomatis dipaginate ke halaman berikutnya
+- Indikator halaman ditampilkan di pojok kiri bawah (contoh: "Hal. 1/2")
+- Rincian pembayaran hanya ditampilkan di halaman terakhir
+
+### Nama Item
+Format nama item sekarang mencakup:
+- Nama produk
+- Total berat (contoh: "2.50gr")
+- Kode kadar jika tersedia (contoh: "(916)" atau "(75.0%)")
+
+Contoh: "Cincin Emas 2.50gr (916)"
+
+### Rincian Pembayaran
+Ditampilkan di bagian kanan bawah nota (di atas QR code):
+- Total Berat keseluruhan
+- Subtotal
+- Diskon (jika ada, dengan persentase jika tersedia)
+- Grand Total
+- Jumlah Bayar (dengan metode: Tunai/Transfer/Kartu)
+- Kembalian (hanya untuk pembayaran tunai)
 
 ## Implementasi
 
@@ -94,6 +119,12 @@ Jika posisi cetakan tidak tepat, sesuaikan nilai CSS berikut di `print-nota-over
 
 /* Table position */
 .items-table { top: 5.2cm; left: 1cm; right: 1cm; }
+
+/* Payment details position */
+.payment-details { bottom: 2.8cm; right: 1cm; }
+
+/* Page indicator */
+.page-indicator { bottom: 0.5cm; left: 1cm; }
 
 /* QR Code position */
 .qr-code { bottom: 1cm; right: 5cm; }

@@ -307,7 +307,10 @@ func SeedData() error {
 		{Name: "pos.view-locations", Module: "POS", Category: "POS Access", Description: "View locations for POS operations", Actions: `["read"]`},
 		{Name: "pos.update-gold-prices", Module: "POS", Category: "POS Access", Description: "Update daily gold prices for POS operations", Actions: `["update"]`},
 		{Name: "pos.update-stocks", Module: "POS", Category: "POS Access", Description: "Update stocks for POS operations", Actions: `["update"]`},
-
+		{Name: "pos.view-members", Module: "POS", Category: "POS Access", Description: "View members for POS operations", Actions: `["read"]`},
+		{Name: "pos.create-members", Module: "POS", Category: "POS Access", Description: "Create members for POS operations", Actions: `["create"]`},
+		{Name: "pos.update-members", Module: "POS", Category: "POS Access", Description: "Update members for POS operations", Actions: `["update"]`},
+		{Name: "pos.delete-members", Module: "POS", Category: "POS Access", Description: "Delete members for POS operations", Actions: `["delete"]`},
 		// Reports (Laporan)
 		{Name: "reports.view", Module: "Reports", Category: "Reports", Description: "View all reports (transactions, inventory, financial, members, prices)", Actions: `["read"]`},
 		{Name: "reports.export", Module: "Reports", Category: "Reports", Description: "Export reports to PDF/Excel", Actions: `["export"]`},
@@ -339,7 +342,26 @@ func SeedData() error {
 
 	// Assign limited permissions to user role
 	var limitedPermissions []models.Permission
-	DB.Where("name IN ?", []string{"profile.view", "profile.update", "dashboard.view"}).Find(&limitedPermissions)
+	DB.Where("name IN ?", []string{
+		"profile.view",
+		"profile.update",
+		"dashboard.view",
+		"pos.view-products",
+		"pos.view-stocks",
+		"pos.view-gold-categories",
+		"pos.view-locations",
+		"pos.update-gold-prices",
+		"pos.update-stocks",
+		"transactions.view",
+		"transactions.create",
+		"transactions.sale",
+		"transactions.purchase",
+		"transactions.cancel",
+		"pos.view-members",
+		"pos.create-members",
+		"pos.update-members",
+		"pos.delete-members",
+	}).Find(&limitedPermissions)
 	if len(limitedPermissions) > 0 {
 		DB.Model(&userRole).Association("Permissions").Replace(limitedPermissions)
 	}

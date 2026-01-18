@@ -1284,45 +1284,300 @@ func GetDashboardSummary(c *gin.Context) {
 	today := time.Now().Format("2006-01-02")
 	monthStart := time.Now().Format("2006-01") + "-01"
 
-	// Today's stats
-	database.DB.Model(&models.Transaction{}).
-		Where("DATE(transaction_date) = ? AND type = ? AND status = ?", today, "sale", "completed").
-		Select("COALESCE(SUM(grand_total), 0)").Scan(&summary.TodaySales)
+	// Get current user's assigned locations
+	userID, _ := c.Get("user_id")
+	var userLocationIDs []uint
+	database.DB.Model(&models.UserLocation{}).
+		Where("user_id = ?", userID).
+		Pluck("location_id", &userLocationIDs)
 
-	database.DB.Model(&models.Transaction{}).
-		Where("DATE(transaction_date) = ? AND type = ? AND status = ?", today, "purchase", "completed").
-		Select("COALESCE(SUM(grand_total), 0)").Scan(&summary.TodayPurchases)
+	// Check if user has assigned locations (if no locations assigned, show all data - for admin)
+	hasLocationFilter := len(userLocationIDs) > 0
 
-	database.DB.Model(&models.Transaction{}).
-		Where("DATE(transaction_date) = ? AND status = ?", today, "completed").
-		Count(&summary.TodayTransactions)
+	// Today's stats - filtered by user's locations
+	todaySalesQuery := database.DB.Model(&models.Transaction{}).
+		Where("DATE(transaction_date) = ? AND type = ? AND status = ?", today, "sale", "completed")
+	if hasLocationFilter {
+		todaySalesQuery = todaySalesQuery.Where("location_id IN ?", userLocationIDs)
+	}
+	todaySalesQuery.Select("COALESCE(SUM(grand_total), 0)").Scan(&summary.TodaySales)
 
-	// This month stats
-	database.DB.Model(&models.Transaction{}).
-		Where("transaction_date >= ? AND type = ? AND status = ?", monthStart, "sale", "completed").
-		Select("COALESCE(SUM(grand_total), 0)").Scan(&summary.MonthSales)
+	todayPurchasesQuery := database.DB.Model(&models.Transaction{}).
+		Where("DATE(transaction_date) = ? AND type = ? AND status = ?", today, "purchase", "completed")
+	if hasLocationFilter {
+		todayPurchasesQuery = todayPurchasesQuery.Where("location_id IN ?", userLocationIDs)
+	}
+	todayPurchasesQuery.Select("COALESCE(SUM(grand_total), 0)").Scan(&summary.TodayPurchases)
 
-	database.DB.Model(&models.Transaction{}).
-		Where("transaction_date >= ? AND type = ? AND status = ?", monthStart, "purchase", "completed").
-		Select("COALESCE(SUM(grand_total), 0)").Scan(&summary.MonthPurchases)
+	todayTxQuery := database.DB.Model(&models.Transaction{}).
+		Where("DATE(transaction_date) = ? AND status = ?", today, "completed")
+	if hasLocationFilter {
+		todayTxQuery = todayTxQuery.Where("location_id IN ?", userLocationIDs)
+	}
+	todayTxQuery.Count(&summary.TodayTransactions)
 
-	database.DB.Model(&models.Transaction{}).
-		Where("transaction_date >= ? AND status = ?", monthStart, "completed").
-		Count(&summary.MonthTransactions)
+	// This month stats - filtered by user's locations
+	monthSalesQuery := database.DB.Model(&models.Transaction{}).
+		Where("transaction_date >= ? AND type = ? AND status = ?", monthStart, "sale", "completed")
+	if hasLocationFilter {
+		monthSalesQuery = monthSalesQuery.Where("location_id IN ?", userLocationIDs)
+	}
+	monthSalesQuery.Select("COALESCE(SUM(grand_total), 0)").Scan(&summary.MonthSales)
 
-	// Inventory stats
-	database.DB.Model(&models.Stock{}).Count(&summary.TotalStock)
-	database.DB.Model(&models.Stock{}).Where("status = ?", "available").Count(&summary.AvailableStock)
-	database.DB.Model(&models.Stock{}).
-		Where("status = ?", "available").
-		Select("COALESCE(SUM(sell_price), 0)").Scan(&summary.StockValue)
+	monthPurchasesQuery := database.DB.Model(&models.Transaction{}).
+		Where("transaction_date >= ? AND type = ? AND status = ?", monthStart, "purchase", "completed")
+	if hasLocationFilter {
+		monthPurchasesQuery = monthPurchasesQuery.Where("location_id IN ?", userLocationIDs)
+	}
+	monthPurchasesQuery.Select("COALESCE(SUM(grand_total), 0)").Scan(&summary.MonthPurchases)
 
-	// Member stats
+	monthTxQuery := database.DB.Model(&models.Transaction{}).
+		Where("transaction_date >= ? AND status = ?", monthStart, "completed")
+	if hasLocationFilter {
+		monthTxQuery = monthTxQuery.Where("location_id IN ?", userLocationIDs)
+	}
+	monthTxQuery.Count(&summary.MonthTransactions)
+
+	// Inventory stats - filtered by user's locations
+	stockCountQuery := database.DB.Model(&models.Stock{})
+	if hasLocationFilter {
+		stockCountQuery = stockCountQuery.Where("location_id IN ?", userLocationIDs)
+	}
+	stockCountQuery.Count(&summary.TotalStock)
+
+	availableStockQuery := database.DB.Model(&models.Stock{}).Where("status = ?", "available")
+	if hasLocationFilter {
+		availableStockQuery = availableStockQuery.Where("location_id IN ?", userLocationIDs)
+	}
+	availableStockQuery.Count(&summary.AvailableStock)
+
+	stockValueQuery := database.DB.Model(&models.Stock{}).Where("status = ?", "available")
+	if hasLocationFilter {
+		stockValueQuery = stockValueQuery.Where("location_id IN ?", userLocationIDs)
+	}
+	stockValueQuery.Select("COALESCE(SUM(sell_price), 0)").Scan(&summary.StockValue)
+
+	// Member stats - these are global, not location-specific
 	database.DB.Model(&models.Member{}).Count(&summary.TotalMembers)
 	database.DB.Model(&models.Member{}).Where("is_active = ?", true).Count(&summary.ActiveMembers)
 
-	// Location stats
-	database.DB.Model(&models.Location{}).Where("is_active = ?", true).Count(&summary.TotalLocations)
+	// Location stats - show only assigned locations count for filtered users
+	if hasLocationFilter {
+		summary.TotalLocations = int64(len(userLocationIDs))
+	} else {
+		database.DB.Model(&models.Location{}).Where("is_active = ?", true).Count(&summary.TotalLocations)
+	}
 
 	c.JSON(http.StatusOK, gin.H{"data": summary})
+}
+
+// ==================== USER DASHBOARD (No Permission Required) ====================
+
+// UserDashboardData represents dashboard data for any logged in user
+type UserDashboardData struct {
+	// Assigned location IDs for this user
+	AssignedLocationIDs []uint `json:"assigned_location_ids"`
+
+	// Today's stats
+	TodaySales          float64 `json:"today_sales"`
+	TodaySalesCount     int64   `json:"today_sales_count"`
+	TodayPurchases      float64 `json:"today_purchases"`
+	TodayPurchasesCount int64   `json:"today_purchases_count"`
+	TodayTransactions   int64   `json:"today_transactions"`
+
+	// This month stats
+	MonthSales        float64 `json:"month_sales"`
+	MonthPurchases    float64 `json:"month_purchases"`
+	MonthTransactions int64   `json:"month_transactions"`
+
+	// Inventory stats
+	TotalStock     int64   `json:"total_stock"`
+	AvailableStock int64   `json:"available_stock"`
+	StockValue     float64 `json:"stock_value"`
+
+	// Member stats
+	TotalMembers  int64 `json:"total_members"`
+	ActiveMembers int64 `json:"active_members"`
+
+	// Location stats
+	TotalLocations int64 `json:"total_locations"`
+
+	// Recent transactions (last 5)
+	RecentTransactions []TransactionDetail `json:"recent_transactions"`
+
+	// Stocks by category (for chart)
+	StocksByCategory []struct {
+		CategoryName string  `json:"category_name"`
+		Count        int64   `json:"count"`
+		TotalWeight  float64 `json:"total_weight"`
+	} `json:"stocks_by_category"`
+}
+
+// GetUserDashboard returns dashboard data for any logged in user
+// Data is filtered by user's assigned locations
+// If user is not assigned to any location, NO data is shown
+func GetUserDashboard(c *gin.Context) {
+	var data UserDashboardData
+	today := time.Now().Format("2006-01-02")
+	monthStart := time.Now().Format("2006-01") + "-01"
+
+	// Get current user's assigned locations
+	userIDRaw, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	// Convert user_id to uint (JWT stores as float64)
+	var userID uint
+	switch v := userIDRaw.(type) {
+	case float64:
+		userID = uint(v)
+	case uint:
+		userID = v
+	case int:
+		userID = uint(v)
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID type"})
+		return
+	}
+
+	// Query user's assigned locations
+	var userLocationIDs []uint
+	database.DB.Model(&models.UserLocation{}).
+		Where("user_id = ?", userID).
+		Pluck("location_id", &userLocationIDs)
+
+	fmt.Printf("Dashboard - User ID: %d, Locations: %v\n", userID, userLocationIDs)
+
+	// JIKA USER TIDAK DI-ASSIGN KE TOKO MANAPUN, RETURN DATA KOSONG
+	if len(userLocationIDs) == 0 {
+		fmt.Printf("User %v has no assigned locations - returning empty dashboard\n", userID)
+		data.AssignedLocationIDs = []uint{}
+		c.JSON(http.StatusOK, gin.H{"data": data})
+		return
+	}
+
+	// Store assigned location IDs in response
+	data.AssignedLocationIDs = userLocationIDs
+
+	// Today's stats - SELALU filtered by user's locations
+	database.DB.Model(&models.Transaction{}).
+		Where("DATE(transaction_date) = ? AND type = ? AND status = ? AND location_id IN ?", today, "sale", "completed", userLocationIDs).
+		Select("COALESCE(SUM(grand_total), 0)").Scan(&data.TodaySales)
+
+	database.DB.Model(&models.Transaction{}).
+		Where("DATE(transaction_date) = ? AND type = ? AND status = ? AND location_id IN ?", today, "sale", "completed", userLocationIDs).
+		Count(&data.TodaySalesCount)
+
+	database.DB.Model(&models.Transaction{}).
+		Where("DATE(transaction_date) = ? AND type = ? AND status = ? AND location_id IN ?", today, "purchase", "completed", userLocationIDs).
+		Select("COALESCE(SUM(grand_total), 0)").Scan(&data.TodayPurchases)
+
+	database.DB.Model(&models.Transaction{}).
+		Where("DATE(transaction_date) = ? AND type = ? AND status = ? AND location_id IN ?", today, "purchase", "completed", userLocationIDs).
+		Count(&data.TodayPurchasesCount)
+
+	database.DB.Model(&models.Transaction{}).
+		Where("DATE(transaction_date) = ? AND status = ? AND location_id IN ?", today, "completed", userLocationIDs).
+		Count(&data.TodayTransactions)
+
+	// This month stats - SELALU filtered by user's locations
+	database.DB.Model(&models.Transaction{}).
+		Where("transaction_date >= ? AND type = ? AND status = ? AND location_id IN ?", monthStart, "sale", "completed", userLocationIDs).
+		Select("COALESCE(SUM(grand_total), 0)").Scan(&data.MonthSales)
+
+	database.DB.Model(&models.Transaction{}).
+		Where("transaction_date >= ? AND type = ? AND status = ? AND location_id IN ?", monthStart, "purchase", "completed", userLocationIDs).
+		Select("COALESCE(SUM(grand_total), 0)").Scan(&data.MonthPurchases)
+
+	database.DB.Model(&models.Transaction{}).
+		Where("transaction_date >= ? AND status = ? AND location_id IN ?", monthStart, "completed", userLocationIDs).
+		Count(&data.MonthTransactions)
+
+	// Inventory stats - SELALU filtered by user's locations
+	database.DB.Model(&models.Stock{}).
+		Where("location_id IN ?", userLocationIDs).
+		Count(&data.TotalStock)
+
+	database.DB.Model(&models.Stock{}).
+		Where("status = ? AND location_id IN ?", "available", userLocationIDs).
+		Count(&data.AvailableStock)
+
+	database.DB.Model(&models.Stock{}).
+		Where("status = ? AND location_id IN ?", "available", userLocationIDs).
+		Select("COALESCE(SUM(sell_price), 0)").Scan(&data.StockValue)
+
+	// Member stats - global (member tidak terikat lokasi)
+	database.DB.Model(&models.Member{}).Count(&data.TotalMembers)
+	database.DB.Model(&models.Member{}).Where("is_active = ?", true).Count(&data.ActiveMembers)
+
+	// Location stats - hanya lokasi yang di-assign
+	data.TotalLocations = int64(len(userLocationIDs))
+
+	// Recent transactions (last 5) - SELALU filtered by user's locations
+	var recentTx []models.Transaction
+	database.DB.Model(&models.Transaction{}).
+		Preload("Location").
+		Preload("Cashier").
+		Preload("Member").
+		Where("status = ? AND location_id IN ?", "completed", userLocationIDs).
+		Order("transaction_date DESC").
+		Limit(5).
+		Find(&recentTx)
+
+	for _, tx := range recentTx {
+		locationName := tx.Location.Name
+		cashierName := tx.Cashier.FullName
+		memberName := ""
+		if tx.Member != nil {
+			memberName = tx.Member.Name
+		}
+
+		data.RecentTransactions = append(data.RecentTransactions, TransactionDetail{
+			ID:              tx.ID,
+			TransactionCode: tx.TransactionCode,
+			Type:            string(tx.Type),
+			TransactionDate: tx.TransactionDate,
+			LocationName:    locationName,
+			CashierName:     cashierName,
+			MemberName:      memberName,
+			CustomerName:    tx.CustomerName,
+			GrandTotal:      tx.GrandTotal,
+			PaymentMethod:   string(tx.PaymentMethod),
+			Status:          tx.Status,
+		})
+	}
+
+	// Stocks by category - SELALU filtered by user's locations
+	type CategoryStock struct {
+		CategoryName string  `json:"category_name"`
+		Count        int64   `json:"count"`
+		TotalWeight  float64 `json:"total_weight"`
+	}
+	var stocksByCategory []CategoryStock
+	database.DB.Model(&models.Stock{}).
+		Select("gold_categories.name as category_name, COUNT(*) as count, COALESCE(SUM(stocks.weight), 0) as total_weight").
+		Joins("JOIN products ON products.id = stocks.product_id").
+		Joins("JOIN gold_categories ON gold_categories.id = products.gold_category_id").
+		Where("stocks.status = ? AND stocks.deleted_at IS NULL AND stocks.location_id IN ?", "available", userLocationIDs).
+		Group("gold_categories.name").
+		Order("count DESC").
+		Limit(5).
+		Scan(&stocksByCategory)
+
+	// Convert to the response format
+	for _, cat := range stocksByCategory {
+		data.StocksByCategory = append(data.StocksByCategory, struct {
+			CategoryName string  `json:"category_name"`
+			Count        int64   `json:"count"`
+			TotalWeight  float64 `json:"total_weight"`
+		}{
+			CategoryName: cat.CategoryName,
+			Count:        cat.Count,
+			TotalWeight:  cat.TotalWeight,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": data})
 }

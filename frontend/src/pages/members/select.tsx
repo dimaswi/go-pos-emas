@@ -83,7 +83,7 @@ export default function MemberSelectPage() {
         is_active: true,
       });
 
-      toast.success(`Member ${res.data.data.code} berhasil dibuat`);
+      toast.success(`Member ${res.data.data.name} berhasil dibuat`);
       handleSelect(res.data.data);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: string } } };

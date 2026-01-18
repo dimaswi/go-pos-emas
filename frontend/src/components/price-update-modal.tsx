@@ -143,8 +143,20 @@ export function PriceUpdateModal({ open, onOpenChange, onSuccess }: PriceUpdateM
         notes: notes || `Update harga emas ${new Date().toLocaleDateString('id-ID')}`,
       };
 
-      await priceUpdateApi.bulkUpdate(request);
+      const response = await priceUpdateApi.bulkUpdate(request);
       toast.success('Harga emas berhasil diperbarui');
+
+      // Update lastUpdate dan lastUpdatedBy dari response
+      if (response.data?.data) {
+        const updatedData = response.data.data;
+        if (updatedData.created_at) {
+          setLastUpdate(updatedData.created_at);
+        }
+        if (updatedData.updated_by) {
+          setLastUpdatedBy(updatedData.updated_by);
+        }
+      }
+
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {

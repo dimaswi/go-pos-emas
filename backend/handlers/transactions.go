@@ -13,7 +13,7 @@ import (
 // GetTransactions returns all transactions
 func GetTransactions(c *gin.Context) {
 	var transactions []models.Transaction
-	query := database.DB.Preload("Member").Preload("Location").Preload("Cashier").Preload("Items")
+	query := database.DB.Preload("Member").Preload("Location").Preload("Cashier").Preload("Items").Preload("Items.GoldCategory").Preload("Items.Stock").Preload("Items.Stock.Product").Preload("Items.Stock.Product.GoldCategory")
 
 	// Filter by type
 	if txType := c.Query("type"); txType != "" {
@@ -50,6 +50,74 @@ func GetTransactions(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": transactions})
 }
 
+// GetMyTransactions returns transactions filtered by user's assigned locations
+func GetMyTransactions(c *gin.Context) {
+	// Get current user's assigned locations
+	userIDRaw, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	// Convert user_id to uint (JWT stores as float64)
+	var userID uint
+	switch v := userIDRaw.(type) {
+	case float64:
+		userID = uint(v)
+	case uint:
+		userID = v
+	case int:
+		userID = uint(v)
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID type"})
+		return
+	}
+
+	// Query user's assigned locations
+	var userLocationIDs []uint
+	database.DB.Model(&models.UserLocation{}).
+		Where("user_id = ?", userID).
+		Pluck("location_id", &userLocationIDs)
+
+	fmt.Printf("GetMyTransactions - User ID: %d, Locations: %v\n", userID, userLocationIDs)
+
+	// Jika user tidak punya lokasi, return empty
+	if len(userLocationIDs) == 0 {
+		c.JSON(http.StatusOK, gin.H{"data": []models.Transaction{}})
+		return
+	}
+
+	var transactions []models.Transaction
+	query := database.DB.Preload("Member").Preload("Location").Preload("Cashier").Preload("Items").Preload("Items.GoldCategory").Preload("Items.Stock").Preload("Items.Stock.Product").Preload("Items.Stock.Product.GoldCategory").
+		Where("location_id IN ?", userLocationIDs)
+
+	// Filter by type
+	if txType := c.Query("type"); txType != "" {
+		query = query.Where("type = ?", txType)
+	}
+
+	// Filter by status
+	if status := c.Query("status"); status != "" {
+		query = query.Where("status = ?", status)
+	}
+
+	// Filter by date range
+	if startDate := c.Query("start_date"); startDate != "" {
+		query = query.Where("transaction_date >= ?", startDate)
+	}
+	if endDate := c.Query("end_date"); endDate != "" {
+		query = query.Where("transaction_date <= ?", endDate)
+	}
+
+	// Limit results
+	limit := 100
+	if err := query.Order("created_at DESC").Limit(limit).Find(&transactions).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": transactions})
+}
+
 // GetTransaction returns a single transaction with all details
 func GetTransaction(c *gin.Context) {
 	id := c.Param("id")
@@ -68,7 +136,7 @@ func GetTransactionByCode(c *gin.Context) {
 	code := c.Param("code")
 	var transaction models.Transaction
 	if err := database.DB.Preload("Member").Preload("Location").Preload("Cashier").
-		Preload("Items").Preload("Items.Stock").Preload("Items.Stock.Product").
+		Preload("Items").Preload("Items.GoldCategory").Preload("Items.Stock").Preload("Items.Stock.Product").Preload("Items.Stock.Product.GoldCategory").
 		Where("transaction_code = ?", code).First(&transaction).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Transaction not found"})
 		return

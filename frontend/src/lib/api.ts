@@ -482,6 +482,9 @@ export interface DailySummary {
 export const transactionsApi = {
   getAll: (params?: { type?: string; location_id?: number; member_id?: number; status?: string; start_date?: string; end_date?: string; page?: number; page_size?: number }) => 
     api.get<{ data: Transaction[]; pagination?: { total: number; total_pages: number; page: number; page_size: number } }>('/transactions', { params }),
+  // Get transactions filtered by user's assigned locations (no permission required)
+  getMy: (params?: { type?: string; status?: string; start_date?: string; end_date?: string }) => 
+    api.get<{ data: Transaction[] }>('/transactions/my', { params }),
   getById: (id: number) => api.get<{ data: Transaction }>(`/transactions/${id}`),
   getByCode: (code: string) => api.get<{ data: Transaction }>(`/transactions/code/${code}`),
   createSale: (data: {
@@ -859,6 +862,32 @@ export interface DashboardSummary {
   active_members: number;
   total_locations: number;
 }
+
+// User Dashboard Data (accessible by all logged in users)
+export interface UserDashboardData {
+  assigned_location_ids: number[];
+  today_sales: number;
+  today_sales_count: number;
+  today_purchases: number;
+  today_purchases_count: number;
+  today_transactions: number;
+  month_sales: number;
+  month_purchases: number;
+  month_transactions: number;
+  total_stock: number;
+  available_stock: number;
+  stock_value: number;
+  total_members: number;
+  active_members: number;
+  total_locations: number;
+  recent_transactions: TransactionDetail[];
+  stocks_by_category: { category_name: string; count: number; total_weight: number }[];
+}
+
+// Dashboard API (no permission required, just login)
+export const dashboardApi = {
+  getData: () => api.get<{ data: UserDashboardData }>('/dashboard'),
+};
 
 export const reportsApi = {
   // Dashboard Summary

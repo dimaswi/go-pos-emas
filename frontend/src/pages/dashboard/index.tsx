@@ -4,15 +4,13 @@ import { useAuthStore } from '@/lib/store';
 import {
   usersApi,
   rolesApi,
-  stocksApi,
   productsApi,
   membersApi,
-  transactionsApi,
-  locationsApi,
   goldCategoriesApi,
+  dashboardApi,
   type Transaction,
   type Member,
-  type DailySummary
+  type UserDashboardData
 } from '@/lib/api';
 import { PriceUpdateModal } from '@/components/price-update-modal';
 import {
@@ -36,7 +34,9 @@ import {
   RefreshCw,
   ChevronRight,
   DollarSign,
-  Banknote
+  Banknote,
+  Computer,
+  AlertTriangle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { setPageTitle } from '@/lib/page-title';
@@ -46,7 +46,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -60,7 +60,7 @@ interface DashboardStats {
   totalMembers: number;
   totalLocations: number;
   totalGoldCategories: number;
-  dailySummary: DailySummary | null;
+  dashboardData: UserDashboardData | null;
   recentTransactions: Transaction[];
   recentMembers: Member[];
   stocksByStatus: { status: string; count: number }[];
@@ -150,7 +150,7 @@ export default function DashboardPage() {
     totalMembers: 0,
     totalLocations: 0,
     totalGoldCategories: 0,
-    dailySummary: null,
+    dashboardData: null,
     recentTransactions: [],
     recentMembers: [],
     stocksByStatus: [],
@@ -192,79 +192,49 @@ export default function DashboardPage() {
     try {
       if (isRefresh) setRefreshing(true);
 
+      // First, load dashboard data (this endpoint is always accessible)
+      let dashboardData: UserDashboardData | null = null;
+      try {
+        const dashboardRes = await dashboardApi.getData();
+        dashboardData = dashboardRes.data.data || null;
+      } catch (error) {
+        console.warn('Failed to load dashboard data:', error);
+      }
+
+      // Helper function to safely call API and return default on error
+      const safeApiCall = async (apiCall: () => Promise<any>): Promise<any> => {
+        try {
+          return await apiCall();
+        } catch (error) {
+          // Silently fail - we have dashboardData as fallback
+          return { data: { data: [] } };
+        }
+      };
+
+      // Call optional APIs with error handling - these may fail due to permissions
+      // CATATAN: Data stok dan transaksi diambil dari dashboardApi yang sudah difilter per lokasi
       const [
         usersRes,
         rolesRes,
-        stocksRes,
         productsRes,
         membersRes,
-        transactionsRes,
-        locationsRes,
         goldCategoriesRes,
-        dailySummaryRes,
-        allTransactionsRes
       ] = await Promise.all([
-        usersApi.getAll(),
-        rolesApi.getAll(),
-        stocksApi.getAll({ page_size: 1000 }),
-        productsApi.getAll({ page_size: 1000 }),
-        membersApi.getAll({ page_size: 1000 }),
-        transactionsApi.getAll({ page_size: 10 }),
-        locationsApi.getAll(),
-        goldCategoriesApi.getAll(),
-        transactionsApi.getDailySummary(),
-        transactionsApi.getAll({ page_size: 1000 }), // Get all transactions for totals
+        safeApiCall(() => usersApi.getAll()),
+        safeApiCall(() => rolesApi.getAll()),
+        safeApiCall(() => productsApi.getAll({ page_size: 1000 })),
+        safeApiCall(() => membersApi.getAll({ page_size: 1000 })),
+        safeApiCall(() => goldCategoriesApi.getAll()),
       ]);
 
-      const users = usersRes.data.data || [];
-      const roles = rolesRes.data.data || [];
-      const stocks = stocksRes.data.data || [];
-      const products = productsRes.data.data || [];
-      const members = membersRes.data.data || [];
-      const transactions = transactionsRes.data.data || [];
-      const locations = locationsRes.data.data || [];
-      const goldCategories = goldCategoriesRes.data.data || [];
-      const dailySummary = dailySummaryRes.data.data || null;
-      const allTransactions = allTransactionsRes.data.data || [];
+      const users = usersRes?.data?.data || [];
+      const roles = rolesRes?.data?.data || [];
+      const products = productsRes?.data?.data || [];
+      const members = membersRes?.data?.data || [];
+      const goldCategories = goldCategoriesRes?.data?.data || [];
 
-      // Calculate stats
+      // Calculate stats (hanya yang tidak terikat lokasi)
       const activeUsers = users.filter((u: any) => u.is_active).length;
-      const availableStocks = stocks.filter((s: any) => s.status === 'available').length;
-
-      // Calculate total sales and purchases all time
-      const totalSalesAllTime = allTransactions
-        .filter((t: Transaction) => t.type === 'sale' && t.status === 'completed')
-        .reduce((sum: number, t: Transaction) => sum + (t.grand_total || 0), 0);
-
-      const totalPurchasesAllTime = allTransactions
-        .filter((t: Transaction) => t.type === 'purchase' && t.status === 'completed')
-        .reduce((sum: number, t: Transaction) => sum + (t.grand_total || 0), 0);
-
-      const totalProfit = totalSalesAllTime - totalPurchasesAllTime;
-
-      // Stocks by status
-      const stockStatusMap: Record<string, number> = {};
-      stocks.forEach((s: any) => {
-        stockStatusMap[s.status] = (stockStatusMap[s.status] || 0) + 1;
-      });
-      const stocksByStatus = Object.entries(stockStatusMap).map(([status, count]) => ({ status, count }));
-
-      // Stocks by gold category (available stocks only)
-      const stockCategoryMap: Record<string, { count: number; weight: number }> = {};
-      stocks
-        .filter((s: any) => s.status === 'available')
-        .forEach((s: any) => {
-          const categoryName = s.product?.gold_category?.name || 'Lainnya';
-          if (!stockCategoryMap[categoryName]) {
-            stockCategoryMap[categoryName] = { count: 0, weight: 0 };
-          }
-          stockCategoryMap[categoryName].count += 1;
-          stockCategoryMap[categoryName].weight += parseFloat(s.weight) || 0;
-        });
-      const stocksByCategory = Object.entries(stockCategoryMap)
-        .map(([name, data]) => ({ name, count: data.count, weight: data.weight }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5);
 
       // Members by type
       const memberTypeMap: Record<string, number> = {};
@@ -279,33 +249,55 @@ export default function DashboardPage() {
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       ).slice(0, 5);
 
-      // Generate weekly transaction data (last 7 days)
-      const weeklyTransactions = generateWeeklyData(allTransactions);
-
-      // Generate monthly cash flow data
-      const monthlyCashFlow = generateMonthlyCashFlow(allTransactions);
-
+      // Use dashboardData as primary source (it's filtered by user's locations)
+      // Fall back to API data if dashboardData is not available
+      // PENTING: Semua data transaksi/stok HARUS dari dashboardData yang sudah difilter per lokasi
       setStats({
         totalUsers: users.length,
         activeUsers: activeUsers,
         totalRoles: roles.length,
         totalProducts: products.length,
-        totalStocks: stocks.length,
-        availableStocks: availableStocks,
-        totalMembers: members.length,
-        totalLocations: locations.length,
+        // Data stok HANYA dari dashboardData (sudah difilter per lokasi)
+        totalStocks: dashboardData?.total_stock ?? 0,
+        availableStocks: dashboardData?.available_stock ?? 0,
+        totalMembers: dashboardData?.total_members ?? 0,
+        totalLocations: dashboardData?.total_locations ?? 0,
         totalGoldCategories: goldCategories.length,
-        dailySummary: dailySummary,
-        recentTransactions: transactions.slice(0, 5),
+        dashboardData: dashboardData,
+        // Transaksi HANYA dari dashboardData
+        recentTransactions: dashboardData?.recent_transactions?.length 
+          ? dashboardData.recent_transactions.map(t => ({
+              id: t.id,
+              transaction_code: t.transaction_code,
+              type: t.type as 'sale' | 'purchase',
+              transaction_date: t.transaction_date,
+              grand_total: t.grand_total,
+              payment_method: t.payment_method,
+              status: t.status,
+              location: { name: t.location_name } as any,
+              cashier: { full_name: t.cashier_name } as any,
+              member: t.member_name ? { name: t.member_name } as any : undefined,
+              customer_name: t.customer_name,
+            } as Transaction))
+          : [],
         recentMembers: sortedMembers,
-        stocksByStatus: stocksByStatus,
+        stocksByStatus: [], // Tidak pakai karena tidak difilter
         membersByType: membersByType,
-        weeklyTransactions: weeklyTransactions,
-        totalSalesAllTime,
-        totalPurchasesAllTime,
-        totalProfit,
-        monthlyCashFlow,
-        stocksByCategory,
+        weeklyTransactions: [], // Grafik mingguan perlu endpoint baru yang difilter
+        // Data penjualan HANYA dari dashboardData
+        totalSalesAllTime: dashboardData?.month_sales ?? 0,
+        totalPurchasesAllTime: dashboardData?.month_purchases ?? 0,
+        totalProfit: dashboardData 
+          ? (dashboardData.month_sales - dashboardData.month_purchases) 
+          : 0,
+        monthlyCashFlow: [], // Grafik bulanan perlu endpoint baru yang difilter
+        stocksByCategory: dashboardData?.stocks_by_category?.length 
+          ? dashboardData.stocks_by_category.map(c => ({
+              name: c.category_name,
+              count: c.count,
+              weight: c.total_weight
+            }))
+          : [],
       });
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
@@ -315,76 +307,15 @@ export default function DashboardPage() {
     }
   };
 
-  const generateWeeklyData = (transactions: Transaction[]) => {
-    const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-    const data = [];
-
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      const dayName = days[date.getDay()];
-
-      const dayTransactions = transactions.filter((t: Transaction) => {
-        const tDate = new Date(t.transaction_date || t.created_at);
-        return tDate.toDateString() === date.toDateString() && t.status === 'completed';
-      });
-
-      const sales = dayTransactions
-        .filter((t: Transaction) => t.type === 'sale')
-        .reduce((sum: number, t: Transaction) => sum + (t.grand_total || 0), 0);
-
-      const purchases = dayTransactions
-        .filter((t: Transaction) => t.type === 'purchase')
-        .reduce((sum: number, t: Transaction) => sum + (t.grand_total || 0), 0);
-
-      data.push({
-        date: dayName,
-        sales: sales / 1000000,
-        purchases: purchases / 1000000,
-        profit: (sales - purchases) / 1000000,
-      });
-    }
-
-    return data;
-  };
-
-  const generateMonthlyCashFlow = (transactions: Transaction[]) => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-    const currentYear = new Date().getFullYear();
-    const data = [];
-
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date();
-      date.setMonth(date.getMonth() - i);
-      const monthIndex = date.getMonth();
-      const year = date.getFullYear();
-
-      const monthTransactions = transactions.filter((t: Transaction) => {
-        const tDate = new Date(t.transaction_date || t.created_at);
-        return tDate.getMonth() === monthIndex && tDate.getFullYear() === year && t.status === 'completed';
-      });
-
-      const income = monthTransactions
-        .filter((t: Transaction) => t.type === 'sale')
-        .reduce((sum: number, t: Transaction) => sum + (t.grand_total || 0), 0);
-
-      const expense = monthTransactions
-        .filter((t: Transaction) => t.type === 'purchase')
-        .reduce((sum: number, t: Transaction) => sum + (t.grand_total || 0), 0);
-
-      data.push({
-        month: year === currentYear ? months[monthIndex] : `${months[monthIndex]} ${year}`,
-        income: income / 1000000,
-        expense: expense / 1000000,
-      });
-    }
-
-    return data;
-  };
+  const navigate = useNavigate();
 
   const handleRefresh = () => {
     loadDashboardData(true);
   };
+
+  const handleToPOS = () => {
+    navigate('/pos');
+  }
 
   const quickLinks = [
     { title: 'POS Penjualan', href: '/pos', icon: ShoppingCart, color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-50 dark:bg-green-950' },
@@ -457,6 +388,15 @@ export default function DashboardPage() {
             <span className="sm:inline">Update Harga</span>
           </Button>
           <Button
+            variant="default"
+            size="sm"
+            onClick={handleToPOS}
+            className="flex-1 sm:flex-none bg-blue-500 hover:bg-blue-600 text-white"
+          >
+            <Computer className="h-4 w-4 mr-2" />
+            <span className="sm:inline">POS</span>
+          </Button>
+          <Button
             variant="outline"
             size="sm"
             onClick={handleRefresh}
@@ -472,6 +412,23 @@ export default function DashboardPage() {
           </Badge>
         </div>
       </div>
+
+      {/* Warning if user has no assigned locations */}
+      {stats.dashboardData && stats.dashboardData.assigned_location_ids?.length === 0 && (
+        <Card className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950/30">
+          <CardContent className="flex items-center gap-3 py-4">
+            <AlertTriangle className="h-6 w-6 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+            <div>
+              <p className="font-semibold text-yellow-800 dark:text-yellow-200">
+                Anda belum di-assign ke toko manapun
+              </p>
+              <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                Hubungi administrator untuk mengassign Anda ke toko yang sesuai. Data dashboard tidak akan muncul sampai Anda di-assign ke minimal satu toko.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Links */}
       <div className="grid gap-2 sm:gap-3 grid-cols-2 md:grid-cols-4">
@@ -587,10 +544,10 @@ export default function DashboardPage() {
             </div>
             <div className="mt-1 sm:mt-2 space-y-0.5 sm:space-y-1">
               <div className="text-lg sm:text-2xl font-bold text-green-700 dark:text-green-300">
-                {formatCompactCurrency(stats.dailySummary?.sales_amount || 0)}
+                {formatCompactCurrency(stats.dashboardData?.today_sales || 0)}
               </div>
               <Badge className="bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200 text-[10px] sm:text-xs">
-                {stats.dailySummary?.sales_count || 0} trx
+                {stats.dashboardData?.today_sales_count || 0} trx
               </Badge>
             </div>
           </CardContent>
@@ -605,10 +562,10 @@ export default function DashboardPage() {
             </div>
             <div className="mt-1 sm:mt-2 space-y-0.5 sm:space-y-1">
               <div className="text-lg sm:text-2xl font-bold text-blue-700 dark:text-blue-300">
-                {formatCompactCurrency(stats.dailySummary?.purchases_amount || 0)}
+                {formatCompactCurrency(stats.dashboardData?.today_purchases || 0)}
               </div>
               <Badge className="bg-blue-200 text-blue-800 dark:bg-blue-800 dark:text-blue-200 text-[10px] sm:text-xs">
-                {stats.dailySummary?.purchases_count || 0} trx
+                {stats.dashboardData?.today_purchases_count || 0} trx
               </Badge>
             </div>
           </CardContent>
@@ -623,12 +580,12 @@ export default function DashboardPage() {
             </div>
             <div className="mt-1 sm:mt-2 space-y-0.5 sm:space-y-1">
               <div className={cn("text-lg sm:text-2xl font-bold",
-                ((stats.dailySummary?.sales_amount || 0) - (stats.dailySummary?.purchases_amount || 0)) >= 0
+                ((stats.dashboardData?.today_sales || 0) - (stats.dashboardData?.today_purchases || 0)) >= 0
                   ? "text-amber-700 dark:text-amber-300"
                   : "text-red-600"
               )}>
-                {((stats.dailySummary?.sales_amount || 0) - (stats.dailySummary?.purchases_amount || 0)) >= 0 ? '+' : ''}
-                {formatCompactCurrency((stats.dailySummary?.sales_amount || 0) - (stats.dailySummary?.purchases_amount || 0))}
+                {((stats.dashboardData?.today_sales || 0) - (stats.dashboardData?.today_purchases || 0)) >= 0 ? '+' : ''}
+                {formatCompactCurrency((stats.dashboardData?.today_sales || 0) - (stats.dashboardData?.today_purchases || 0))}
               </div>
               <p className="text-[10px] sm:text-xs text-amber-600 dark:text-amber-400">Jual - Setor</p>
             </div>
