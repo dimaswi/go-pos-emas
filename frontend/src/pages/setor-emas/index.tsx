@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { TransactionConfirmationModal } from "@/components/transaction-confirmation-modal";
 import { printReceipt, type ReceiptData } from "@/lib/print-receipt";
 import { BarcodeScannerModal } from "@/components/barcode-scanner-modal";
+import { PriceUpdateModal } from "@/components/price-update-modal";
 import {
   LayoutDashboard,
   Plus,
@@ -96,6 +97,7 @@ export default function SetorEmasPage() {
   const [saveAsRawMaterial, setSaveAsRawMaterial] = useState(true); // Hybrid: Simpan sebagai bahan baku (default: true)
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [showPriceUpdateModal, setShowPriceUpdateModal] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [memberSearchCode, setMemberSearchCode] = useState("");
   const [scannerReady, setScannerReady] = useState(false);
@@ -649,6 +651,15 @@ export default function SetorEmasPage() {
             triggerClassName="flex-1 sm:w-[200px] lg:w-[300px] h-7 sm:h-8 text-xs sm:text-sm"
             size="sm"
           />
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 sm:h-8 px-2 sm:px-3 bg-yellow-50 hover:bg-yellow-100 border-yellow-300 text-yellow-700 dark:bg-yellow-950 dark:hover:bg-yellow-900 dark:border-yellow-700 dark:text-yellow-400"
+            onClick={() => setShowPriceUpdateModal(true)}
+          >
+            <Coins className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            <span className="hidden sm:inline ml-1.5">Harga</span>
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -1267,6 +1278,15 @@ export default function SetorEmasPage() {
         open={showBarcodeScanner}
         onOpenChange={setShowBarcodeScanner}
         onScan={handleCameraScan}
+      />
+
+      {/* Price Update Modal */}
+      <PriceUpdateModal
+        open={showPriceUpdateModal}
+        onOpenChange={setShowPriceUpdateModal}
+        onSuccess={() => {
+          fetchData();
+        }}
       />
     </div>
   );

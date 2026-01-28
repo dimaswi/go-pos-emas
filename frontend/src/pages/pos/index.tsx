@@ -9,6 +9,7 @@ import { TransactionConfirmationModal } from "@/components/transaction-confirmat
 import { PrintNotaOverlay, type NotaData } from "@/components/print-nota-overlay";
 import { printReceipt, type ReceiptData } from "@/lib/print-receipt";
 import { BarcodeScannerModal } from "@/components/barcode-scanner-modal";
+import { PriceUpdateModal } from "@/components/price-update-modal";
 import {
   LayoutDashboard,
   Trash2,
@@ -29,6 +30,7 @@ import {
   CheckCircle2,
   Camera,
   Usb,
+  Coins,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -80,6 +82,7 @@ export default function POSPage() {
   const [showNotaOverlay, setShowNotaOverlay] = useState(false);
   const [notaData, setNotaData] = useState<NotaData | null>(null);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [showPriceUpdateModal, setShowPriceUpdateModal] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [scannerReady, setScannerReady] = useState(false);
   const lastInputTimeRef = useRef<number>(0);
@@ -540,6 +543,15 @@ export default function POSPage() {
               size="sm"
             />
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 sm:h-8 px-2 sm:px-3 bg-yellow-50 hover:bg-yellow-100 border-yellow-300 text-yellow-700 dark:bg-yellow-950 dark:hover:bg-yellow-900 dark:border-yellow-700 dark:text-yellow-400"
+            onClick={() => setShowPriceUpdateModal(true)}
+          >
+            <Coins className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            <span className="hidden sm:inline ml-1.5">Harga</span>
+          </Button>
           <Button variant="outline" size="sm" className="h-7 sm:h-8 px-2 sm:px-3" onClick={() => navigate("/pos/history?return=/pos&type=sale")}>
             <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
             <span className="hidden sm:inline ml-1.5">Riwayat</span>
@@ -904,6 +916,17 @@ export default function POSPage() {
         open={showBarcodeScanner}
         onOpenChange={setShowBarcodeScanner}
         onScan={handleCameraScan}
+      />
+
+      {/* Price Update Modal */}
+      <PriceUpdateModal
+        open={showPriceUpdateModal}
+        onOpenChange={setShowPriceUpdateModal}
+        onSuccess={() => {
+          if (selectedLocationId) {
+            fetchStocksByLocation(parseInt(selectedLocationId));
+          }
+        }}
       />
     </div>
   );
