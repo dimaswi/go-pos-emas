@@ -238,15 +238,15 @@ export default function StockShow() {
               </CardTitle>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div>
-                  <label className="text-sm text-muted-foreground">Harga Beli</label>
+                  <label className="text-sm text-muted-foreground">Harga Beli (dari kategori)</label>
                   <p className="font-medium text-base">
-                    {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(stock.buy_price || 0)}
+                    {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format((stock.product?.gold_category?.buy_price || 0) * (stock.product?.weight || 0))}
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm text-muted-foreground">Harga Jual</label>
+                  <label className="text-sm text-muted-foreground">Harga Jual (dari kategori)</label>
                   <p className="font-medium text-base">
-                    {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(stock.sell_price || 0)}
+                    {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format((stock.product?.gold_category?.sell_price || 0) * (stock.product?.weight || 0))}
                   </p>
                 </div>
                 <div>

@@ -70,11 +70,14 @@ export function PrintNotaOverlay({ data, onClose }: PrintNotaOverlayProps) {
     // Tambahkan total berat
     const weightText = `${item.weight.toFixed(2)}gr`;
     // Tambahkan kemurnian dalam persen (purity * 100)
-    let purityText = '';
+    return `${name} ${weightText}`.trim();
+  };
+
+  const formatPurityPercent = (item: NotaItem) => {
     if (item.purity !== undefined && item.purity !== null) {
-      purityText = `${(item.purity * 100).toFixed(0)}%`; // e.g., 1 = "100%", 0.75 = "75%"
+      return `${(item.purity * 100).toFixed(0)}%`;
     }
-    return `${name} ${weightText} ${purityText}`.trim();
+    return '';
   };
 
   // Generate HTML untuk satu halaman nota dengan item tertentu
@@ -101,7 +104,7 @@ export function PrintNotaOverlay({ data, onClose }: PrintNotaOverlayProps) {
       `<tr>
         <td class="col-qty">${item.qty}</td>
         <td class="col-name">${formatItemName(item)}</td>
-        <td class="col-karat">${item.karat}</td>
+        <td class="col-karat">${formatPurityPercent(item)}</td>
         <td class="col-weight">${item.weight.toFixed(2)}</td>
         <td class="col-price">${formatPrice(item.price)}</td>
       </tr>`
@@ -449,7 +452,7 @@ export function PrintNotaOverlay({ data, onClose }: PrintNotaOverlayProps) {
                       <td style={{ width: '6cm' }} className="py-0.5 text-left truncate max-w-[6cm]" title={formatItemName(item)}>
                         {formatItemName(item)}
                       </td>
-                      <td style={{ width: '1.5cm' }} className="py-0.5 text-center">{item.karat}</td>
+                      <td style={{ width: '1.5cm' }} className="py-0.5 text-center">{formatPurityPercent(item)}</td>
                       <td style={{ width: '2cm' }} className="py-0.5 text-right">{item.weight.toFixed(2)}</td>
                       <td style={{ width: '2.5cm' }} className="py-0.5 text-right">
                         {new Intl.NumberFormat('id-ID').format(item.price)}

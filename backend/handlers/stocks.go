@@ -86,16 +86,12 @@ func CreateStock(c *gin.Context) {
 		return
 	}
 
-	// Verify product exists and get gold category prices
+	// Verify product exists and has gold category
 	var product models.Product
 	if err := database.DB.Preload("GoldCategory").First(&product, req.ProductID).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Product not found"})
 		return
 	}
-
-	// Get buy and sell price from gold category
-	buyPrice := product.GoldCategory.BuyPrice * product.Weight
-	sellPrice := product.GoldCategory.SellPrice * product.Weight
 
 	// Verify location exists
 	var location models.Location
@@ -112,6 +108,7 @@ func CreateStock(c *gin.Context) {
 	}
 
 	// Create multiple stock entries based on quantity
+	// Harga tidak disimpan di stock - akan dihitung dari gold_category saat dibutuhkan
 	now := time.Now()
 	timestamp := now.Unix() // Use seconds for shorter serial
 	var stocks []models.Stock
@@ -126,8 +123,6 @@ func CreateStock(c *gin.Context) {
 			StorageBoxID: req.StorageBoxID,
 			SerialNumber: serialNumber,
 			Status:       models.StockStatusAvailable,
-			BuyPrice:     buyPrice,
-			SellPrice:    sellPrice,
 			SupplierName: req.SupplierName,
 			ReceivedAt:   &now,
 			Notes:        req.Notes,
@@ -186,12 +181,11 @@ type UpdateStockRequest struct {
 	LocationID   uint               `json:"location_id"`
 	StorageBoxID uint               `json:"storage_box_id"`
 	Status       models.StockStatus `json:"status"`
-	BuyPrice     float64            `json:"buy_price"`
-	SellPrice    float64            `json:"sell_price"`
 	Notes        string             `json:"notes"`
 }
 
 // UpdateStock updates stock information
+// Harga tidak bisa diupdate karena selalu mengikuti gold_category
 func UpdateStock(c *gin.Context) {
 	id := c.Param("id")
 	var stock models.Stock
@@ -214,12 +208,6 @@ func UpdateStock(c *gin.Context) {
 	}
 	if req.Status != "" {
 		stock.Status = req.Status
-	}
-	if req.BuyPrice > 0 {
-		stock.BuyPrice = req.BuyPrice
-	}
-	if req.SellPrice > 0 {
-		stock.SellPrice = req.SellPrice
 	}
 	if req.Notes != "" {
 		stock.Notes = req.Notes

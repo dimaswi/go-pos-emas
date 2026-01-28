@@ -15,36 +15,57 @@ import { api, type Stock } from '@/lib/api';
 import QRCode from 'qrcode';
 
 /**
- * KONFIGURASI LABEL PRINT - LP-T368 80mm Thermal Printer
- * 
- * Ukuran Kertas Fisik (diukur dengan penggaris):
- * - Lebar: 73mm (7.3 cm)
- * - Tinggi: 23mm (2.3 cm)
- * 
- * Setting Printer: Tinggi 300mm (continuous mode)
- * 
- * Perhitungan Label (2 kolom, gap 2mm semua sisi):
- * - Margin kiri: 2mm
- * - Gap antara kolom: 2mm
- * - Margin kanan: 2mm (implisit)
- * - Margin atas: 2mm
- * - Margin bawah: 2mm (implisit)
- * 
- * Lebar label = (73 - 2 - 2 - 2) / 2 = 33.5mm → 33mm
- * Tinggi label = 23 - 2 - 2 = 19mm
+ * KONFIGURASI LABEL PRINT - 2 Mode
+ *
+ * === Mode A: Label Besar (88x27mm) ===
+ * - Lebar: 88mm, Tinggi: 27mm
+ * - Gap semua sisi: 2mm
+ * - Jarak antar label: 34mm
+ * - Lebar label = (88 - 2 - 2 - 34) / 2 = 25mm
+ * - Tinggi label = 27 - 2 - 2 = 23mm
+ * - Layout horizontal 50/50: Berat+Kadar (kiri), Barcode (kanan)
+ *
+ * === Mode B: Label Kecil (74x23mm) ===
+ * - Lebar: 74mm, Tinggi: 23mm
+ * - Gap semua sisi: 2mm
+ * - Gap antar label: 4mm
+ * - Lebar label = (74 - 2 - 2 - 4) / 2 = 33mm
+ * - Tinggi label = 23 - 2 - 2 = 19mm
+ * - Layout: QR/Barcode (kiri), Berat+Kadar (kanan)
  */
 
-const PAPER_WIDTH = 73;   // mm - lebar kertas fisik
-const PAPER_HEIGHT = 23;  // mm - tinggi kertas fisik (per row)
-const MARGIN_H = 2;       // mm - gap kiri kanan (horizontal)
-const MARGIN_V = 1;       // mm - gap atas bawah (vertikal)
-const GAP_BETWEEN = 2;    // mm - gap antara 2 kolom
-const COLS = 2;
+type LabelMode = 'large' | 'small';
 
-// Calculated values
-const LABEL_WIDTH = Math.floor((PAPER_WIDTH - MARGIN_H - MARGIN_H - GAP_BETWEEN) / COLS); // 33mm
-const LABEL_HEIGHT = PAPER_HEIGHT - MARGIN_V - MARGIN_V; // 21mm
-const QR_SIZE = 12;       // mm - QR code size (max untuk tinggi 19mm)
+const LABEL_CONFIGS = {
+  large: {
+    name: 'Label Besar',
+    description: '88x27mm - Vertikal',
+    paperWidth: 88,
+    paperHeight: 27,
+    margin: 2,
+    marginTop: 5, // gap atas 5mm (samakan dengan kecil)
+    marginLeft: 5, // gap kiri 5mm (2mm + 3mm extra)
+    gapBetween: 34,
+    cols: 2,
+    get labelWidth() { return (this.paperWidth - this.marginLeft - this.margin - this.gapBetween) / this.cols; }, // 23.5mm
+    get labelHeight() { return this.paperHeight - this.marginTop - this.margin; }, // 20mm
+    qrSize: 12,
+  },
+  small: {
+    name: 'Label Kecil',
+    description: '74x23mm - Horizontal',
+    paperWidth: 74,
+    paperHeight: 23,
+    margin: 2,
+    marginTop: 5, // gap atas 5mm (3mm extra)
+    marginLeft: 4,
+    gapBetween: 4,
+    cols: 2,
+    get labelWidth() { return (this.paperWidth - this.marginLeft - this.margin - this.gapBetween) / this.cols; }, // 33mm
+    get labelHeight() { return this.paperHeight - this.marginTop - this.margin; }, // 16mm
+    qrSize: 12,
+  },
+} as const;
 
 interface BarcodePrintDialogProps {
   open: boolean;
@@ -56,10 +77,10 @@ interface BarcodePrintDialogProps {
   onPrintComplete?: () => void;
 }
 
-export function BarcodePrintDialog({ 
-  open, 
-  onOpenChange, 
-  boxId, 
+export function BarcodePrintDialog({
+  open,
+  onOpenChange,
+  boxId,
   boxName,
   stocks: selectedStocks,
   mode = 'box',
@@ -69,6 +90,9 @@ export function BarcodePrintDialog({
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [loading, setLoading] = useState(false);
   const [printing, setPrinting] = useState(false);
+  const [labelMode, setLabelMode] = useState<LabelMode>('small');
+
+  const cfg = LABEL_CONFIGS[labelMode];
 
   useEffect(() => {
     if (open) {
@@ -101,8 +125,8 @@ export function BarcodePrintDialog({
   };
 
   const generateQRCodes = useCallback(async (stockList: Stock[]) => {
-    const qrSizePx = Math.round(QR_SIZE * 3.78); // mm to px at 96dpi
-    
+    const qrSizePx = Math.round(cfg.qrSize * 3.78); // mm to px at 96dpi
+
     for (const stock of stockList) {
       const canvas = document.getElementById(`qr-${stock.id}`) as HTMLCanvasElement;
       if (canvas) {
@@ -117,13 +141,13 @@ export function BarcodePrintDialog({
         }
       }
     }
-  }, []);
+  }, [cfg.qrSize]);
 
   useEffect(() => {
     if (stocks.length > 0) {
       setTimeout(() => generateQRCodes(stocks), 50);
     }
-  }, [stocks, generateQRCodes]);
+  }, [stocks, generateQRCodes, labelMode]);
 
   const markStocksAsPrinted = async () => {
     try {
@@ -146,18 +170,30 @@ export function BarcodePrintDialog({
     }
   };
 
-  // Format harga full
-  const formatPrice = (price: number) => {
-    return 'Rp.' + price.toLocaleString('id-ID');
+  // Format berat
+  const formatWeight = (weight: number) => {
+    return weight.toFixed(2) + 'g';
+  };
+
+  // Format kadar
+  const formatKadar = (purity: number) => {
+    return (purity * 100).toFixed(1) + '%';
+  };
+
+  const getStockInfo = (stock: Stock) => {
+    const weight = stock.product?.weight || 0;
+    const purity = stock.product?.gold_category?.purity || 0;
+    const kadarCode = stock.product?.gold_category?.code || '-';
+    return { weight, purity, kadarCode };
   };
 
   const handlePrint = async () => {
     setPrinting(true);
-    
+
     // Generate QR codes as data URLs first
     const qrDataUrls: Record<string, string> = {};
-    const qrSizePx = Math.round(QR_SIZE * 10); // higher resolution for print
-    
+    const qrSizePx = Math.round(cfg.qrSize * 10); // higher resolution for print
+
     for (const stock of stocks) {
       try {
         const dataUrl = await QRCode.toDataURL(stock.serial_number, {
@@ -170,19 +206,46 @@ export function BarcodePrintDialog({
         console.error('QR Code error:', e);
       }
     }
-    
+
     // Build rows - 2 labels per row
     const buildRows = () => {
       const rows = [];
-      for (let i = 0; i < stocks.length; i += COLS) {
+      for (let i = 0; i < stocks.length; i += cfg.cols) {
         const rowLabels = [];
 
-        for (let j = 0; j < COLS; j++) {
+        for (let j = 0; j < cfg.cols; j++) {
           const stock = stocks[i + j];
           if (stock) {
-            const name = (stock.product?.name || '-');
+            const { weight, purity, kadarCode } = getStockInfo(stock);
             const qrUrl = qrDataUrls[stock.serial_number] || '';
-            rowLabels.push(`<div class="label"><div class="name">${name}</div><img src="${qrUrl}" class="qr-img"/></div>`);
+
+            if (labelMode === 'large') {
+              // Mode A: Vertikal 50/50 - Berat+Kadar atas, QR bawah
+              rowLabels.push(`
+                <div class="label">
+                  <div class="info-top">
+                    <div class="info-text">${formatWeight(weight)}</div>
+                    <div class="info-text">${formatKadar(purity)}</div>
+                  </div>
+                  <div class="qr-bottom">
+                    <img src="${qrUrl}" class="qr-img"/>
+                  </div>
+                </div>
+              `);
+            } else {
+              // Mode B: Horizontal - QR kiri, Berat+Kadar kanan
+              rowLabels.push(`
+                <div class="label">
+                  <div class="qr-side">
+                    <img src="${qrUrl}" class="qr-img"/>
+                  </div>
+                  <div class="info-side">
+                    <div class="info-text">${formatWeight(weight)}</div>
+                    <div class="info-text">${formatKadar(purity)}</div>
+                  </div>
+                </div>
+              `);
+            }
           }
         }
 
@@ -191,23 +254,38 @@ export function BarcodePrintDialog({
       return rows.join('');
     };
 
-    const totalRows = Math.ceil(stocks.length / COLS);
-    const totalHeight = totalRows * PAPER_HEIGHT;
+    const totalRows = Math.ceil(stocks.length / cfg.cols);
+    const totalHeight = totalRows * cfg.paperHeight;
+
+    const halfHeight = cfg.labelHeight / 2;
+    let labelStyles = '';
+    if (labelMode === 'large') {
+      labelStyles = `
+.label{display:inline-flex;flex-direction:column;vertical-align:top;width:${cfg.labelWidth}mm;height:${cfg.labelHeight}mm;overflow:hidden}
+.info-top{height:${halfHeight}mm;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0.5mm;overflow:hidden}
+.info-text{font-size:7pt;font-weight:900;color:#000;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:${cfg.labelWidth - 1}mm;line-height:1.4}
+.qr-bottom{height:${halfHeight}mm;display:flex;align-items:center;justify-content:center;padding:0.5mm}
+.qr-img{display:block;width:${halfHeight - 2}mm;height:${halfHeight - 2}mm}`;
+    } else {
+      labelStyles = `
+.label{display:inline-flex;flex-direction:row;vertical-align:top;width:${cfg.labelWidth}mm;height:${cfg.labelHeight}mm;overflow:hidden;align-items:center}
+.qr-side{display:flex;align-items:center;justify-content:center;padding:0.5mm;padding-left:3mm;flex-shrink:0}
+.qr-img{display:block;width:${cfg.qrSize}mm;height:${cfg.qrSize}mm}
+.info-side{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0.5mm;overflow:hidden}
+.info-text{font-size:6pt;font-weight:900;color:#000;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:${cfg.labelWidth - cfg.qrSize - 2}mm;line-height:1.4}`;
+    }
 
     const printContent = `<!DOCTYPE html>
 <html>
 <head>
-<title>Cetak Barcode</title>
+<title>Cetak Label</title>
 <style>
-@page{size:${PAPER_WIDTH}mm ${totalHeight}mm;margin:0;padding:0}
+@page{size:${cfg.paperWidth}mm ${totalHeight}mm;margin:0;padding:0}
 *{margin:0;padding:0;box-sizing:border-box;line-height:1}
-html,body{font-family:Arial,sans-serif;width:${PAPER_WIDTH}mm;height:${totalHeight}mm;margin:0;padding:0;font-size:0}
-.container{width:${PAPER_WIDTH}mm;height:${totalHeight}mm;font-size:0}
-.row{width:${PAPER_WIDTH}mm;height:${PAPER_HEIGHT}mm;padding-left:${MARGIN_H}mm;font-size:0;white-space:nowrap;overflow:hidden}
-.label{display:inline-block;vertical-align:top;width:${LABEL_WIDTH}mm;height:${PAPER_HEIGHT - 1}mm;text-align:center;padding-top:0.5mm}
-.label:nth-child(2){margin-left:${GAP_BETWEEN}mm}
-.qr-img{display:block;width:${QR_SIZE}mm;height:${QR_SIZE}mm;margin:0 auto}
-.name{font-size:7pt;font-weight:900;color:#000;text-align:center;max-width:${LABEL_WIDTH}mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:1mm}
+html,body{font-family:Arial,sans-serif;width:${cfg.paperWidth}mm;height:${totalHeight}mm;margin:0;padding:0;font-size:0}
+.container{width:${cfg.paperWidth}mm;height:${totalHeight}mm;font-size:0}
+.row{width:${cfg.paperWidth}mm;height:${cfg.paperHeight}mm;padding:${cfg.marginTop}mm ${cfg.margin}mm ${cfg.margin}mm ${cfg.marginLeft}mm;font-size:0;white-space:nowrap;overflow:hidden;display:flex;justify-content:space-between;align-items:center}
+${labelStyles}
 </style>
 </head>
 <body><div class="container">${buildRows()}</div></body>
@@ -219,17 +297,17 @@ html,body{font-family:Arial,sans-serif;width:${PAPER_WIDTH}mm;height:${totalHeig
     iframe.style.top = '-10000px';
     iframe.style.left = '-10000px';
     document.body.appendChild(iframe);
-    
+
     const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
     if (!iframeDoc) {
       setPrinting(false);
       return;
     }
-    
+
     iframeDoc.open();
     iframeDoc.write(printContent);
     iframeDoc.close();
-    
+
     // Wait for images to load then print
     setTimeout(() => {
       try {
@@ -243,7 +321,7 @@ html,body{font-family:Arial,sans-serif;width:${PAPER_WIDTH}mm;height:${totalHeig
               setPrinting(false);
             }, 100);
           }, { once: true });
-          
+
           iframeWindow.print();
         } else {
           setPrinting(false);
@@ -257,9 +335,150 @@ html,body{font-family:Arial,sans-serif;width:${PAPER_WIDTH}mm;height:${totalHeig
     }, 500);
   };
 
-  const title = mode === 'box' ? `Cetak Barcode - ${boxName || 'Box'}` : `Cetak Barcode (${stocks.length} item)`;
+  const title = mode === 'box' ? `Cetak Label - ${boxName || 'Box'}` : `Cetak Label (${stocks.length} item)`;
   const printedCount = stocks.filter(s => s.barcode_printed).length;
   const notPrintedCount = stocks.length - printedCount;
+
+  // Preview render for Mode A (large) - vertikal 50/50 layout (atas: info, bawah: QR)
+  const renderLargePreviewLabel = (stock: Stock) => {
+    const { weight, purity } = getStockInfo(stock);
+    const halfHeight = cfg.labelHeight / 2;
+    return (
+      <div
+        key={stock.id}
+        className={`overflow-hidden ${
+          stock.barcode_printed ? 'bg-green-50' : ''
+        }`}
+        style={{
+          width: `${cfg.labelWidth}mm`,
+          height: `${cfg.labelHeight}mm`,
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'relative',
+        }}
+      >
+        {stock.barcode_printed && (
+          <div className="absolute top-0 right-0 bg-green-500 text-white p-0.5 rounded-bl">
+            <Check className="h-2 w-2" />
+          </div>
+        )}
+        {/* Berat dan Kadar (atas 50%) */}
+        <div style={{
+          height: `${halfHeight}mm`,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '0.5mm',
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            fontSize: '6.5pt',
+            fontWeight: 'bold',
+            lineHeight: 1.4,
+            textAlign: 'center',
+          }}>
+            {formatWeight(weight)}
+          </div>
+          <div style={{
+            fontSize: '6.5pt',
+            fontWeight: 'bold',
+            lineHeight: 1.4,
+            textAlign: 'center',
+          }}>
+            {formatKadar(purity)}
+          </div>
+        </div>
+        {/* QR Code (bawah 50%) */}
+        <div style={{
+          height: `${halfHeight}mm`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '0.5mm',
+        }}>
+          <canvas
+            id={`qr-${stock.id}`}
+            style={{ width: `${halfHeight - 2}mm`, height: `${halfHeight - 2}mm`, flexShrink: 0 }}
+          />
+        </div>
+      </div>
+    );
+  };
+
+  // Preview render for Mode B (small) - horizontal layout
+  const renderSmallPreviewLabel = (stock: Stock) => {
+    const { weight, purity, kadarCode } = getStockInfo(stock);
+    return (
+      <div
+        key={stock.id}
+        className={`overflow-hidden ${
+          stock.barcode_printed ? 'bg-green-50' : ''
+        }`}
+        style={{
+          width: `${cfg.labelWidth}mm`,
+          height: `${cfg.labelHeight}mm`,
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          position: 'relative',
+        }}
+      >
+        {stock.barcode_printed && (
+          <div className="absolute top-0 right-0 bg-green-500 text-white p-0.5 rounded-bl">
+            <Check className="h-2 w-2" />
+          </div>
+        )}
+        {/* QR Code / Barcode (kiri, geser 3mm ke kanan) */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '0.5mm',
+          paddingLeft: '3mm',
+          flexShrink: 0,
+        }}>
+          <canvas
+            id={`qr-${stock.id}`}
+            style={{ width: `${cfg.qrSize}mm`, height: `${cfg.qrSize}mm`, flexShrink: 0 }}
+          />
+        </div>
+        {/* Berat dan Kadar (kanan) */}
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '0.5mm',
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            fontSize: '6pt',
+            fontWeight: 'bold',
+            lineHeight: 1.4,
+            textAlign: 'center',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}>
+            {formatWeight(weight)}
+          </div>
+          <div style={{
+            fontSize: '6pt',
+            fontWeight: 'bold',
+            lineHeight: 1.4,
+            textAlign: 'center',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}>
+            {formatKadar(purity)}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -269,9 +488,9 @@ html,body{font-family:Arial,sans-serif;width:${PAPER_WIDTH}mm;height:${totalHeig
           <DialogDescription className="flex items-center gap-2 flex-wrap">
             <span>{stocks.length} item</span>
             <span>•</span>
-            <span>Kertas {PAPER_WIDTH}x{PAPER_HEIGHT}mm</span>
+            <span>Kertas {cfg.paperWidth}x{cfg.paperHeight}mm</span>
             <span>•</span>
-            <span>Label {LABEL_WIDTH}x{LABEL_HEIGHT}mm</span>
+            <span>Label {cfg.labelWidth.toFixed(0)}x{cfg.labelHeight}mm</span>
             {stocks.length > 0 && (
               <>
                 <span>•</span>
@@ -289,6 +508,24 @@ html,body{font-family:Arial,sans-serif;width:${PAPER_WIDTH}mm;height:${totalHeig
           </DialogDescription>
         </DialogHeader>
 
+        {/* Mode Selector */}
+        <div className="flex gap-2">
+          <Button
+            variant={labelMode === 'small' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setLabelMode('small')}
+          >
+            <span className="text-xs">Label Kecil (74x23mm)</span>
+          </Button>
+          <Button
+            variant={labelMode === 'large' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setLabelMode('large')}
+          >
+            <span className="text-xs">Label Besar (88x27mm)</span>
+          </Button>
+        </div>
+
         {/* Preview Area */}
         <div className="flex-1 border rounded-lg p-4 bg-gray-100 overflow-auto">
           {loading ? (
@@ -302,63 +539,24 @@ html,body{font-family:Arial,sans-serif;width:${PAPER_WIDTH}mm;height:${totalHeig
           ) : (
             <div className="flex flex-col items-center gap-2">
               {/* Preview per row */}
-              {Array.from({ length: Math.ceil(stocks.length / COLS) }).map((_, rowIndex) => (
+              {Array.from({ length: Math.ceil(stocks.length / cfg.cols) }).map((_, rowIndex) => (
                 <div
                   key={rowIndex}
                   className="bg-white shadow border"
                   style={{
-                    width: `${PAPER_WIDTH}mm`,
-                    height: `${PAPER_HEIGHT}mm`,
+                    width: `${cfg.paperWidth}mm`,
+                    height: `${cfg.paperHeight}mm`,
                     display: 'flex',
-                    justifyContent: 'flex-start',
+                    justifyContent: 'space-between',
                     alignItems: 'center',
-                    padding: `${MARGIN_V}mm ${MARGIN_H}mm`,
-                    gap: `${GAP_BETWEEN}mm`,
+                    padding: `${cfg.marginTop}mm ${cfg.margin}mm ${cfg.margin}mm ${cfg.marginLeft}mm`,
                   }}
                 >
-                  {stocks.slice(rowIndex * COLS, rowIndex * COLS + COLS).map((stock) => {
-                    const productName = stock.product?.name || '-';
-                    const shortName = productName.length > 10 ? productName.substring(0, 10) + '..' : productName;
-                    const price = formatPrice(stock.product?.gold_category?.sell_price || 0);
-                    
-                    return (
-                      <div
-                        key={stock.id}
-                        className={`border overflow-hidden ${
-                          stock.barcode_printed 
-                            ? 'border-green-300 bg-green-50' 
-                            : 'border-dashed border-gray-300'
-                        }`}
-                        style={{
-                          width: `${LABEL_WIDTH}mm`,
-                          height: `${LABEL_HEIGHT}mm`,
-                          display: 'flex',
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          gap: '1mm',
-                          position: 'relative',
-                        }}
-                      >
-                        {stock.barcode_printed && (
-                          <div className="absolute top-0 right-0 bg-green-500 text-white p-0.5 rounded-bl">
-                            <Check className="h-2 w-2" />
-                          </div>
-                        )}
-                        <canvas 
-                          id={`qr-${stock.id}`} 
-                          style={{ width: `${QR_SIZE}mm`, height: `${QR_SIZE}mm`, flexShrink: 0 }}
-                        />
-                        <div style={{ flex: 1, overflow: 'hidden' }}>
-                          <div style={{ fontSize: '6pt', fontWeight: 'bold', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {shortName}
-                          </div>
-                          <div style={{ fontSize: '8pt', fontWeight: 'bold', lineHeight: 1.3 }}>
-                            {price}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {stocks.slice(rowIndex * cfg.cols, rowIndex * cfg.cols + cfg.cols).map((stock) =>
+                    labelMode === 'large'
+                      ? renderLargePreviewLabel(stock)
+                      : renderSmallPreviewLabel(stock)
+                  )}
                 </div>
               ))}
             </div>

@@ -275,7 +275,7 @@ export default function StorageBoxShow() {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold">
-                      Rp {stock.sell_price?.toLocaleString('id-ID') || '-'}
+                      Rp {((stock.product?.gold_category?.sell_price || 0) * (stock.product?.weight || 0)).toLocaleString('id-ID')}
                     </p>
                     <Badge variant={stock.status === 'available' ? 'default' : 'secondary'}>
                       {stock.status === 'available' ? 'Tersedia' : stock.status}

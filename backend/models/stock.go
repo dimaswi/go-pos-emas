@@ -17,6 +17,7 @@ const (
 )
 
 // Stock represents individual stock item with location tracking
+// Harga tidak disimpan di sini - selalu dihitung dari gold_category.sell_price * product.weight
 type Stock struct {
 	ID           uint           `gorm:"primarykey" json:"id"`
 	CreatedAt    time.Time      `json:"created_at"`
@@ -30,8 +31,6 @@ type Stock struct {
 	StorageBox   StorageBox     `gorm:"foreignKey:StorageBoxID" json:"storage_box,omitempty"`
 	SerialNumber string         `gorm:"not null;size:50" json:"serial_number"` // Unique identifier for each piece - unique index created manually in migration
 	Status       StockStatus    `gorm:"not null;size:20;default:'available';index" json:"status"`
-	BuyPrice     float64        `gorm:"not null" json:"buy_price"`  // Actual purchase price
-	SellPrice    float64        `gorm:"not null" json:"sell_price"` // Target selling price
 	Notes        string         `gorm:"size:255" json:"notes"`
 
 	// Source tracking

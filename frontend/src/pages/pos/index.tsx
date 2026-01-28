@@ -336,9 +336,8 @@ export default function POSPage() {
       return;
     }
     
-    const price = stock.product?.gold_category
-      ? stock.product.gold_category.sell_price * stock.product.weight
-      : stock.sell_price || 0;
+    // Selalu gunakan harga dari gold_category (harga terbaru)
+    const price = (stock.product?.gold_category?.sell_price || 0) * (stock.product?.weight || 0);
 
     setCart([
       ...cart,
@@ -644,9 +643,8 @@ export default function POSPage() {
                 ) : (
                   <div className="p-1.5 sm:p-2 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1.5 sm:gap-2">
                     {availableStocks.map((stock) => {
-                      const price = stock.product?.gold_category
-                        ? stock.product.gold_category.sell_price * stock.product.weight
-                        : stock.sell_price || 0;
+                      // Selalu gunakan harga dari gold_category (harga terbaru)
+                      const price = (stock.product?.gold_category?.sell_price || 0) * (stock.product?.weight || 0);
                       return (
                         <button
                           key={stock.id}

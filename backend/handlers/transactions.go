@@ -216,7 +216,11 @@ func CreateSale(c *gin.Context) {
 			return
 		}
 
-		itemSubTotal := stock.SellPrice - item.Discount
+		// Gunakan harga terbaru dari gold category, bukan dari stock.SellPrice yang mungkin sudah lama
+		currentSellPrice := stock.Product.GoldCategory.SellPrice * stock.Product.Weight
+		pricePerGram := stock.Product.GoldCategory.SellPrice
+
+		itemSubTotal := currentSellPrice - item.Discount
 		subTotal += itemSubTotal
 
 		transactionItems = append(transactionItems, models.TransactionItem{
@@ -224,8 +228,8 @@ func CreateSale(c *gin.Context) {
 			ItemName:     stock.Product.Name,
 			Barcode:      stock.Product.Barcode,
 			Weight:       stock.Product.Weight,
-			PricePerGram: stock.SellPrice / stock.Product.Weight,
-			UnitPrice:    stock.SellPrice,
+			PricePerGram: pricePerGram,
+			UnitPrice:    currentSellPrice,
 			Quantity:     1,
 			Discount:     item.Discount,
 			SubTotal:     itemSubTotal,

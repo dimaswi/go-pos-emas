@@ -358,8 +358,7 @@ export interface Stock {
   storage_box?: StorageBox;
   serial_number: string;
   status: StockStatus;
-  buy_price: number;
-  sell_price: number;
+  // Harga tidak disimpan di stock, dihitung dari gold_category.sell_price * product.weight
   supplier_name?: string;
   received_at?: string;
   sold_at?: string;

@@ -11,7 +11,8 @@ import (
 // GetGoldCategories returns all gold categories
 func GetGoldCategories(c *gin.Context) {
 	var categories []models.GoldCategory
-	if err := database.DB.Find(&categories).Error; err != nil {
+	// Order by updated_at DESC to show most recently updated prices first
+	if err := database.DB.Order("updated_at DESC").Find(&categories).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

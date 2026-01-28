@@ -55,6 +55,10 @@ func Migrate() error {
 		return err
 	}
 
+	// Remove deprecated columns from stocks table (buy_price and sell_price)
+	// Harga sekarang selalu dihitung dari gold_category
+	removeDeprecatedStockColumns()
+
 	// Create partial unique indexes for soft delete compatibility
 	createPartialUniqueIndexes()
 
@@ -164,6 +168,29 @@ func dropIndexesOnColumn(tableName, columnName string) {
 			log.Printf("Warning: Failed to drop constraint %s: %v", con.ConstraintName, err)
 		} else {
 			log.Printf("Dropped constraint: %s", con.ConstraintName)
+		}
+	}
+}
+
+// removeDeprecatedStockColumns removes buy_price and sell_price columns from stocks table
+// Harga sekarang selalu dihitung dari gold_category.buy_price * product.weight
+func removeDeprecatedStockColumns() {
+	// Check if columns exist before trying to drop them
+	columnsToRemove := []string{"buy_price", "sell_price"}
+
+	for _, column := range columnsToRemove {
+		var count int64
+		DB.Raw(`
+			SELECT COUNT(*) FROM information_schema.columns 
+			WHERE table_name = 'stocks' AND column_name = ?
+		`, column).Scan(&count)
+
+		if count > 0 {
+			if err := DB.Exec("ALTER TABLE stocks DROP COLUMN IF EXISTS " + column).Error; err != nil {
+				log.Printf("Warning: Failed to drop column %s from stocks: %v", column, err)
+			} else {
+				log.Printf("Dropped deprecated column: stocks.%s", column)
+			}
 		}
 	}
 }

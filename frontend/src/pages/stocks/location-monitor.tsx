@@ -540,7 +540,7 @@ export default function LocationMonitorPage() {
                               {formatWeight(stock.product?.weight || 0)}
                             </TableCell>
                             <TableCell className={`text-right font-medium ${stock.status === 'sold' ? 'text-muted-foreground line-through decoration-red-500 decoration-2' : ''}`}>
-                              {formatPrice(stock.sell_price)}
+                              {formatPrice((stock.product?.gold_category?.sell_price || 0) * (stock.product?.weight || 0))}
                             </TableCell>
                             <TableCell className="text-center">
                               <Badge 

@@ -293,6 +293,7 @@ func GetStockLocationReport(c *gin.Context) {
 	var results []StockLocationReport
 
 	// Get stock counts and values by location
+	// Harga dihitung dari gold_category.buy_price * product.weight dan gold_category.sell_price * product.weight
 	query := `
 		SELECT 
 			l.id as location_id,
@@ -303,11 +304,12 @@ func GetStockLocationReport(c *gin.Context) {
 			SUM(CASE WHEN s.status = 'sold' THEN 1 ELSE 0 END) as sold_stock,
 			SUM(CASE WHEN s.status = 'reserved' THEN 1 ELSE 0 END) as reserved_stock,
 			COALESCE(SUM(p.weight), 0) as total_weight,
-			COALESCE(SUM(CASE WHEN s.status = 'available' THEN s.buy_price ELSE 0 END), 0) as total_buy_value,
-			COALESCE(SUM(CASE WHEN s.status = 'available' THEN s.sell_price ELSE 0 END), 0) as total_sell_value
+			COALESCE(SUM(CASE WHEN s.status = 'available' THEN gc.buy_price * p.weight ELSE 0 END), 0) as total_buy_value,
+			COALESCE(SUM(CASE WHEN s.status = 'available' THEN gc.sell_price * p.weight ELSE 0 END), 0) as total_sell_value
 		FROM locations l
 		LEFT JOIN stocks s ON s.location_id = l.id AND s.deleted_at IS NULL
 		LEFT JOIN products p ON p.id = s.product_id
+		LEFT JOIN gold_categories gc ON gc.id = p.gold_category_id
 		WHERE l.deleted_at IS NULL
 		GROUP BY l.id, l.name, l.type
 		ORDER BY l.name
@@ -342,6 +344,7 @@ func GetStockCategoryReport(c *gin.Context) {
 
 	var results []StockCategoryReport
 
+	// Harga dihitung dari gold_category.buy_price * product.weight dan gold_category.sell_price * product.weight
 	query := `
 		SELECT 
 			gc.id as category_id,
@@ -351,10 +354,10 @@ func GetStockCategoryReport(c *gin.Context) {
 			SUM(CASE WHEN s.status = 'available' THEN 1 ELSE 0 END) as available_stock,
 			SUM(CASE WHEN s.status = 'sold' THEN 1 ELSE 0 END) as sold_stock,
 			COALESCE(SUM(CASE WHEN s.status = 'available' THEN p.weight ELSE 0 END), 0) as total_weight,
-			COALESCE(AVG(CASE WHEN s.status = 'available' THEN s.buy_price ELSE NULL END), 0) as avg_buy_price,
-			COALESCE(AVG(CASE WHEN s.status = 'available' THEN s.sell_price ELSE NULL END), 0) as avg_sell_price,
-			COALESCE(SUM(CASE WHEN s.status = 'available' THEN s.buy_price ELSE 0 END), 0) as total_buy_value,
-			COALESCE(SUM(CASE WHEN s.status = 'available' THEN s.sell_price ELSE 0 END), 0) as total_sell_value
+			gc.buy_price as avg_buy_price,
+			gc.sell_price as avg_sell_price,
+			COALESCE(SUM(CASE WHEN s.status = 'available' THEN gc.buy_price * p.weight ELSE 0 END), 0) as total_buy_value,
+			COALESCE(SUM(CASE WHEN s.status = 'available' THEN gc.sell_price * p.weight ELSE 0 END), 0) as total_sell_value
 		FROM gold_categories gc
 		LEFT JOIN products p ON p.gold_category_id = gc.id AND p.deleted_at IS NULL
 		LEFT JOIN stocks s ON s.product_id = p.id AND s.deleted_at IS NULL
@@ -366,7 +369,7 @@ func GetStockCategoryReport(c *gin.Context) {
 
 	query += `
 		WHERE gc.deleted_at IS NULL
-		GROUP BY gc.id, gc.code, gc.name
+		GROUP BY gc.id, gc.code, gc.name, gc.buy_price, gc.sell_price
 		ORDER BY gc.code
 	`
 
@@ -560,8 +563,8 @@ type SoldStockReport struct {
 	ProductName     string     `json:"product_name"`
 	CategoryName    string     `json:"category_name"`
 	Weight          float64    `json:"weight"`
-	BuyPrice        float64    `json:"buy_price"`
-	SellPrice       float64    `json:"sell_price"`
+	BuyPrice        float64    `json:"buy_price"`  // Dari gold_category saat stok masuk (dihitung)
+	SellPrice       float64    `json:"sell_price"` // Dari transaction_item (snapshot saat dijual)
 	Profit          float64    `json:"profit"`
 	LocationName    string     `json:"location_name"`
 	TransactionCode string     `json:"transaction_code"`
@@ -612,10 +615,16 @@ func GetSoldStockReport(c *gin.Context) {
 			categoryName = s.Product.GoldCategory.Name
 		}
 
-		// Get transaction info
+		// Hitung harga dari gold_category (harga beli saat stok masuk tidak disimpan, jadi gunakan harga saat ini sebagai estimasi)
+		buyPrice := s.Product.GoldCategory.BuyPrice * s.Product.Weight
+
+		// Get transaction info and actual sell price from transaction_item
 		var tx models.Transaction
+		var txItem models.TransactionItem
 		customerName := ""
 		txCode := ""
+		sellPrice := s.Product.GoldCategory.SellPrice * s.Product.Weight // Default jika tidak ada transaction_item
+
 		if s.TransactionID != nil {
 			database.DB.First(&tx, *s.TransactionID)
 			txCode = tx.TransactionCode
@@ -626,17 +635,22 @@ func GetSoldStockReport(c *gin.Context) {
 				database.DB.First(&member, *tx.MemberID)
 				customerName = member.Name
 			}
+
+			// Ambil harga jual dari transaction_item (snapshot saat transaksi)
+			if err := database.DB.Where("stock_id = ?", s.ID).First(&txItem).Error; err == nil {
+				sellPrice = txItem.SubTotal
+			}
 		}
 
-		profit := s.SellPrice - s.BuyPrice
+		profit := sellPrice - buyPrice
 		reports = append(reports, SoldStockReport{
 			ID:              s.ID,
 			SerialNumber:    s.SerialNumber,
 			ProductName:     s.Product.Name,
 			CategoryName:    categoryName,
 			Weight:          s.Product.Weight,
-			BuyPrice:        s.BuyPrice,
-			SellPrice:       s.SellPrice,
+			BuyPrice:        buyPrice,
+			SellPrice:       sellPrice,
 			Profit:          profit,
 			LocationName:    s.Location.Name,
 			TransactionCode: txCode,
@@ -645,7 +659,7 @@ func GetSoldStockReport(c *gin.Context) {
 		})
 
 		totalProfit += profit
-		totalSales += s.SellPrice
+		totalSales += sellPrice
 	}
 
 	c.JSON(http.StatusOK, gin.H{
