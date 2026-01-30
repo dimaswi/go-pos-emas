@@ -216,7 +216,7 @@ export function BarcodePrintDialog({
         for (let j = 0; j < cfg.cols; j++) {
           const stock = stocks[i + j];
           if (stock) {
-            const { weight, purity, kadarCode } = getStockInfo(stock);
+            const { weight, purity } = getStockInfo(stock);
             const qrUrl = qrDataUrls[stock.serial_number] || '';
 
             if (labelMode === 'large') {
@@ -408,7 +408,7 @@ ${labelStyles}
 
   // Preview render for Mode B (small) - horizontal layout
   const renderSmallPreviewLabel = (stock: Stock) => {
-    const { weight, purity, kadarCode } = getStockInfo(stock);
+    const { weight, purity } = getStockInfo(stock);
     return (
       <div
         key={stock.id}
