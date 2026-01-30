@@ -47,6 +47,7 @@ interface Stock {
     gold_category?: {
       id: number;
       name: string;
+      sell_price: number;
     };
   };
   storage_box?: {
