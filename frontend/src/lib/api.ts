@@ -159,7 +159,7 @@ export interface GoldCategory {
   name: string;
   purity: number;
   buy_price: number;
-  sell_price: number | string | null;
+  sell_price: number | string;
   description: string;
   is_active: boolean;
   created_at: string;
