@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { transactionsApi, type Transaction } from '@/lib/api';
+import { transactionsApi, printApi, type Transaction } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Loader2, Printer, ShoppingCart, ArrowDownToLine, User, Calendar, CreditCard } from 'lucide-react';
 import { setPageTitle } from '@/lib/page-title';
@@ -109,7 +109,7 @@ export default function TransactionShow() {
                 <CardDescription className="text-[10px] sm:text-xs">{transaction.transaction_code}</CardDescription>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm" onClick={() => window.print()}>
+            <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm" onClick={async () => { try { const url = await printApi.getSuratPdf(transaction.id); window.open(url, "_blank"); } catch(e) { console.error(e); } }}>
               <Printer className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               Cetak
             </Button>

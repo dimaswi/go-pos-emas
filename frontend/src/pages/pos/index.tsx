@@ -396,41 +396,18 @@ export default function POSPage() {
         toast.success(`Transaksi berhasil! No: ${response.data.data.transaction_code}`);
 
         if (withNotaPrint) {
-          // Prepare nota data for pre-printed form overlay
-          const notaDataToShow: NotaData = {
-            transactionCode: response.data.data.transaction_code,
-            date: new Date(),
-            customerName: selectedMember?.name,
-            customerAddress: (selectedMember as any)?.address,
-            items: cart.map(item => {
-              // Find the stock to get gold category info
-              const stock = stocks.find(s => s.id === item.stock_id);
-              const goldCategory = stock?.product?.gold_category;
-              return {
-                qty: 1,
-                name: item.product_name,
-                karat: goldCategory?.name || '-',
-                karatCode: goldCategory?.code,
-                purity: goldCategory?.purity,
-                weight: item.weight,
-                price: item.price,
-              };
-            }),
-            validationUrl: `${window.location.origin}/validate/${response.data.data.transaction_code}`,
-            // Payment details
-            subtotal: subtotal,
-            discount: discountAmount > 0 ? discountAmount : undefined,
-            grandTotal: grandTotal,
-            paidAmount: paidAmountNum,
-            changeAmount: changeAmount > 0 ? changeAmount : undefined,
-            paymentMethod: paymentMethod,
-          };
-          setNotaData(notaDataToShow);
-          setShowNotaOverlay(true);
+          try {
+            const url = await import("@/lib/api").then(m => m.printApi.getSuratPdf(response.data.data.id));
+            window.open(url, "_blank");
+          } catch (e) {
+            console.error(e);
+            toast.error("Gagal mencetak surat");
+          }
         } else if (withPrint) {
           // Print receipt with 80mm layout
           const receiptData: ReceiptData = {
             type: 'sale',
+            transactionId: response.data.data.id,
             storeName: selectedLocationName || 'TOKO EMAS',
             storeAddress: 'Alamat Toko',
             storePhone: '',

@@ -149,6 +149,7 @@ func main() {
 			// Stocks routes
 			protected.GET("/stocks", middleware.RequireAnyPermission("stocks.view", "pos.view-stocks"), handlers.GetStocks)
 			protected.GET("/stocks/by-location", middleware.RequireAnyPermission("stocks.view", "pos.view-stocks"), handlers.GetStocksByLocation)
+			protected.GET("/stocks/print-label", middleware.RequireAnyPermission("stocks.view", "pos.view-stocks"), handlers.GenerateLabelPDF)
 			protected.POST("/stocks", middleware.RequirePermission("stocks.create"), handlers.CreateStock)
 			protected.POST("/stocks-mark-printed", middleware.RequireAnyPermission("stocks.update", "pos.update-stocks"), handlers.MarkStocksPrinted)
 			protected.POST("/stocks/transfer", middleware.RequirePermission("stocks.transfer"), handlers.TransferStock)
@@ -168,6 +169,8 @@ func main() {
 			protected.POST("/transactions/purchase", middleware.RequirePermission("transactions.purchase"), handlers.CreatePurchase)
 			protected.PUT("/transactions/:id/cancel", middleware.RequirePermission("transactions.cancel"), handlers.CancelTransaction)
 			protected.GET("/transactions/daily-summary", middleware.RequirePermission("transactions.view"), handlers.GetDailySummary)
+			protected.GET("/transactions/:id/print-surat", middleware.RequirePermission("transactions.view"), handlers.GenerateSuratPDF)
+			protected.GET("/transactions/:id/print-receipt", middleware.RequirePermission("transactions.view"), handlers.GenerateReceiptPDF)
 
 			// Dashboard - accessible by all logged in users (filtered by their assigned locations)
 			protected.GET("/dashboard", handlers.GetUserDashboard)

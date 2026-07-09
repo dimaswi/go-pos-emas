@@ -34,35 +34,21 @@ import QRCode from 'qrcode';
  * - Layout: QR/Barcode (kiri), Berat+Kadar (kanan)
  */
 
-type LabelMode = 'large' | 'small';
+type LabelMode = 'small';
 
 const LABEL_CONFIGS = {
-  large: {
-    name: 'Label Besar',
-    description: '88x27mm - Vertikal',
-    paperWidth: 88,
-    paperHeight: 27,
-    margin: 2,
-    marginTop: 5, // gap atas 5mm (samakan dengan kecil)
-    marginLeft: 5, // gap kiri 5mm (2mm + 3mm extra)
-    gapBetween: 34,
-    cols: 2,
-    get labelWidth() { return (this.paperWidth - this.marginLeft - this.margin - this.gapBetween) / this.cols; }, // 23.5mm
-    get labelHeight() { return this.paperHeight - this.marginTop - this.margin; }, // 20mm
-    qrSize: 12,
-  },
   small: {
-    name: 'Label Kecil',
+    name: 'Label Stok',
     description: '74x23mm - Horizontal',
     paperWidth: 74,
     paperHeight: 23,
     margin: 2,
-    marginTop: 5, // gap atas 5mm (3mm extra)
+    marginTop: 5,
     marginLeft: 4,
     gapBetween: 4,
     cols: 2,
-    get labelWidth() { return (this.paperWidth - this.marginLeft - this.margin - this.gapBetween) / this.cols; }, // 33mm
-    get labelHeight() { return this.paperHeight - this.marginTop - this.margin; }, // 16mm
+    get labelWidth() { return (this.paperWidth - this.marginLeft - this.margin - this.gapBetween) / this.cols; },
+    get labelHeight() { return this.paperHeight - this.marginTop - this.margin; },
     qrSize: 12,
   },
 } as const;
@@ -90,7 +76,7 @@ export function BarcodePrintDialog({
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [loading, setLoading] = useState(false);
   const [printing, setPrinting] = useState(false);
-  const [labelMode, setLabelMode] = useState<LabelMode>('small');
+  const labelMode: LabelMode = 'small';
 
   const cfg = LABEL_CONFIGS[labelMode];
 
@@ -189,222 +175,31 @@ export function BarcodePrintDialog({
 
   const handlePrint = async () => {
     setPrinting(true);
+    try {
+      const stockIds = stocks.map(s => s.id);
+      const { printApi } = await import('@/lib/api');
+      const url = await printApi.getLabelPdf(stockIds, 'small');
+      window.open(url, '_blank');
 
-    // Generate QR codes as data URLs first
-    const qrDataUrls: Record<string, string> = {};
-    const qrSizePx = Math.round(cfg.qrSize * 10); // higher resolution for print
-
-    for (const stock of stocks) {
-      try {
-        const dataUrl = await QRCode.toDataURL(stock.serial_number, {
-          width: qrSizePx,
-          margin: 0,
-          errorCorrectionLevel: 'L',
-        });
-        qrDataUrls[stock.serial_number] = dataUrl;
-      } catch (e) {
-        console.error('QR Code error:', e);
+      const confirmed = window.confirm('Tandai stok sebagai sudah dicetak?');
+      if (confirmed) {
+        markStocksAsPrinted();
       }
-    }
-
-    // Build rows - 2 labels per row
-    const buildRows = () => {
-      const rows = [];
-      for (let i = 0; i < stocks.length; i += cfg.cols) {
-        const rowLabels = [];
-
-        for (let j = 0; j < cfg.cols; j++) {
-          const stock = stocks[i + j];
-          if (stock) {
-            const { weight, purity } = getStockInfo(stock);
-            const qrUrl = qrDataUrls[stock.serial_number] || '';
-
-            if (labelMode === 'large') {
-              // Mode A: Vertikal 50/50 - Berat+Kadar atas, QR bawah
-              rowLabels.push(`
-                <div class="label">
-                  <div class="info-top">
-                    <div class="info-text">${formatWeight(weight)}</div>
-                    <div class="info-text">${formatKadar(purity)}</div>
-                  </div>
-                  <div class="qr-bottom">
-                    <img src="${qrUrl}" class="qr-img"/>
-                  </div>
-                </div>
-              `);
-            } else {
-              // Mode B: Horizontal - QR kiri, Berat+Kadar kanan
-              rowLabels.push(`
-                <div class="label">
-                  <div class="qr-side">
-                    <img src="${qrUrl}" class="qr-img"/>
-                  </div>
-                  <div class="info-side">
-                    <div class="info-text">${formatWeight(weight)}</div>
-                    <div class="info-text">${formatKadar(purity)}</div>
-                  </div>
-                </div>
-              `);
-            }
-          }
-        }
-
-        rows.push(`<div class="row">${rowLabels.join('')}</div>`);
-      }
-      return rows.join('');
-    };
-
-    const totalRows = Math.ceil(stocks.length / cfg.cols);
-    const totalHeight = totalRows * cfg.paperHeight;
-
-    const halfHeight = cfg.labelHeight / 2;
-    let labelStyles = '';
-    if (labelMode === 'large') {
-      labelStyles = `
-.label{display:inline-flex;flex-direction:column;vertical-align:top;width:${cfg.labelWidth}mm;height:${cfg.labelHeight}mm;overflow:hidden}
-.info-top{height:${halfHeight}mm;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0.5mm;overflow:hidden}
-.info-text{font-size:7pt;font-weight:900;color:#000;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:${cfg.labelWidth - 1}mm;line-height:1.4}
-.qr-bottom{height:${halfHeight}mm;display:flex;align-items:center;justify-content:center;padding:0.5mm}
-.qr-img{display:block;width:${halfHeight - 2}mm;height:${halfHeight - 2}mm}`;
-    } else {
-      labelStyles = `
-.label{display:inline-flex;flex-direction:row;vertical-align:top;width:${cfg.labelWidth}mm;height:${cfg.labelHeight}mm;overflow:hidden;align-items:center}
-.qr-side{display:flex;align-items:center;justify-content:center;padding:0.5mm;padding-left:3mm;flex-shrink:0}
-.qr-img{display:block;width:${cfg.qrSize}mm;height:${cfg.qrSize}mm}
-.info-side{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0.5mm;overflow:hidden}
-.info-text{font-size:6pt;font-weight:900;color:#000;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:${cfg.labelWidth - cfg.qrSize - 2}mm;line-height:1.4}`;
-    }
-
-    const printContent = `<!DOCTYPE html>
-<html>
-<head>
-<title>Cetak Label</title>
-<style>
-@page{size:${cfg.paperWidth}mm ${totalHeight}mm;margin:0;padding:0}
-*{margin:0;padding:0;box-sizing:border-box;line-height:1}
-html,body{font-family:Arial,sans-serif;width:${cfg.paperWidth}mm;height:${totalHeight}mm;margin:0;padding:0;font-size:0}
-.container{width:${cfg.paperWidth}mm;height:${totalHeight}mm;font-size:0}
-.row{width:${cfg.paperWidth}mm;height:${cfg.paperHeight}mm;padding:${cfg.marginTop}mm ${cfg.margin}mm ${cfg.margin}mm ${cfg.marginLeft}mm;font-size:0;white-space:nowrap;overflow:hidden;display:flex;justify-content:space-between;align-items:center}
-${labelStyles}
-</style>
-</head>
-<body><div class="container">${buildRows()}</div></body>
-</html>`;
-
-    // Create hidden iframe for printing
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute';
-    iframe.style.top = '-10000px';
-    iframe.style.left = '-10000px';
-    document.body.appendChild(iframe);
-
-    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (!iframeDoc) {
+    } catch (error) {
+      console.error('Print error:', error);
+      toast({
+        variant: "destructive",
+        title: "Error!",
+        description: "Gagal mencetak label melalui backend.",
+      });
+    } finally {
       setPrinting(false);
-      return;
     }
-
-    iframeDoc.open();
-    iframeDoc.write(printContent);
-    iframeDoc.close();
-
-    // Wait for images to load then print
-    setTimeout(() => {
-      try {
-        const iframeWindow = iframe.contentWindow;
-        if (iframeWindow) {
-          iframeWindow.addEventListener('afterprint', () => {
-            const confirmed = window.confirm('Tandai stok sebagai sudah dicetak?');
-            if (confirmed) markStocksAsPrinted();
-            setTimeout(() => {
-              if (document.body.contains(iframe)) document.body.removeChild(iframe);
-              setPrinting(false);
-            }, 100);
-          }, { once: true });
-
-          iframeWindow.print();
-        } else {
-          setPrinting(false);
-          document.body.removeChild(iframe);
-        }
-      } catch (error) {
-        console.error('Print error:', error);
-        setPrinting(false);
-        if (document.body.contains(iframe)) document.body.removeChild(iframe);
-      }
-    }, 500);
   };
 
   const title = mode === 'box' ? `Cetak Label - ${boxName || 'Box'}` : `Cetak Label (${stocks.length} item)`;
   const printedCount = stocks.filter(s => s.barcode_printed).length;
   const notPrintedCount = stocks.length - printedCount;
-
-  // Preview render for Mode A (large) - vertikal 50/50 layout (atas: info, bawah: QR)
-  const renderLargePreviewLabel = (stock: Stock) => {
-    const { weight, purity } = getStockInfo(stock);
-    const halfHeight = cfg.labelHeight / 2;
-    return (
-      <div
-        key={stock.id}
-        className={`overflow-hidden ${
-          stock.barcode_printed ? 'bg-green-50' : ''
-        }`}
-        style={{
-          width: `${cfg.labelWidth}mm`,
-          height: `${cfg.labelHeight}mm`,
-          display: 'flex',
-          flexDirection: 'column',
-          position: 'relative',
-        }}
-      >
-        {stock.barcode_printed && (
-          <div className="absolute top-0 right-0 bg-green-500 text-white p-0.5 rounded-bl">
-            <Check className="h-2 w-2" />
-          </div>
-        )}
-        {/* Berat dan Kadar (atas 50%) */}
-        <div style={{
-          height: `${halfHeight}mm`,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '0.5mm',
-          overflow: 'hidden',
-        }}>
-          <div style={{
-            fontSize: '6.5pt',
-            fontWeight: 'bold',
-            lineHeight: 1.4,
-            textAlign: 'center',
-          }}>
-            {formatWeight(weight)}
-          </div>
-          <div style={{
-            fontSize: '6.5pt',
-            fontWeight: 'bold',
-            lineHeight: 1.4,
-            textAlign: 'center',
-          }}>
-            {formatKadar(purity)}
-          </div>
-        </div>
-        {/* QR Code (bawah 50%) */}
-        <div style={{
-          height: `${halfHeight}mm`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '0.5mm',
-        }}>
-          <canvas
-            id={`qr-${stock.id}`}
-            style={{ width: `${halfHeight - 2}mm`, height: `${halfHeight - 2}mm`, flexShrink: 0 }}
-          />
-        </div>
-      </div>
-    );
-  };
 
   // Preview render for Mode B (small) - horizontal layout
   const renderSmallPreviewLabel = (stock: Stock) => {
@@ -508,23 +303,7 @@ ${labelStyles}
           </DialogDescription>
         </DialogHeader>
 
-        {/* Mode Selector */}
-        <div className="flex gap-2">
-          <Button
-            variant={labelMode === 'small' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setLabelMode('small')}
-          >
-            <span className="text-xs">Label Kecil (74x23mm)</span>
-          </Button>
-          <Button
-            variant={labelMode === 'large' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setLabelMode('large')}
-          >
-            <span className="text-xs">Label Besar (88x27mm)</span>
-          </Button>
-        </div>
+        
 
         {/* Preview Area */}
         <div className="flex-1 border rounded-lg p-4 bg-gray-100 overflow-auto">
@@ -553,9 +332,7 @@ ${labelStyles}
                   }}
                 >
                   {stocks.slice(rowIndex * cfg.cols, rowIndex * cfg.cols + cfg.cols).map((stock) =>
-                    labelMode === 'large'
-                      ? renderLargePreviewLabel(stock)
-                      : renderSmallPreviewLabel(stock)
+                    renderSmallPreviewLabel(stock)
                   )}
                 </div>
               ))}

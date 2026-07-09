@@ -122,9 +122,27 @@ export const columns = ({ hasPermission }: ColumnsProps): ColumnDef<Transaction>
                 Lihat Detail
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem onClick={() => window.print()}>
+            <DropdownMenuItem onClick={async () => {
+              try {
+                const url = await import('@/lib/api').then(m => m.printApi.getSuratPdf(transaction.id));
+                window.open(url, '_blank');
+              } catch (e) {
+                console.error(e);
+              }
+            }}>
               <Printer className="mr-2 h-4 w-4" />
-              Cetak Struk
+              Cetak Surat
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={async () => {
+              try {
+                const url = await import('@/lib/api').then(m => m.printApi.getReceiptPdf(transaction.id));
+                window.open(url, '_blank');
+              } catch (e) {
+                console.error(e);
+              }
+            }}>
+              <Printer className="mr-2 h-4 w-4" />
+              Cetak Struk Thermal
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

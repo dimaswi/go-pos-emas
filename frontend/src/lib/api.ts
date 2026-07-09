@@ -478,6 +478,25 @@ export interface DailySummary {
   net_amount: number;
 }
 
+export const printApi = {
+  getLabelPdf: async (stockIds: number | number[], size: "small" | "large" = "large") => {
+    const ids = Array.isArray(stockIds) ? stockIds.join(',') : String(stockIds);
+    const path = Array.isArray(stockIds)
+      ? `/stocks/print-label?ids=${ids}&size=${size}`
+      : `/stocks/${stockIds}/print-label?size=${size}`;
+    const response = await api.get(path, { responseType: "blob" });
+    return window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
+  },
+  getSuratPdf: async (transactionId: number) => {
+    const response = await api.get(`/transactions/${transactionId}/print-surat`, { responseType: "blob" });
+    return window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
+  },
+  getReceiptPdf: async (transactionId: number) => {
+    const response = await api.get(`/transactions/${transactionId}/print-receipt`, { responseType: "blob" });
+    return window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
+  },
+};
+
 export const transactionsApi = {
   getAll: (params?: { type?: string; location_id?: number; member_id?: number; status?: string; start_date?: string; end_date?: string; page?: number; page_size?: number }) => 
     api.get<{ data: Transaction[]; pagination?: { total: number; total_pages: number; page: number; page_size: number } }>('/transactions', { params }),

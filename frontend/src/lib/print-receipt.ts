@@ -20,6 +20,7 @@ interface ReceiptItem {
 
 interface ReceiptData {
   type: 'sale' | 'deposit' | 'purchase';
+  transactionId?: number;
   storeName?: string;
   storeAddress?: string;
   storePhone?: string;
@@ -505,19 +506,32 @@ function getPaymentMethodLabel(method: string): string {
   return methods[method] || method.toUpperCase();
 }
 
-export const printReceipt = (data: ReceiptData): void => {
+import { printApi } from './api';
+
+export const printReceipt = async (data: ReceiptData): Promise<void> => {
+  if (data.transactionId) {
+    try {
+      const pdfUrl = await printApi.getReceiptPdf(data.transactionId);
+      window.open(pdfUrl, '_blank');
+      return;
+    } catch (error) {
+      console.error('Failed to print via backend, falling back to local HTML:', error);
+    }
+  }
+
+  // Fallback to local HTML generation
   const html = generateReceiptHTML(data);
   const printWindow = window.open('', '_blank');
-  
+
   if (printWindow) {
     printWindow.document.write(html);
     printWindow.document.close();
-    
+
     // Wait for content to load before printing
     printWindow.onload = () => {
       printWindow.print();
     };
-    
+
     // Fallback for browsers that don't trigger onload
     setTimeout(() => {
       printWindow.print();

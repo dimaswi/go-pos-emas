@@ -190,6 +190,7 @@ export default function POSHistoryPage() {
 
       const receiptData: ReceiptData = {
         type: selectedTransaction.type === 'purchase' ? 'purchase' : 'sale',
+        transactionId: selectedTransaction.id,
         storeName: selectedTransaction.location?.name || 'TOKO EMAS',
         storeAddress: selectedTransaction.location?.address || 'Alamat Toko',
         storePhone: '',
@@ -228,40 +229,16 @@ export default function POSHistoryPage() {
   };
 
   // Handle print nota (pre-printed form overlay)
-  const handlePrintNota = () => {
+  const handlePrintNota = async () => {
     if (!selectedTransaction) return;
 
-    const notaDataToShow: NotaData = {
-      transactionCode: selectedTransaction.transaction_code,
-      date: new Date(selectedTransaction.transaction_date || selectedTransaction.created_at),
-      customerName: selectedTransaction.member?.name || selectedTransaction.customer_name,
-      customerAddress: (selectedTransaction.member as any)?.address,
-      items: (selectedTransaction.items || []).map(item => {
-        const goldCategory = item.gold_category || item.stock?.product?.gold_category;
-        return {
-          qty: item.quantity || 1,
-          name: item.item_name || item.product?.name || item.stock?.product?.name || 'Item',
-          karat: goldCategory?.name || '-',
-          karatCode: goldCategory?.code,
-          purity: goldCategory?.purity,
-          weight: item.weight || 0,
-          price: item.sub_total || item.unit_price || 0,
-        };
-      }),
-      validationUrl: `${window.location.origin}/validate/${selectedTransaction.transaction_code}`,
-      // Payment details
-      subtotal: selectedTransaction.sub_total,
-      discount: selectedTransaction.discount > 0 ? selectedTransaction.discount : undefined,
-      grandTotal: selectedTransaction.grand_total,
-      paidAmount: selectedTransaction.paid_amount,
-      changeAmount: selectedTransaction.change_amount > 0 ? selectedTransaction.change_amount : undefined,
-      paymentMethod: selectedTransaction.payment_method,
-    };
-
-    // Tutup modal detail dulu agar tidak menutupi
-    setShowDetail(false);
-    setNotaData(notaDataToShow);
-    setShowNotaOverlay(true);
+    try {
+      const url = await import('@/lib/api').then(m => m.printApi.getSuratPdf(selectedTransaction.id));
+      window.open(url, '_blank');
+    } catch (e) {
+      console.error(e);
+      toast.error("Gagal mencetak surat");
+    }
   };
 
   const getStatusBadge = (status: string) => {
