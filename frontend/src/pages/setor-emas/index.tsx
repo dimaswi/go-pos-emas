@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Switch } from "@/components/ui/switch";
@@ -99,6 +99,7 @@ export default function SetorEmasPage() {
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [showPriceUpdateModal, setShowPriceUpdateModal] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [mobileStep, setMobileStep] = useState<1 | 2>(1);
   const [memberSearchCode, setMemberSearchCode] = useState("");
   const [scannerReady, setScannerReady] = useState(false);
   const lastInputTimeRef = useRef<number>(0);
@@ -117,7 +118,8 @@ export default function SetorEmasPage() {
   // Detect mobile device
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+      // Menggunakan < 1400 agar iPad Pro terdeteksi sebagai tablet
+      setIsMobile(window.innerWidth < 1400);
     };
     checkMobile();
     window.addEventListener("resize", checkMobile);
@@ -157,6 +159,7 @@ export default function SetorEmasPage() {
         if (savedState.depositMode) setDepositMode(savedState.depositMode);
         if (savedState.saveAsRawMaterial !== undefined)
           setSaveAsRawMaterial(savedState.saveAsRawMaterial);
+        if (savedState.mobileStep) setMobileStep(savedState.mobileStep);
       } catch {
         // ignore
       }
@@ -589,56 +592,51 @@ export default function SetorEmasPage() {
     );
   }
 
+  const saveStateAndNavigate = (path: string) => {
+    sessionStorage.setItem(
+      "setor_emas_cart",
+      JSON.stringify({
+        depositItems,
+        locationId: selectedLocationId,
+        paymentMethod,
+        notes,
+        depositMode,
+        saveAsRawMaterial,
+        mobileStep,
+      })
+    );
+    navigate(path);
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-muted/30">
-      {/* Header */}
-      <header className="h-auto min-h-12 border-b bg-background flex flex-col sm:flex-row items-start sm:items-center justify-between px-2 sm:px-4 py-2 sm:py-0 gap-2 sm:gap-0 shrink-0">
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto">
-          <div className="flex items-center gap-2">
+    <div className="min-h-screen min-h-[100dvh] flex flex-col bg-muted/30">
+      <header className="h-auto min-h-12 border-b bg-background flex flex-col sm:flex-row items-start sm:items-center justify-between px-2 sm:px-4 py-2 sm:py-0 gap-2 sm:gap-0 shrink-0 sticky top-0 z-20">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap w-full sm:w-auto">
+          <div className="flex items-center gap-2 shrink-0">
             <div className="h-6 w-6 sm:h-7 sm:w-7 rounded bg-amber-500 flex items-center justify-center">
               <Scale className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-white" />
             </div>
-            <span className="font-bold text-sm sm:text-base">Setor Emas</span>
+            <span className="font-bold text-sm sm:text-base whitespace-nowrap">Setor Emas</span>
           </div>
           <div className="h-5 w-px bg-border hidden sm:block" />
-          <div className="flex gap-1 bg-muted p-0.5 rounded">
+          <div className="flex gap-1 bg-muted p-0.5 rounded shrink-0">
             <Button
               variant="ghost"
               size="sm"
               className="h-6 sm:h-7 text-[10px] sm:text-xs px-2 sm:px-3"
               onClick={() => navigate("/pos")}
             >
-              <ShoppingCart className="h-3 w-3 mr-1" />
-              <span className="hidden xs:inline">Penjualan</span>
+              <ShoppingCart className="h-3 w-3 mr-1 shrink-0" />
+              <span className="hidden xs:inline whitespace-nowrap">Penjualan</span>
             </Button>
             <Button
               size="sm"
-              className="h-6 sm:h-7 text-[10px] sm:text-xs px-2 sm:px-3"
+              className="h-6 sm:h-7 text-[10px] sm:text-xs px-2 sm:px-3 bg-zinc-900 hover:bg-zinc-800"
             >
-              <Scale className="h-3 w-3 mr-1" />
-              <span className="hidden xs:inline">Setor</span>
+              <Scale className="h-3 w-3 mr-1 shrink-0" />
+              <span className="hidden xs:inline whitespace-nowrap">Setor</span>
             </Button>
           </div>
-          <div className="h-5 w-px bg-border hidden sm:block" />
-          <Tabs
-            value={depositMode}
-            onValueChange={(v) => setDepositMode(v as DepositMode)}
-          >
-            <TabsList className="h-6 sm:h-7">
-              <TabsTrigger
-                value="standard"
-                className="text-[10px] sm:text-xs px-1.5 sm:px-2 h-4 sm:h-5"
-              >
-                Standar
-              </TabsTrigger>
-              <TabsTrigger
-                value="custom"
-                className="text-[10px] sm:text-xs px-1.5 sm:px-2 h-4 sm:h-5"
-              >
-                Custom
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
         </div>
         <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto">
           <SearchableSelect
@@ -665,7 +663,7 @@ export default function SetorEmasPage() {
             size="sm"
             className="h-7 sm:h-8 px-2 sm:px-3"
             onClick={() =>
-              navigate("/pos/history?return=/setor-emas&type=purchase")
+              saveStateAndNavigate("/pos/history?return=/setor-emas&type=purchase")
             }
           >
             <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
@@ -684,575 +682,589 @@ export default function SetorEmasPage() {
       </header>
 
       {/* Main */}
-      <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-auto lg:overflow-hidden">
+      <div className={`flex-1 flex ${isMobile ? 'flex-col' : 'flex-col lg:flex-row'}`}>
         {/* Left */}
-        <div className="flex-1 flex flex-col p-2 sm:p-3 gap-2 sm:gap-3 min-w-0">
-          {/* Form */}
-          <div className="bg-background rounded-lg border p-2 sm:p-3">
-            {depositMode === "standard" ? (
-              <div className="space-y-2 sm:space-y-3">
-                <div className="flex gap-1.5 sm:gap-2 items-end flex-wrap">
-                  <div className="flex-1 min-w-[120px] sm:min-w-[180px]">
-                    <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
-                      Kategori Emas
-                    </Label>
-                    <SearchableSelect
-                      options={goldCategoryOptions}
-                      value={selectedCategoryId}
-                      onValueChange={handleCategoryChange}
-                      placeholder="Pilih kategori"
-                      searchPlaceholder="Cari kategori..."
-                      emptyMessage="Kategori tidak ditemukan"
-                    />
-                  </div>
-                  <div className="w-20 sm:w-28">
-                    <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
-                      Berat (g)
-                    </Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={standardWeight}
-                      onChange={(e) => setStandardWeight(e.target.value)}
-                      placeholder="0.00"
-                      className="h-8 sm:h-9 text-xs sm:text-sm"
-                    />
-                  </div>
-                  <div className="w-24 sm:w-32">
-                    <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
-                      Harga Beli/g <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      type="number"
-                      value={standardBuyPrice}
-                      onChange={(e) => setStandardBuyPrice(e.target.value)}
-                      placeholder="0"
-                      className="h-8 sm:h-9 text-xs sm:text-sm"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-[100px] sm:min-w-[120px]">
-                    <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
-                      Catatan
-                    </Label>
-                    <Input
-                      value={standardNotes}
-                      onChange={(e) => setStandardNotes(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && addStandardItem()}
-                      placeholder="Opsional"
-                      className="h-8 sm:h-9 text-xs sm:text-sm"
-                    />
-                  </div>
-                  <Button
-                    onClick={addStandardItem}
-                    className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3"
-                  >
-                    <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
-                    <span className="hidden sm:inline">Tambah</span>
-                  </Button>
-                </div>
-                <p className="text-[10px] sm:text-xs text-muted-foreground">
-                  * Susut akan diatur setelah item masuk keranjang
-                </p>
+        {(!isMobile || mobileStep === 1) && (
+          <div className="flex-1 flex flex-col p-2 sm:p-3 gap-2 sm:gap-3 min-w-0">
+            {/* Form */}
+            <div className="bg-background rounded-lg border p-2 sm:p-3 shrink-0 relative">
+              <div className="mb-3 sm:mb-4">
+                <Tabs
+                  value={depositMode}
+                  onValueChange={(v) => setDepositMode(v as DepositMode)}
+                >
+                  <TabsList className="h-7 sm:h-8">
+                    <TabsTrigger value="standard" className="text-xs sm:text-sm px-3 sm:px-4">Standar</TabsTrigger>
+                    <TabsTrigger value="custom" className="text-xs sm:text-sm px-3 sm:px-4">Custom</TabsTrigger>
+                  </TabsList>
+                </Tabs>
               </div>
-            ) : (
-              <div className="space-y-2 sm:space-y-3">
-                <div className="flex gap-1.5 sm:gap-2 items-end flex-wrap">
-                  <div className="w-20 sm:w-28">
-                    <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
-                      Berat (g)
-                    </Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={customWeight}
-                      onChange={(e) => setCustomWeight(e.target.value)}
-                      placeholder="0.00"
-                      className="h-8 sm:h-9 text-xs sm:text-sm"
-                    />
+              {depositMode === "standard" ? (
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="flex gap-1.5 sm:gap-2 items-end flex-wrap">
+                    <div className="flex-1 min-w-[120px] sm:min-w-[180px]">
+                      <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
+                        Kategori Emas
+                      </Label>
+                      <SearchableSelect
+                        options={goldCategoryOptions}
+                        value={selectedCategoryId}
+                        onValueChange={handleCategoryChange}
+                        placeholder="Pilih kategori"
+                        searchPlaceholder="Cari kategori..."
+                        emptyMessage="Kategori tidak ditemukan"
+                      />
+                    </div>
+                    <div className="w-20 sm:w-28">
+                      <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
+                        Berat (g)
+                      </Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={standardWeight}
+                        onChange={(e) => setStandardWeight(e.target.value)}
+                        placeholder="0.00"
+                        className="h-8 sm:h-9 text-xs sm:text-sm"
+                      />
+                    </div>
+                    <div className="w-24 sm:w-32">
+                      <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
+                        Harga Beli/g <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        type="number"
+                        value={standardBuyPrice}
+                        onChange={(e) => setStandardBuyPrice(e.target.value)}
+                        placeholder="0"
+                        className="h-8 sm:h-9 text-xs sm:text-sm"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-[100px] sm:min-w-[120px]">
+                      <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
+                        Catatan
+                      </Label>
+                      <Input
+                        value={standardNotes}
+                        onChange={(e) => setStandardNotes(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && addStandardItem()}
+                        placeholder="Opsional"
+                        className="h-8 sm:h-9 text-xs sm:text-sm"
+                      />
+                    </div>
+                    <Button
+                      onClick={addStandardItem}
+                      className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3"
+                    >
+                      <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
+                      <span className="hidden sm:inline">Tambah</span>
+                    </Button>
                   </div>
-                  <div className="w-16 sm:w-20">
-                    <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
-                      Kadar (%)
-                    </Label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      value={customPurity}
-                      onChange={(e) => setCustomPurity(e.target.value)}
-                      placeholder="99.9"
-                      className="h-8 sm:h-9 text-xs sm:text-sm"
-                    />
-                  </div>
-                  <div className="w-24 sm:w-28">
-                    <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
-                      Harga Surat/g
-                    </Label>
-                    <Input
-                      type="number"
-                      value={customPricePerGram}
-                      onChange={(e) => setCustomPricePerGram(e.target.value)}
-                      placeholder="0"
-                      className="h-8 sm:h-9 text-xs sm:text-sm"
-                    />
-                  </div>
-                  <div className="w-24 sm:w-28">
-                    <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
-                      Harga Beli/g <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      type="number"
-                      value={customBuyPrice}
-                      onChange={(e) => setCustomBuyPrice(e.target.value)}
-                      placeholder="0"
-                      className="h-8 sm:h-9 text-xs sm:text-sm"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-[80px] sm:min-w-[100px]">
-                    <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
-                      Catatan
-                    </Label>
-                    <Input
-                      value={customNotes}
-                      onChange={(e) => setCustomNotes(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && addCustomItem()}
-                      placeholder="Opsional"
-                      className="h-8 sm:h-9 text-xs sm:text-sm"
-                    />
-                  </div>
-                  <Button
-                    onClick={addCustomItem}
-                    className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3"
-                  >
-                    <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
-                    <span className="hidden sm:inline">Tambah</span>
-                  </Button>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">
+                    * Susut akan diatur setelah item masuk keranjang
+                  </p>
                 </div>
-                <p className="text-[10px] sm:text-xs text-muted-foreground">
-                  * Susut akan diatur setelah item masuk keranjang
-                </p>
-              </div>
-            )}
+              ) : (
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="flex gap-1.5 sm:gap-2 items-end flex-wrap">
+                    <div className="w-20 sm:w-28">
+                      <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
+                        Berat (g)
+                      </Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={customWeight}
+                        onChange={(e) => setCustomWeight(e.target.value)}
+                        placeholder="0.00"
+                        className="h-8 sm:h-9 text-xs sm:text-sm"
+                      />
+                    </div>
+                    <div className="w-16 sm:w-20">
+                      <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
+                        Kadar (%)
+                      </Label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={customPurity}
+                        onChange={(e) => setCustomPurity(e.target.value)}
+                        placeholder="99.9"
+                        className="h-8 sm:h-9 text-xs sm:text-sm"
+                      />
+                    </div>
+                    <div className="w-24 sm:w-28">
+                      <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
+                        Harga Surat/g
+                      </Label>
+                      <Input
+                        type="number"
+                        value={customPricePerGram}
+                        onChange={(e) => setCustomPricePerGram(e.target.value)}
+                        placeholder="0"
+                        className="h-8 sm:h-9 text-xs sm:text-sm"
+                      />
+                    </div>
+                    <div className="w-24 sm:w-28">
+                      <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
+                        Harga Beli/g <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        type="number"
+                        value={customBuyPrice}
+                        onChange={(e) => setCustomBuyPrice(e.target.value)}
+                        placeholder="0"
+                        className="h-8 sm:h-9 text-xs sm:text-sm"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-[80px] sm:min-w-[100px]">
+                      <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">
+                        Catatan
+                      </Label>
+                      <Input
+                        value={customNotes}
+                        onChange={(e) => setCustomNotes(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && addCustomItem()}
+                        placeholder="Opsional"
+                        className="h-8 sm:h-9 text-xs sm:text-sm"
+                      />
+                    </div>
+                    <Button
+                      onClick={addCustomItem}
+                      className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3"
+                    >
+                      <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
+                      <span className="hidden sm:inline">Tambah</span>
+                    </Button>
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">
+                    * Susut akan diatur setelah item masuk keranjang
+                  </p>
+                </div>
+              )}
 
-            {selectedCategory && depositMode === "standard" && (
-              <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t">
-                <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm flex-wrap">
-                  <div className="flex items-center gap-1 sm:gap-2">
-                    <span className="text-muted-foreground">Ref:</span>
-                    <span className="font-medium">
-                      {formatCurrency(selectedCategory.buy_price)}/g
-                    </span>
-                  </div>
-                  <Badge variant="outline" className="text-[10px] sm:text-xs">
-                    {selectedCategory.purity}%
-                  </Badge>
-                  {standardWeight && parseFloat(standardWeight) > 0 && (
-                    <>
-                      <span className="text-muted-foreground hidden sm:inline">|</span>
-                      <div className="flex items-center gap-1 sm:gap-2">
-                        <span className="text-muted-foreground">Berat:</span>
-                        <span className="font-medium">
-                          {parseFloat(standardWeight).toFixed(2)}g
-                        </span>
-                      </div>
-                    </>
-                  )}
-                  {standardBuyPrice &&
-                    parseFloat(standardBuyPrice) > 0 &&
-                    standardWeight &&
-                    parseFloat(standardWeight) > 0 && (
+              {selectedCategory && depositMode === "standard" && (
+                <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t">
+                  <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm flex-wrap">
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <span className="text-muted-foreground">Ref:</span>
+                      <span className="font-medium">
+                        {formatCurrency(selectedCategory.buy_price)}/g
+                      </span>
+                    </div>
+                    <Badge variant="outline" className="text-[10px] sm:text-xs">
+                      {selectedCategory.purity}%
+                    </Badge>
+                    {standardWeight && parseFloat(standardWeight) > 0 && (
                       <>
                         <span className="text-muted-foreground hidden sm:inline">|</span>
                         <div className="flex items-center gap-1 sm:gap-2">
-                          <span className="text-muted-foreground">Est. Total:</span>
-                          <span className="font-bold text-green-600">
-                            {formatCurrency(
-                              parseFloat(standardWeight) * parseFloat(standardBuyPrice)
-                            )}
+                          <span className="text-muted-foreground">Berat:</span>
+                          <span className="font-medium">
+                            {parseFloat(standardWeight).toFixed(2)}g
                           </span>
                         </div>
                       </>
                     )}
+                    {standardBuyPrice &&
+                      parseFloat(standardBuyPrice) > 0 &&
+                      standardWeight &&
+                      parseFloat(standardWeight) > 0 && (
+                        <>
+                          <span className="text-muted-foreground hidden sm:inline">|</span>
+                          <div className="flex items-center gap-1 sm:gap-2">
+                            <span className="text-muted-foreground">Est. Total:</span>
+                            <span className="font-bold text-green-600">
+                              {formatCurrency(
+                                parseFloat(standardWeight) * parseFloat(standardBuyPrice)
+                              )}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* Items */}
-          <div className="flex-1 bg-background rounded-lg border flex flex-col shrink-0">
-            <div className="h-9 sm:h-10 px-2 sm:px-3 border-b flex items-center justify-between shrink-0">
-              <span className="text-xs sm:text-sm font-medium">
-                Item Setor ({depositItems.length})
-              </span>
-              {depositItems.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 sm:h-7 text-[10px] sm:text-xs text-destructive hover:text-destructive px-2"
-                  onClick={clearAll}
-                >
-                  <Trash2 className="h-3 w-3 mr-1" />
-                  Hapus
-                </Button>
               )}
             </div>
-            <ScrollArea className="flex-1 h-[180px] sm:h-[220px] lg:h-auto lg:max-h-[calc(100vh-400px)]">
-              {depositItems.length === 0 ? (
-                <div className="p-4 sm:p-8 text-center text-muted-foreground">
-                  <Scale className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 opacity-30" />
-                  <p className="text-xs sm:text-sm">Belum ada item</p>
-                </div>
-              ) : (
-                <div className="p-1.5 sm:p-2 space-y-1.5">
-                  {depositItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="p-2 sm:p-3 rounded-lg border bg-card hover:shadow-sm transition-shadow"
-                    >
-                      {/* Row 1: Name & Delete */}
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
-                          <span className="text-xs sm:text-sm font-medium truncate">
-                            {item.gold_category_name || `Emas ${item.purity}%`}
-                          </span>
-                          {item.item_type === "custom" && (
-                            <Badge
-                              variant="secondary"
-                              className="text-[8px] sm:text-[10px]"
-                            >
-                              Custom
-                            </Badge>
-                          )}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 sm:h-7 sm:w-7 text-muted-foreground hover:text-destructive shrink-0"
-                          onClick={() => removeItem(item.id)}
-                        >
-                          <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                        </Button>
-                      </div>
 
-                      {/* Row 2: Weight Input, Shrinkage Input, Net Weight */}
-                      <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                        {/* Berat Kotor - Input Field */}
-                        <div className="flex items-center gap-1">
-                          <span className="text-[10px] sm:text-xs text-muted-foreground">Berat:</span>
-                          <Input
-                            type="number"
-                            step="0.001"
-                            min="0.001"
-                            value={item.weight_gross || ""}
-                            onChange={(e) => updateWeightDirect(item.id, e.target.value)}
-                            placeholder="0.000"
-                            className="h-6 sm:h-7 w-20 sm:w-24 text-xs sm:text-sm text-center px-1"
-                          />
-                          <span className="text-[10px] sm:text-xs text-muted-foreground">g</span>
-                        </div>
-
-                        {/* Susut Input */}
-                        <div className="flex items-center gap-1">
-                          <span className="text-[10px] sm:text-xs text-orange-500">Susut:</span>
-                          <Input
-                            type="number"
-                            step="0.1"
-                            min="0"
-                            max="100"
-                            value={item.shrinkage_percent || ""}
-                            onChange={(e) => updateShrinkage(item.id, e.target.value)}
-                            placeholder="0"
-                            className="h-6 sm:h-7 w-14 sm:w-16 text-xs sm:text-sm text-center px-1"
-                          />
-                          <span className="text-[10px] sm:text-xs text-muted-foreground">%</span>
-                        </div>
-
-                        {/* Arrow & Net Weight */}
-                        <div className="flex items-center gap-1">
-                          <span className="text-muted-foreground">→</span>
-                          <span className="text-xs sm:text-sm font-semibold text-primary">
-                            {item.weight_grams.toFixed(3)}g
-                          </span>
-                        </div>
-
-                        {/* Price */}
-                        <div className="flex items-center gap-1 ml-auto">
-                          <span className="text-[10px] sm:text-xs text-muted-foreground">×</span>
-                          <span className="text-xs sm:text-sm text-green-600">
-                            {formatCurrency(item.price_per_gram)}/g
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Row 3: Subtotal */}
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t">
-                        <span className="text-[10px] sm:text-xs text-muted-foreground">
-                          {item.shrinkage_percent > 0 && (
-                            <span className="text-orange-500">
-                              Susut: -{(item.weight_gross * item.shrinkage_percent / 100).toFixed(3)}g
-                            </span>
-                          )}
-                        </span>
-                        <span className="text-sm sm:text-base font-bold text-green-600">
-                          {formatCurrency(item.subtotal)}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
-          </div>
-        </div>
-
-        {/* Right */}
-        <div className="w-full lg:w-72 xl:w-80 border-t lg:border-t-0 lg:border-l bg-background flex flex-col shrink-0">
-          {/* Member */}
-          <div className="p-2 sm:p-3 border-b">
-            <Label className="text-[10px] sm:text-xs text-muted-foreground mb-1 sm:mb-1.5 block">
-              Penyetor
-            </Label>
-            {selectedMember ? (
-              <div className="space-y-1.5 sm:space-y-2">
-                <div className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded border bg-muted/30">
-                  <User className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs sm:text-sm font-medium truncate">
-                      {selectedMember.name}
-                    </p>
-                    <p className="text-[10px] sm:text-xs text-muted-foreground">
-                      {selectedMember.code || selectedMember.member_code}
-                    </p>
-                  </div>
+            {/* Items */}
+            <div className="flex-1 bg-background rounded-lg border flex flex-col shrink-0">
+              <div className="h-9 sm:h-10 px-2 sm:px-3 border-b flex items-center justify-between shrink-0 sticky top-12 sm:top-14 bg-background z-10 rounded-t-lg">
+                <span className="text-xs sm:text-sm font-medium">
+                  Item Setor ({depositItems.length})
+                </span>
+                {depositItems.length > 0 && (
                   <Button
                     variant="ghost"
-                    size="icon"
-                    className="h-5 w-5 sm:h-6 sm:w-6 shrink-0"
-                    onClick={() => setSelectedMember(null)}
+                    size="sm"
+                    className="h-6 sm:h-7 text-[10px] sm:text-xs text-destructive hover:text-destructive px-2"
+                    onClick={clearAll}
                   >
-                    <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Hapus
+                  </Button>
+                )}
+              </div>
+              <div className="flex-1">
+                {depositItems.length === 0 ? (
+                  <div className="p-4 sm:p-8 text-center text-muted-foreground">
+                    <Scale className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 opacity-30" />
+                    <p className="text-xs sm:text-sm">Belum ada item</p>
+                  </div>
+                ) : (
+                  <div className="p-1.5 sm:p-2 space-y-1.5">
+                    {depositItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-2 sm:p-3 rounded-lg border bg-card hover:shadow-sm transition-shadow"
+                      >
+                        {/* Row 1: Name & Delete */}
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
+                            <span className="text-xs sm:text-sm font-medium truncate">
+                              {item.gold_category_name || `Emas ${item.purity}%`}
+                            </span>
+                            {item.item_type === "custom" && (
+                              <Badge
+                                variant="secondary"
+                                className="text-[8px] sm:text-[10px]"
+                              >
+                                Custom
+                              </Badge>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 sm:h-7 sm:w-7 text-muted-foreground hover:text-destructive shrink-0"
+                            onClick={() => removeItem(item.id)}
+                          >
+                            <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                          </Button>
+                        </div>
+
+                        {/* Row 2: Weight Input, Shrinkage Input, Net Weight */}
+                        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                          {/* Berat Kotor - Input Field */}
+                          <div className="flex items-center gap-1">
+                            <span className="text-[10px] sm:text-xs text-muted-foreground">Berat:</span>
+                            <Input
+                              type="number"
+                              step="0.001"
+                              min="0.001"
+                              value={item.weight_gross || ""}
+                              onChange={(e) => updateWeightDirect(item.id, e.target.value)}
+                              placeholder="0.000"
+                              className="h-6 sm:h-7 w-20 sm:w-24 text-xs sm:text-sm text-center px-1"
+                            />
+                            <span className="text-[10px] sm:text-xs text-muted-foreground">g</span>
+                          </div>
+
+                          {/* Susut Input */}
+                          <div className="flex items-center gap-1">
+                            <span className="text-[10px] sm:text-xs text-orange-500">Susut:</span>
+                            <Input
+                              type="number"
+                              step="0.1"
+                              min="0"
+                              max="100"
+                              value={item.shrinkage_percent || ""}
+                              onChange={(e) => updateShrinkage(item.id, e.target.value)}
+                              placeholder="0"
+                              className="h-6 sm:h-7 w-14 sm:w-16 text-xs sm:text-sm text-center px-1"
+                            />
+                            <span className="text-[10px] sm:text-xs text-muted-foreground">%</span>
+                          </div>
+
+                          {/* Arrow & Net Weight */}
+                          <div className="flex items-center gap-1">
+                            <span className="text-muted-foreground">→</span>
+                            <span className="text-xs sm:text-sm font-semibold text-primary">
+                              {item.weight_grams.toFixed(3)}g
+                            </span>
+                          </div>
+
+                          {/* Price */}
+                          <div className="flex items-center gap-1 ml-auto">
+                            <span className="text-[10px] sm:text-xs text-muted-foreground">×</span>
+                            <span className="text-xs sm:text-sm text-green-600">
+                              {formatCurrency(item.price_per_gram)}/g
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Row 3: Subtotal */}
+                        <div className="flex items-center justify-between mt-2 pt-2 border-t">
+                          <span className="text-[10px] sm:text-xs text-muted-foreground">
+                            {item.shrinkage_percent > 0 && (
+                              <span className="text-orange-500">
+                                Susut: -{(item.weight_gross * item.shrinkage_percent / 100).toFixed(3)}g
+                              </span>
+                            )}
+                          </span>
+                          <span className="text-sm sm:text-base font-bold text-green-600">
+                            {formatCurrency(item.subtotal)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {isMobile && (
+                <div className="p-2 sm:p-3 border-t mt-auto bg-background shrink-0">
+                  <Button className="w-full h-12 sm:h-14 md:h-16 text-base md:text-lg font-semibold bg-primary hover:bg-primary/90 shadow-md" onClick={() => setMobileStep(2)}>
+                    Lanjut Pembayaran
                   </Button>
                 </div>
-                <div className="text-[10px] sm:text-xs flex items-center justify-between px-0.5 sm:px-1">
-                  <span className="text-muted-foreground">
-                    Poin:{" "}
-                    <span className="font-medium text-yellow-600">
-                      {selectedMember.points?.toLocaleString() || 0}
-                    </span>
-                  </span>
-                  <span className="text-muted-foreground">
-                    +{Math.floor(totals.totalAmount / 200000)} poin
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {/* Quick search by code/barcode */}
-                <div className="flex gap-1.5">
-                  <div className="flex-1 relative">
-                    <Barcode className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                    <Input
-                      ref={memberSearchRef}
-                      placeholder={isMobile ? "Ketik kode member..." : "Scan atau ketik kode member..."}
-                      value={memberSearchCode}
-                      onChange={handleMemberInputChange}
-                      onKeyDown={(e) => e.key === "Enter" && handleSearchMember()}
-                      onFocus={handleMemberInputFocus}
-                      onBlur={handleMemberInputBlur}
-                      className={`pl-7 h-8 text-xs ${!isMobile && scannerReady ? "ring-2 ring-green-500 border-green-500" : ""}`}
-                      autoFocus={!isMobile}
-                    />
-                    {/* USB Scanner status indicator - desktop only */}
-                    {!isMobile && scannerReady && (
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  {/* Camera scan button - only show on mobile */}
-                  {isMobile && (
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Right */}
+        {(!isMobile || mobileStep === 2) && (
+          <div className={`bg-background flex flex-col shrink-0 ${isMobile ? 'w-full flex-1 border-t' : 'w-full lg:w-72 xl:w-80 border-t lg:border-t-0 lg:border-l'}`}>
+            {/* Member */}
+            <div className={isMobile ? 'p-4 border-b' : 'p-2 sm:p-3 border-b'}>
+              <Label className={`block font-semibold ${isMobile ? 'text-sm mb-2' : 'text-[10px] sm:text-xs text-muted-foreground mb-1 sm:mb-1.5'}`}>
+                Penyetor
+              </Label>
+              {selectedMember ? (
+                <div className={isMobile ? 'space-y-3' : 'space-y-1.5 sm:space-y-2'}>
+                  <div className={`flex items-center rounded border bg-muted/30 ${isMobile ? 'p-3 gap-3' : 'p-1.5 sm:p-2 gap-1.5 sm:gap-2'}`}>
+                    <User className={`text-muted-foreground shrink-0 ${isMobile ? 'h-6 w-6' : 'h-3 w-3 sm:h-4 sm:w-4'}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-medium truncate ${isMobile ? 'text-base' : 'text-xs sm:text-sm'}`}>
+                        {selectedMember.name}
+                      </p>
+                      <p className={`text-muted-foreground ${isMobile ? 'text-sm' : 'text-[10px] sm:text-xs'}`}>
+                        {selectedMember.code || selectedMember.member_code}
+                      </p>
+                    </div>
                     <Button
-                      variant="default"
+                      variant="ghost"
                       size="icon"
-                      onClick={() => setShowBarcodeScanner(true)}
-                      className="h-8 w-8 bg-blue-600 hover:bg-blue-700"
-                      title="Scan dengan kamera"
+                      className={`shrink-0 ${isMobile ? 'h-8 w-8' : 'h-5 w-5 sm:h-6 sm:w-6'}`}
+                      onClick={() => setSelectedMember(null)}
                     >
-                      <Camera className="h-3.5 w-3.5" />
+                      <X className={isMobile ? 'h-4 w-4' : 'h-2.5 w-2.5 sm:h-3 sm:w-3'} />
                     </Button>
+                  </div>
+                  <div className={`flex items-center justify-between ${isMobile ? 'text-sm px-1.5' : 'text-[10px] sm:text-xs px-0.5 sm:px-1'}`}>
+                    <span className="text-muted-foreground">
+                      Poin:{" "}
+                      <span className="font-medium text-yellow-600">
+                        {selectedMember.points?.toLocaleString() || 0}
+                      </span>
+                    </span>
+                    <span className="text-muted-foreground">
+                      +{Math.floor(totals.totalAmount / 200000)} poin
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className={isMobile ? 'space-y-3' : 'space-y-2'}>
+                  {/* Quick search by code/barcode */}
+                  <div className={`flex ${isMobile ? 'gap-2' : 'gap-1.5'}`}>
+                    <div className="flex-1 relative">
+                      <Barcode className={`absolute top-1/2 -translate-y-1/2 text-muted-foreground ${isMobile ? 'left-3 h-5 w-5' : 'left-2 h-3 w-3'}`} />
+                      <Input
+                        ref={memberSearchRef}
+                        placeholder={isMobile ? "Ketik kode member..." : "Scan atau ketik kode member..."}
+                        value={memberSearchCode}
+                        onChange={handleMemberInputChange}
+                        onKeyDown={(e) => e.key === "Enter" && handleSearchMember()}
+                        onFocus={handleMemberInputFocus}
+                        onBlur={handleMemberInputBlur}
+                        className={`${isMobile ? 'pl-10 h-12 text-sm' : 'pl-7 h-8 text-xs'} ${!isMobile && scannerReady ? "ring-2 ring-green-500 border-green-500" : ""}`}
+                        autoFocus={!isMobile}
+                      />
+                      {/* USB Scanner status indicator - desktop only */}
+                      {!isMobile && scannerReady && (
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    {/* Camera scan button - only show on mobile */}
+                    {isMobile && (
+                      <Button
+                        variant="default"
+                        size="icon"
+                        onClick={() => setShowBarcodeScanner(true)}
+                        className="h-12 w-12 bg-blue-600 hover:bg-blue-700 shrink-0"
+                        title="Scan dengan kamera"
+                      >
+                        <Camera className="h-5 w-5" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleSearchMember()}
+                      className={`shrink-0 ${isMobile ? 'h-12 w-12' : 'h-8 w-8'}`}
+                    >
+                      <Search className={isMobile ? 'h-5 w-5' : 'h-3.5 w-3.5'} />
+                    </Button>
+                  </div>
+                  {/* Status indicator */}
+                  {isMobile ? (
+                    <p className="text-xs text-muted-foreground text-center">
+                      Tekan <Camera className="inline h-4 w-4" /> untuk scan kartu member
+                    </p>
+                  ) : (
+                    <div className={`flex items-center justify-center gap-1.5 text-[10px] ${scannerReady ? "text-green-600" : "text-muted-foreground"}`}>
+                      <Usb className="h-3 w-3" />
+                      <span>{scannerReady ? "Scanner siap" : "Klik untuk scan"}</span>
+                    </div>
                   )}
                   <Button
                     variant="outline"
-                    size="icon"
-                    onClick={() => handleSearchMember()}
-                    className="h-8 w-8"
+                    className={`w-full justify-start ${isMobile ? 'h-12 text-sm' : 'h-8 sm:h-9 text-xs sm:text-sm'}`}
+                    onClick={() => saveStateAndNavigate("/members/select?return=/setor-emas")}
                   >
-                    <Search className="h-3.5 w-3.5" />
+                    <User className={`mr-1.5 sm:mr-2 ${isMobile ? 'h-5 w-5' : 'h-3 w-3 sm:h-4 sm:w-4'}`} />
+                    Cari di Daftar Member
                   </Button>
                 </div>
-                {/* Status indicator */}
-                {isMobile ? (
-                  <p className="text-[10px] text-muted-foreground text-center">
-                    Tekan <Camera className="inline h-3 w-3" /> untuk scan kartu member
-                  </p>
-                ) : (
-                  <div className={`flex items-center justify-center gap-1.5 text-[10px] ${scannerReady ? "text-green-600" : "text-muted-foreground"}`}>
-                    <Usb className="h-3 w-3" />
-                    <span>{scannerReady ? "Scanner siap" : "Klik untuk scan"}</span>
-                  </div>
-                )}
-                <Button
-                  variant="outline"
-                  className="w-full justify-start h-8 sm:h-9 text-xs sm:text-sm"
-                  onClick={() => {
-                    // Save cart state before navigating
-                    sessionStorage.setItem(
-                      "setor_emas_cart",
-                      JSON.stringify({
-                        depositItems,
-                        locationId: selectedLocationId,
-                        paymentMethod,
-                        notes,
-                        depositMode,
-                        saveAsRawMaterial,
-                      })
-                    );
-                    navigate("/members/select?return=/setor-emas");
-                  }}
-                >
-                  <User className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
-                  Cari di Daftar Member
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Payment */}
-          <div className="p-2 sm:p-3 border-b">
-            <Label className="text-[10px] sm:text-xs text-muted-foreground mb-1 sm:mb-1.5 block">
-              Pembayaran
-            </Label>
-            <div className="grid grid-cols-3 gap-1 sm:gap-1.5">
-              {[
-                { value: "cash", label: "Tunai", icon: Banknote },
-                { value: "transfer", label: "Transfer", icon: Wallet },
-                { value: "card", label: "Kartu", icon: CreditCard },
-              ].map((m) => (
-                <button
-                  key={m.value}
-                  onClick={() => setPaymentMethod(m.value as PaymentMethod)}
-                  className={`flex flex-col items-center gap-0.5 sm:gap-1 p-1.5 sm:p-2 rounded border text-[10px] sm:text-xs transition-colors ${
-                    paymentMethod === m.value
-                      ? "border-primary bg-primary/5 text-primary"
-                      : "hover:border-primary/50"
-                  }`}
-                >
-                  <m.icon className="h-3 w-3 sm:h-4 sm:w-4" />
-                  {m.label}
-                </button>
-              ))}
+              )}
             </div>
-          </div>
 
-          {/* Notes */}
-          <div className="p-2 sm:p-3 border-b">
-            <Label className="text-[10px] sm:text-xs text-muted-foreground mb-1 block">
-              Catatan
-            </Label>
-            <Input
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Opsional"
-              className="h-7 sm:h-8 text-xs sm:text-sm"
-            />
-          </div>
-
-          {/* Simpan sebagai Raw Material */}
-          <div className="p-2 sm:p-3 border-b">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <Package className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
-                <div>
-                  <Label className="text-xs sm:text-sm font-medium">
-                    Simpan Bahan Baku
-                  </Label>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">
-                    Untuk dilebur nanti
-                  </p>
-                </div>
+            {/* Payment */}
+            <div className={isMobile ? 'p-4 border-b' : 'p-2 sm:p-3 border-b'}>
+              <Label className={`block font-semibold ${isMobile ? 'text-sm mb-2' : 'text-[10px] sm:text-xs text-muted-foreground mb-1 sm:mb-1.5'}`}>
+                Pembayaran
+              </Label>
+              <div className={`grid grid-cols-3 ${isMobile ? 'gap-2' : 'gap-1 sm:gap-1.5'}`}>
+                {[
+                  { value: "cash", label: "Tunai", icon: Banknote },
+                  { value: "transfer", label: "Transfer", icon: Wallet },
+                  { value: "card", label: "Kartu", icon: CreditCard },
+                ].map((m) => (
+                  <button
+                    key={m.value}
+                    onClick={() => setPaymentMethod(m.value as PaymentMethod)}
+                    className={`flex flex-col items-center rounded border transition-colors ${isMobile ? 'gap-2 p-3 text-sm' : 'gap-0.5 sm:gap-1 p-1.5 sm:p-2 text-[10px] sm:text-xs'
+                      } ${paymentMethod === m.value
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "hover:border-primary/50"
+                      }`}
+                  >
+                    <m.icon className={isMobile ? 'h-6 w-6' : 'h-3 w-3 sm:h-4 sm:w-4'} />
+                    {m.label}
+                  </button>
+                ))}
               </div>
-              <Switch
-                checked={saveAsRawMaterial}
-                onCheckedChange={setSaveAsRawMaterial}
+            </div>
+
+            {/* Notes */}
+            <div className={isMobile ? 'p-4 border-b' : 'p-2 sm:p-3 border-b'}>
+              <Label className={`block font-semibold ${isMobile ? 'text-sm mb-2' : 'text-[10px] sm:text-xs text-muted-foreground mb-1 block'}`}>
+                Catatan
+              </Label>
+              <Input
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Opsional"
+                className={isMobile ? 'h-12 text-sm' : 'h-7 sm:h-8 text-xs sm:text-sm'}
               />
             </div>
-            {saveAsRawMaterial && (
-              <div className="mt-1.5 sm:mt-2 p-1.5 sm:p-2 rounded bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                <p className="text-[10px] sm:text-xs text-amber-700 dark:text-amber-400">
-                  Emas akan disimpan ke inventory bahan baku.
-                </p>
-              </div>
-            )}
-          </div>
 
-          {/* Summary */}
-          <div className="flex-1 p-2 sm:p-3 flex flex-col">
-            <div className="space-y-1 sm:space-y-1.5 text-xs sm:text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Berat Kotor</span>
-                <span className="font-medium">
-                  {totals.totalWeightGross.toFixed(3)} g
-                </span>
+            {/* Simpan sebagai Raw Material */}
+            <div className={isMobile ? 'p-4 border-b' : 'p-2 sm:p-3 border-b'}>
+              <div className="flex items-center justify-between gap-2">
+                <div className={`flex items-center ${isMobile ? 'gap-3' : 'gap-1.5 sm:gap-2'}`}>
+                  <Package className={`text-muted-foreground shrink-0 ${isMobile ? 'h-6 w-6' : 'h-3 w-3 sm:h-4 sm:w-4'}`} />
+                  <div>
+                    <Label className={`font-medium ${isMobile ? 'text-base' : 'text-xs sm:text-sm'}`}>
+                      Simpan Bahan Baku
+                    </Label>
+                    <p className={`text-muted-foreground ${isMobile ? 'text-sm' : 'text-[10px] sm:text-xs'}`}>
+                      Untuk dilebur nanti
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={saveAsRawMaterial}
+                  onCheckedChange={setSaveAsRawMaterial}
+                  className={isMobile ? 'scale-125' : ''}
+                />
               </div>
-              <div className="flex justify-between text-amber-600 dark:text-amber-400">
-                <span>Susut (avg)</span>
-                <span>
-                  -
-                  {depositItems.length > 0
-                    ? (
+              {saveAsRawMaterial && (
+                <div className={`rounded bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 ${isMobile ? 'mt-3 p-3' : 'mt-1.5 sm:mt-2 p-1.5 sm:p-2'}`}>
+                  <p className={`text-amber-700 dark:text-amber-400 ${isMobile ? 'text-sm' : 'text-[10px] sm:text-xs'}`}>
+                    Emas akan disimpan ke inventory bahan baku.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Summary */}
+            <div className={`flex-1 flex flex-col ${isMobile ? 'p-4' : 'p-2 sm:p-3'}`}>
+              <div className={`space-y-1 sm:space-y-1.5 ${isMobile ? 'text-base' : 'text-xs sm:text-sm'}`}>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Berat Kotor</span>
+                  <span className="font-medium">
+                    {totals.totalWeightGross.toFixed(3)} g
+                  </span>
+                </div>
+                <div className="flex justify-between text-amber-600 dark:text-amber-400">
+                  <span>Susut (avg)</span>
+                  <span>
+                    -
+                    {depositItems.length > 0
+                      ? (
                         (1 - totals.totalWeight / totals.totalWeightGross) *
                         100
                       ).toFixed(1)
-                    : 0}
-                  %
+                      : 0}
+                    %
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Berat Bersih</span>
+                  <span className="font-semibold">
+                    {totals.totalWeight.toFixed(3)} g
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Jumlah Item</span>
+                  <span>{depositItems.length} item</span>
+                </div>
+              </div>
+              <div className={`border-t ${isMobile ? 'my-4' : 'my-1.5 sm:my-2'}`} />
+              <div className="flex justify-between items-center mt-auto">
+                <span className={`text-muted-foreground ${isMobile ? 'text-base font-medium' : 'text-xs sm:text-sm'}`}>
+                  Total Bayar
+                </span>
+                <span className={`font-bold text-green-600 ${isMobile ? 'text-3xl' : 'text-lg sm:text-xl'}`}>
+                  {formatCurrency(totals.totalAmount)}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Berat Bersih</span>
-                <span className="font-semibold">
-                  {totals.totalWeight.toFixed(3)} g
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Jumlah Item</span>
-                <span>{depositItems.length} item</span>
-              </div>
             </div>
-            <div className="border-t my-1.5 sm:my-2" />
-            <div className="flex justify-between items-center">
-              <span className="text-xs sm:text-sm text-muted-foreground">
-                Total Bayar
-              </span>
-              <span className="text-lg sm:text-xl font-bold text-green-600">
-                {formatCurrency(totals.totalAmount)}
-              </span>
-            </div>
-          </div>
 
-          {/* Actions */}
-          <div className="p-2 sm:p-3 border-t space-y-1.5 sm:space-y-2">
-            <Button
-              className="w-full h-9 sm:h-11 bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm"
-              disabled={depositItems.length === 0 || isSubmitting}
-              onClick={handlePaymentClick}
-            >
-              <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
-              Proses Pembayaran
-            </Button>
+            {/* Actions */}
+            <div className={`border-t ${isMobile ? 'p-4 space-y-3' : 'p-2 sm:p-3 space-y-1.5 sm:space-y-2'}`}>
+              <Button
+                className={`w-full bg-blue-600 hover:bg-blue-700 ${isMobile ? 'h-14 text-lg' : 'h-9 sm:h-11 text-xs sm:text-sm'}`}
+                disabled={depositItems.length === 0 || isSubmitting}
+                onClick={handlePaymentClick}
+              >
+                <CheckCircle2 className={`mr-1.5 sm:mr-2 ${isMobile ? 'h-6 w-6' : 'h-3 w-3 sm:h-4 sm:w-4'}`} />
+                Proses Pembayaran
+              </Button>
+              {isMobile && (
+                <Button variant="outline" className="w-full h-14 text-lg" onClick={() => setMobileStep(1)}>
+                  Kembali
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Confirmation Modal */}

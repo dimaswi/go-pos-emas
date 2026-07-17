@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { TransactionConfirmationModal } from "@/components/transaction-confirmation-modal";
 import { PrintNotaOverlay, type NotaData } from "@/components/print-nota-overlay";
@@ -84,13 +84,15 @@ export default function POSPage() {
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [showPriceUpdateModal, setShowPriceUpdateModal] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [mobileStep, setMobileStep] = useState<1 | 2 | 3>(1);
   const [scannerReady, setScannerReady] = useState(false);
   const lastInputTimeRef = useRef<number>(0);
 
   // Detect mobile device
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+      // Menggunakan < 1400 agar iPad Pro (termasuk posisi landscape 1366px) terdeteksi sebagai tablet
+      setIsMobile(window.innerWidth < 1400);
     };
     checkMobile();
     window.addEventListener("resize", checkMobile);
@@ -135,6 +137,7 @@ export default function POSPage() {
         if (savedState.discount) setDiscount(savedState.discount);
         if (savedState.notes) setNotes(savedState.notes);
         if (savedState.paidAmount) setPaidAmount(savedState.paidAmount);
+        if (savedState.mobileStep) setMobileStep(savedState.mobileStep);
       } catch {
         // ignore
       }
@@ -251,10 +254,10 @@ export default function POSPage() {
 
   const fetchStocksByLocation = async (locationId: number) => {
     try {
-      const stocksRes = await stocksApi.getAll({ 
-        status: "available", 
+      const stocksRes = await stocksApi.getAll({
+        status: "available",
         location_id: locationId,
-        page_size: 1000 
+        page_size: 1000
       });
       setStocks(stocksRes.data.data || []);
     } catch {
@@ -268,7 +271,7 @@ export default function POSPage() {
     return stocks.filter(stock => {
       const inCart = cart.some(item => item.stock_id === stock.id);
       if (inCart) return false;
-      
+
       if (searchProduct.trim()) {
         const search = searchProduct.toLowerCase();
         return (
@@ -298,7 +301,7 @@ export default function POSPage() {
       (s) =>
         !cart.some(item => item.stock_id === s.id) && // Not already in cart
         (s.product?.barcode.toLowerCase() === barcode.toLowerCase() ||
-        s.serial_number?.toLowerCase() === barcode.toLowerCase())
+          s.serial_number?.toLowerCase() === barcode.toLowerCase())
     );
 
     if (stock && stock.product) {
@@ -333,12 +336,12 @@ export default function POSPage() {
   const addToCart = (stock: Stock) => {
     // Check if this specific stock item is already in cart
     const existingItem = cart.find((item) => item.stock_id === stock.id);
-    
+
     if (existingItem) {
       toast.error("Item ini sudah ada di keranjang");
       return;
     }
-    
+
     // Selalu gunakan harga dari gold_category (harga terbaru)
     const price = (stock.product?.gold_category?.sell_price || 0) * (stock.product?.weight || 0);
 
@@ -364,6 +367,19 @@ export default function POSPage() {
     setPaidAmount("");
     setNotes("");
     setDiscount("");
+  };
+
+  const saveCartStateAndNavigate = (path: string) => {
+    sessionStorage.setItem("pos_cart", JSON.stringify({
+      cart,
+      locationId: selectedLocationId,
+      paymentMethod,
+      discount,
+      notes,
+      paidAmount,
+      mobileStep
+    }));
+    navigate(path);
   };
 
   const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
@@ -485,9 +501,9 @@ export default function POSPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-muted/30">
+    <div className="min-h-screen min-h-[100dvh] flex flex-col bg-muted/30">
       {/* Header */}
-      <header className="h-auto min-h-12 border-b bg-background flex flex-col sm:flex-row items-start sm:items-center justify-between px-2 sm:px-4 py-2 sm:py-0 gap-2 sm:gap-0 shrink-0">
+      <header className="h-auto min-h-12 border-b bg-background flex flex-col sm:flex-row items-start sm:items-center justify-between px-2 sm:px-4 py-2 sm:py-0 gap-2 sm:gap-0 shrink-0 sticky top-0 z-20">
         <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
           <div className="flex items-center gap-2">
             <div className="h-6 w-6 sm:h-7 sm:w-7 rounded bg-primary flex items-center justify-center">
@@ -501,7 +517,7 @@ export default function POSPage() {
               <ShoppingCart className="h-3 w-3 mr-1" />
               <span className="hidden xs:inline">Penjualan</span>
             </Button>
-            <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-[10px] sm:text-xs px-2 sm:px-3" onClick={() => navigate("/setor-emas")}>
+            <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-[10px] sm:text-xs px-2 sm:px-3" onClick={() => saveCartStateAndNavigate("/setor-emas")}>
               <Scale className="h-3 w-3 mr-1" />
               <span className="hidden xs:inline">Setor</span>
             </Button>
@@ -529,11 +545,11 @@ export default function POSPage() {
             <Coins className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
             <span className="hidden sm:inline ml-1.5">Harga</span>
           </Button>
-          <Button variant="outline" size="sm" className="h-7 sm:h-8 px-2 sm:px-3" onClick={() => navigate("/pos/history?return=/pos&type=sale")}>
+          <Button variant="outline" size="sm" className="h-7 sm:h-8 px-2 sm:px-3" onClick={() => saveCartStateAndNavigate("/pos/history?return=/pos&type=sale")}>
             <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
             <span className="hidden sm:inline ml-1.5">Riwayat</span>
           </Button>
-          <Button variant="outline" size="sm" className="h-7 sm:h-8 px-2 sm:px-3" onClick={() => navigate("/dashboard")}>
+          <Button variant="outline" size="sm" className="h-7 sm:h-8 px-2 sm:px-3" onClick={() => saveCartStateAndNavigate("/dashboard")}>
             <LayoutDashboard className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
             <span className="hidden sm:inline ml-1.5">Dashboard</span>
           </Button>
@@ -541,321 +557,342 @@ export default function POSPage() {
       </header>
 
       {/* Main */}
-      <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-auto lg:overflow-hidden">
+      <div className={`flex-1 flex ${isMobile ? 'flex-col' : 'flex-col lg:flex-row'}`}>
         {/* Left - Products & Cart */}
-        <div className="flex-1 flex flex-col p-2 sm:p-3 gap-2 sm:gap-3 min-w-0">
-          {/* Barcode Search */}
-          <div className="bg-background rounded-lg border p-2 sm:p-3">
-            <div className="flex gap-2">
-              <div className="flex-1 relative">
-                <Barcode className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-                <Input
-                  ref={barcodeInputRef}
-                  placeholder={isMobile ? "Ketik barcode/SN..." : "Scan atau ketik barcode/SN..."}
-                  value={searchBarcode}
-                  onChange={handleBarcodeInputChange}
-                  onKeyDown={(e) => e.key === "Enter" && handleSearchBarcode()}
-                  onFocus={handleBarcodeInputFocus}
-                  onBlur={handleBarcodeInputBlur}
-                  className={`pl-7 sm:pl-9 h-8 sm:h-10 text-sm ${!isMobile && scannerReady ? "ring-2 ring-green-500 border-green-500" : ""}`}
-                  autoFocus={!isMobile}
-                />
-                {/* USB Scanner status indicator - desktop only */}
-                {!isMobile && scannerReady && (
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                    </span>
+        {(!isMobile || mobileStep !== 3) && (
+          <div className="flex-1 flex flex-col p-2 sm:p-3 gap-2 sm:gap-3 min-w-0">
+            {/* Barcode Search */}
+            {(!isMobile || mobileStep === 1) && (
+              <div className="bg-background rounded-lg border p-2 sm:p-3">
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <Barcode className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                    <Input
+                      ref={barcodeInputRef}
+                      placeholder={isMobile ? "Ketik barcode/SN..." : "Scan atau ketik barcode/SN..."}
+                      value={searchBarcode}
+                      onChange={handleBarcodeInputChange}
+                      onKeyDown={(e) => e.key === "Enter" && handleSearchBarcode()}
+                      onFocus={handleBarcodeInputFocus}
+                      onBlur={handleBarcodeInputBlur}
+                      className={`pl-7 sm:pl-9 h-8 sm:h-10 text-sm ${!isMobile && scannerReady ? "ring-2 ring-green-500 border-green-500" : ""}`}
+                      autoFocus={!isMobile}
+                    />
+                    {/* USB Scanner status indicator - desktop only */}
+                    {!isMobile && scannerReady && (
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  {/* Camera scan button - only show on mobile */}
+                  {isMobile && (
+                    <Button
+                      variant="default"
+                      onClick={() => setShowBarcodeScanner(true)}
+                      className="h-8 sm:h-10 px-3 bg-blue-600 hover:bg-blue-700"
+                      title="Scan dengan kamera"
+                    >
+                      <Camera className="h-4 w-4" />
+                      <span className="ml-1.5 text-xs">Scan</span>
+                    </Button>
+                  )}
+                  <Button onClick={() => handleSearchBarcode()} className="h-8 sm:h-10 px-3 sm:px-4">
+                    <Search className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline ml-1.5">Cari</span>
+                  </Button>
+                </div>
+                {/* Status indicator */}
+                {isMobile ? (
+                  <p className="text-[10px] text-muted-foreground mt-1.5 text-center">
+                    Tekan tombol <Camera className="inline h-3 w-3" /> untuk scan barcode dengan kamera
+                  </p>
+                ) : (
+                  <div className="flex items-center justify-center gap-2 mt-1.5">
+                    <div className={`flex items-center gap-1.5 text-[10px] ${scannerReady ? "text-green-600" : "text-muted-foreground"}`}>
+                      <Usb className="h-3 w-3" />
+                      <span>{scannerReady ? "Scanner siap - silakan scan barcode" : "Klik field untuk mengaktifkan scanner"}</span>
+                    </div>
                   </div>
                 )}
-              </div>
-              {/* Camera scan button - only show on mobile */}
-              {isMobile && (
-                <Button
-                  variant="default"
-                  onClick={() => setShowBarcodeScanner(true)}
-                  className="h-8 sm:h-10 px-3 bg-blue-600 hover:bg-blue-700"
-                  title="Scan dengan kamera"
-                >
-                  <Camera className="h-4 w-4" />
-                  <span className="ml-1.5 text-xs">Scan</span>
-                </Button>
-              )}
-              <Button onClick={() => handleSearchBarcode()} className="h-8 sm:h-10 px-3 sm:px-4">
-                <Search className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline ml-1.5">Cari</span>
-              </Button>
-            </div>
-            {/* Status indicator */}
-            {isMobile ? (
-              <p className="text-[10px] text-muted-foreground mt-1.5 text-center">
-                Tekan tombol <Camera className="inline h-3 w-3" /> untuk scan barcode dengan kamera
-              </p>
-            ) : (
-              <div className="flex items-center justify-center gap-2 mt-1.5">
-                <div className={`flex items-center gap-1.5 text-[10px] ${scannerReady ? "text-green-600" : "text-muted-foreground"}`}>
-                  <Usb className="h-3 w-3" />
-                  <span>{scannerReady ? "Scanner siap - silakan scan barcode" : "Klik field untuk mengaktifkan scanner"}</span>
-                </div>
               </div>
             )}
-          </div>
 
-          {/* Products List & Cart Container */}
-          <div className="flex-1 flex flex-col lg:flex-row gap-2 sm:gap-3 min-h-0">
-            {/* Products List */}
-            <div className="flex-1 bg-background rounded-lg border flex flex-col min-h-[200px] lg:min-h-0">
-              <div className="h-9 sm:h-10 px-2 sm:px-3 border-b flex items-center justify-between shrink-0">
-                <span className="text-xs sm:text-sm font-medium flex items-center gap-1 sm:gap-2">
-                  <Package className="h-3 w-3 sm:h-4 sm:w-4" />
-                  Stok ({availableStocks.length})
-                </span>
-                <div className="relative w-32 sm:w-48">
-                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground" />
-                  <Input
-                    placeholder="Filter..."
-                    value={searchProduct}
-                    onChange={(e) => setSearchProduct(e.target.value)}
-                    className="h-6 sm:h-7 text-[10px] sm:text-xs pl-6 sm:pl-7"
-                  />
-                </div>
-              </div>
-              <ScrollArea className="flex-1 max-h-[250px] lg:max-h-none">
-                {availableStocks.length === 0 ? (
-                  <div className="p-4 sm:p-8 text-center text-muted-foreground">
-                    <Package className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 opacity-30" />
-                    <p className="text-xs sm:text-sm">
-                      {stocks.length === 0 ? "Tidak ada stok di toko ini" : "Semua stok sudah di keranjang"}
-                    </p>
+            {/* Products List & Cart Container */}
+            <div className={`flex-1 flex gap-2 sm:gap-3 ${isMobile ? 'flex-col' : 'flex-col lg:flex-row'}`}>
+              {/* Products List */}
+              {(!isMobile || mobileStep === 1) && (
+                <div className="flex-1 bg-background rounded-lg border flex flex-col">
+                  <div className="h-9 sm:h-10 px-2 sm:px-3 border-b flex items-center justify-between shrink-0 sticky top-12 sm:top-14 bg-background z-10 rounded-t-lg">
+                    <span className="text-xs sm:text-sm font-medium flex items-center gap-1 sm:gap-2">
+                      <Package className="h-3 w-3 sm:h-4 sm:w-4" />
+                      Stok ({availableStocks.length})
+                    </span>
+                    <div className="relative w-32 sm:w-48">
+                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground" />
+                      <Input
+                        placeholder="Filter..."
+                        value={searchProduct}
+                        onChange={(e) => setSearchProduct(e.target.value)}
+                        className="h-6 sm:h-7 text-[10px] sm:text-xs pl-6 sm:pl-7"
+                      />
+                    </div>
                   </div>
-                ) : (
-                  <div className="p-1.5 sm:p-2 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1.5 sm:gap-2">
-                    {availableStocks.map((stock) => {
-                      // Selalu gunakan harga dari gold_category (harga terbaru)
-                      const price = (stock.product?.gold_category?.sell_price || 0) * (stock.product?.weight || 0);
-                      return (
-                        <button
-                          key={stock.id}
-                          onClick={() => addToCart(stock)}
-                          className="p-2 sm:p-3 rounded-lg border bg-card hover:border-primary hover:bg-primary/5 transition-colors text-left group"
-                        >
-                          <div className="flex items-start justify-between gap-1">
-                            <p className="text-xs sm:text-sm font-medium line-clamp-2">{stock.product?.name}</p>
-                            <Plus className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground group-hover:text-primary shrink-0" />
-                          </div>
-                          <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">
-                            {stock.product?.weight}g • {stock.product?.gold_category?.name}
-                          </p>
-                          <p className="text-[10px] sm:text-xs font-mono text-muted-foreground truncate" title={stock.serial_number}>
-                            SN: {stock.serial_number}
-                          </p>
-                          <p className="text-xs sm:text-sm font-semibold text-primary mt-1 sm:mt-2">
-                            {formatCurrency(price)}
-                          </p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </ScrollArea>
-            </div>
-
-            {/* Cart */}
-            <div className="w-full lg:w-72 xl:w-80 bg-background rounded-lg border flex flex-col shrink-0">
-              <div className="h-9 sm:h-10 px-2 sm:px-3 border-b flex items-center justify-between shrink-0">
-                <span className="text-xs sm:text-sm font-medium flex items-center gap-1 sm:gap-2">
-                  <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
-                  Keranjang ({cart.length})
-                </span>
-                {cart.length > 0 && (
-                  <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-[10px] sm:text-xs text-destructive hover:text-destructive px-2" onClick={clearAll}>
-                    <Trash2 className="h-3 w-3 mr-1" />
-                    Kosongkan
-                  </Button>
-                )}
-              </div>
-              <ScrollArea className="flex-1 h-[180px] sm:h-[220px] lg:h-auto lg:max-h-[calc(100vh-400px)]">
-                {cart.length === 0 ? (
-                  <div className="p-4 sm:p-8 text-center text-muted-foreground">
-                    <ShoppingCart className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 opacity-30" />
-                    <p className="text-xs sm:text-sm">Keranjang kosong</p>
-                    <p className="text-[10px] sm:text-xs mt-1">Klik produk atau scan barcode</p>
-                  </div>
-                ) : (
-                  <div className="p-1.5 sm:p-2 space-y-1">
-                    {cart.map((item) => (
-                      <div key={item.id} className="p-1.5 sm:p-2 rounded hover:bg-muted/50 group">
-                        <div className="flex items-start justify-between gap-1 sm:gap-2">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs sm:text-sm font-medium truncate">{item.product_name}</p>
-                            <p className="text-[10px] sm:text-xs text-muted-foreground">
-                              {item.weight.toFixed(2)}g
-                            </p>
-                          </div>
-                          <Button variant="ghost" size="icon" className="h-5 w-5 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 text-muted-foreground hover:text-destructive shrink-0" onClick={() => removeItem(item.id)}>
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                        <div className="flex items-center justify-between mt-0.5 sm:mt-1">
-                          <p className="text-[10px] sm:text-xs text-muted-foreground font-mono truncate max-w-[100px] sm:max-w-[140px]" title={item.serial_number}>
-                            {item.serial_number}
-                          </p>
-                          <p className="text-xs sm:text-sm font-semibold text-primary">{formatCurrency(item.price)}</p>
-                        </div>
+                  <div className="flex-1">
+                    {availableStocks.length === 0 ? (
+                      <div className="p-4 sm:p-8 text-center text-muted-foreground">
+                        <Package className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 opacity-30" />
+                        <p className="text-xs sm:text-sm">
+                          {stocks.length === 0 ? "Tidak ada stok di toko ini" : "Semua stok sudah di keranjang"}
+                        </p>
                       </div>
-                    ))}
+                    ) : (
+                      <div className="p-1.5 sm:p-2 md:p-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-1.5 sm:gap-2 md:gap-3">
+                        {availableStocks.map((stock) => {
+                          // Selalu gunakan harga dari gold_category (harga terbaru)
+                          const price = (stock.product?.gold_category?.sell_price || 0) * (stock.product?.weight || 0);
+                          return (
+                            <button
+                              key={stock.id}
+                              onClick={() => addToCart(stock)}
+                              className="p-2 sm:p-3 rounded-lg border bg-card hover:border-primary hover:bg-primary/5 transition-colors text-left group"
+                            >
+                              <div className="flex items-start justify-between gap-1">
+                                <p className="text-xs sm:text-sm font-medium line-clamp-2">{stock.product?.name}</p>
+                                <Plus className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground group-hover:text-primary shrink-0" />
+                              </div>
+                              <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">
+                                {stock.product?.weight}g • {stock.product?.gold_category?.name}
+                              </p>
+                              <p className="text-[10px] sm:text-xs font-mono text-muted-foreground truncate" title={stock.serial_number}>
+                                SN: {stock.serial_number}
+                              </p>
+                              <p className="text-xs sm:text-sm font-semibold text-primary mt-1 sm:mt-2">
+                                {formatCurrency(price)}
+                              </p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                )}
-              </ScrollArea>
-              {/* Cart Total */}
-              {cart.length > 0 && (
-                <div className="p-2 sm:p-3 border-t bg-muted/30">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs sm:text-sm text-muted-foreground">Subtotal</span>
-                    <span className="text-base sm:text-lg font-bold">{formatCurrency(subtotal)}</span>
+                  {isMobile && (
+                    <div className="p-2 sm:p-3 border-t mt-auto shrink-0">
+                      <Button className="w-full h-10 sm:h-12 md:h-14 text-sm sm:text-base md:text-lg bg-primary hover:bg-primary/90" onClick={() => setMobileStep(2)}>
+                        Lihat Keranjang ({cart.length} item)
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Cart */}
+              {(!isMobile || mobileStep === 2) && (
+                <div className={`bg-background rounded-lg border flex flex-col shrink-0 ${isMobile ? 'w-full flex-1' : 'w-full lg:w-72 xl:w-80'}`}>
+                  <div className="h-9 sm:h-10 px-2 sm:px-3 border-b flex items-center justify-between shrink-0 sticky top-12 sm:top-14 bg-background z-10 rounded-t-lg">
+                    <span className="text-xs sm:text-sm font-medium flex items-center gap-1 sm:gap-2">
+                      <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
+                      Keranjang ({cart.length})
+                    </span>
+                    {cart.length > 0 && (
+                      <Button variant="ghost" size="sm" className="h-6 sm:h-7 text-[10px] sm:text-xs text-destructive hover:text-destructive px-2" onClick={clearAll}>
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Kosongkan
+                      </Button>
+                    )}
                   </div>
+                  <div className="flex-1">
+                    {cart.length === 0 ? (
+                      <div className="p-4 sm:p-8 text-center text-muted-foreground">
+                        <ShoppingCart className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 opacity-30" />
+                        <p className="text-xs sm:text-sm">Keranjang kosong</p>
+                        <p className="text-[10px] sm:text-xs mt-1">Klik produk atau scan barcode</p>
+                      </div>
+                    ) : (
+                      <div className="p-1.5 sm:p-2 space-y-1">
+                        {cart.map((item) => (
+                          <div key={item.id} className="p-1.5 sm:p-2 rounded hover:bg-muted/50 group">
+                            <div className="flex items-start justify-between gap-1 sm:gap-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs sm:text-sm font-medium truncate">{item.product_name}</p>
+                                <p className="text-[10px] sm:text-xs text-muted-foreground">
+                                  {item.weight.toFixed(2)}g
+                                </p>
+                              </div>
+                              <Button variant="ghost" size="icon" className="h-5 w-5 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 text-muted-foreground hover:text-destructive shrink-0" onClick={() => removeItem(item.id)}>
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            <div className="flex items-center justify-between mt-0.5 sm:mt-1">
+                              <p className="text-[10px] sm:text-xs text-muted-foreground font-mono truncate max-w-[100px] sm:max-w-[140px]" title={item.serial_number}>
+                                {item.serial_number}
+                              </p>
+                              <p className="text-xs sm:text-sm font-semibold text-primary">{formatCurrency(item.price)}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {/* Cart Total */}
+                  {cart.length > 0 && (
+                    <div className="p-2 sm:p-3 border-t bg-muted/30">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs sm:text-sm text-muted-foreground">Subtotal</span>
+                        <span className="text-base sm:text-lg font-bold">{formatCurrency(subtotal)}</span>
+                      </div>
+                    </div>
+                  )}
+                  {isMobile && (
+                    <div className="p-2 sm:p-3 border-t mt-auto space-y-2 shrink-0 bg-background">
+                      <Button className="w-full h-10 sm:h-12 md:h-14 text-sm sm:text-base md:text-lg bg-primary hover:bg-primary/90" onClick={() => setMobileStep(3)}>
+                        Lanjut Pembayaran
+                      </Button>
+                      <Button variant="outline" className="w-full h-10 sm:h-12 md:h-14 text-sm sm:text-base md:text-lg" onClick={() => setMobileStep(1)}>
+                        Kembali ke Produk
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           </div>
-        </div>
+        )}
 
         {/* Right - Payment Panel */}
-        <div className="w-full lg:w-72 xl:w-80 border-t lg:border-t-0 lg:border-l bg-background flex flex-col shrink-0">
-          {/* Member */}
-          <div className="p-2 sm:p-3 border-b">
-            <Label className="text-[10px] sm:text-xs text-muted-foreground mb-1 sm:mb-1.5 block">Pelanggan</Label>
-            {selectedMember ? (
-              <div className="space-y-1.5 sm:space-y-2">
-                <div className="flex items-center gap-2 p-1.5 sm:p-2 rounded border bg-muted/30">
-                  <User className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs sm:text-sm font-medium truncate">{selectedMember.name}</p>
-                    <p className="text-[10px] sm:text-xs text-muted-foreground">{selectedMember.code || selectedMember.member_code}</p>
+        {(!isMobile || mobileStep === 3) && (
+          <div className={`bg-background flex flex-col shrink-0 ${isMobile ? 'w-full flex-1 border-t' : 'w-full lg:w-72 xl:w-80 border-t lg:border-t-0 lg:border-l'}`}>
+            {/* Member */}
+            <div className={isMobile ? 'p-4 border-b' : 'p-2 sm:p-3 border-b'}>
+              <Label className={`block font-semibold ${isMobile ? 'text-sm mb-2' : 'text-[10px] sm:text-xs text-muted-foreground mb-1 sm:mb-1.5'}`}>Pelanggan</Label>
+              {selectedMember ? (
+                <div className={isMobile ? 'space-y-3' : 'space-y-1.5 sm:space-y-2'}>
+                  <div className={`flex items-center rounded border bg-muted/30 ${isMobile ? 'p-3 gap-3' : 'p-1.5 sm:p-2 gap-2'}`}>
+                    <User className={`text-muted-foreground shrink-0 ${isMobile ? 'h-6 w-6' : 'h-3 w-3 sm:h-4 sm:w-4'}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-medium truncate ${isMobile ? 'text-base' : 'text-xs sm:text-sm'}`}>{selectedMember.name}</p>
+                      <p className={`text-muted-foreground ${isMobile ? 'text-sm' : 'text-[10px] sm:text-xs'}`}>{selectedMember.code || selectedMember.member_code}</p>
+                    </div>
+                    <Button variant="ghost" size="icon" className={`shrink-0 ${isMobile ? 'h-10 w-10' : 'h-5 w-5 sm:h-6 sm:w-6'}`} onClick={() => setSelectedMember(null)}>
+                      <X className={isMobile ? 'h-5 w-5' : 'h-3 w-3'} />
+                    </Button>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-5 w-5 sm:h-6 sm:w-6 shrink-0" onClick={() => setSelectedMember(null)}>
-                    <X className="h-3 w-3" />
-                  </Button>
+                  <div className={`flex items-center justify-between px-1 ${isMobile ? 'text-sm' : 'text-[10px] sm:text-xs'}`}>
+                    <span className="text-muted-foreground">Poin: <span className="font-medium text-yellow-600">{selectedMember.points?.toLocaleString() || 0}</span></span>
+                    <span className="text-muted-foreground">+{Math.floor(grandTotal / 100000)} poin</span>
+                  </div>
                 </div>
-                <div className="text-[10px] sm:text-xs flex items-center justify-between px-1">
-                  <span className="text-muted-foreground">Poin: <span className="font-medium text-yellow-600">{selectedMember.points?.toLocaleString() || 0}</span></span>
-                  <span className="text-muted-foreground">+{Math.floor(grandTotal / 100000)} poin</span>
-                </div>
-              </div>
-            ) : (
-              <Button variant="outline" className="w-full justify-start h-8 sm:h-9 text-xs sm:text-sm" onClick={() => {
-                // Save cart state before navigating
-                sessionStorage.setItem("pos_cart", JSON.stringify({
-                  cart,
-                  locationId: selectedLocationId,
-                  paymentMethod,
-                  discount,
-                  notes,
-                  paidAmount
-                }));
-                navigate("/members/select?return=/pos");
-              }}>
-                <User className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                Pilih Member
-              </Button>
-            )}
-          </div>
-
-          {/* Payment Method */}
-          <div className="p-2 sm:p-3 border-b">
-            <Label className="text-[10px] sm:text-xs text-muted-foreground mb-1 sm:mb-1.5 block">Pembayaran</Label>
-            <div className="grid grid-cols-3 gap-1 sm:gap-1.5">
-              {[
-                { value: "cash", label: "Tunai", icon: Banknote },
-                { value: "transfer", label: "Transfer", icon: Wallet },
-                { value: "card", label: "Kartu", icon: CreditCard },
-              ].map((m) => (
-                <button
-                  key={m.value}
-                  onClick={() => setPaymentMethod(m.value as PaymentMethod)}
-                  className={`flex flex-col items-center gap-0.5 sm:gap-1 p-1.5 sm:p-2 rounded border text-[10px] sm:text-xs transition-colors ${paymentMethod === m.value ? "border-primary bg-primary/5 text-primary" : "hover:border-primary/50"}`}
-                >
-                  <m.icon className="h-3 w-3 sm:h-4 sm:w-4" />
-                  {m.label}
-                </button>
-              ))}
+              ) : (
+                <Button variant="outline" className={`w-full justify-start ${isMobile ? 'h-14 text-base' : 'h-8 sm:h-9 text-xs sm:text-sm'}`} onClick={() => saveCartStateAndNavigate("/members/select?return=/pos")}>
+                  <User className={`${isMobile ? 'h-5 w-5 mr-3' : 'h-3 w-3 sm:h-4 sm:w-4 mr-2'}`} />
+                  Pilih Member
+                </Button>
+              )}
             </div>
-          </div>
 
-          {/* Cash Input */}
-          {paymentMethod === "cash" && (
-            <div className="p-2 sm:p-3 border-b">
-              <Label className="text-[10px] sm:text-xs text-muted-foreground mb-1 sm:mb-1.5 block">Jumlah Bayar</Label>
-              <Input type="number" placeholder="0" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} className="h-8 sm:h-9 text-right font-medium text-sm" />
-              <div className="flex gap-1.5 sm:gap-1 mt-2 sm:mt-2 flex-wrap">
-                {quickAmounts.map((amt) => (
-                  <Button key={amt} variant="outline" size="sm" className="h-7 sm:h-6 text-xs sm:text-xs px-2.5 sm:px-2" onClick={() => setPaidAmount(amt.toString())}>
-                    {amt >= 1000000 ? `${amt / 1000000}jt` : `${amt / 1000}rb`}
-                  </Button>
+            {/* Payment Method */}
+            <div className={isMobile ? 'p-4 border-b' : 'p-2 sm:p-3 border-b'}>
+              <Label className={`block font-semibold ${isMobile ? 'text-sm mb-2' : 'text-[10px] sm:text-xs text-muted-foreground mb-1 sm:mb-1.5'}`}>Pembayaran</Label>
+              <div className={`grid grid-cols-3 ${isMobile ? 'gap-3' : 'gap-1 sm:gap-1.5'}`}>
+                {[
+                  { value: "cash", label: "Tunai", icon: Banknote },
+                  { value: "transfer", label: "Transfer", icon: Wallet },
+                  { value: "card", label: "Kartu", icon: CreditCard },
+                ].map((m) => (
+                  <button
+                    key={m.value}
+                    onClick={() => setPaymentMethod(m.value as PaymentMethod)}
+                    className={`flex flex-col items-center transition-colors ${isMobile ? 'gap-2 p-4 h-24 rounded-lg border-2 text-sm font-medium' : 'gap-0.5 sm:gap-1 p-1.5 sm:p-2 rounded border text-[10px] sm:text-xs'} ${paymentMethod === m.value ? "border-primary bg-primary/5 text-primary" : "hover:border-primary/50"}`}
+                  >
+                    <m.icon className={isMobile ? 'h-6 w-6' : 'h-3 w-3 sm:h-4 sm:w-4'} />
+                    {m.label}
+                  </button>
                 ))}
-                <Button variant="outline" size="sm" className="h-7 sm:h-6 text-xs sm:text-xs px-2.5 sm:px-2" onClick={() => setPaidAmount(grandTotal.toString())}>Pas</Button>
               </div>
             </div>
-          )}
 
-          {/* Discount & Notes */}
-          <div className="p-2 sm:p-3 border-b grid grid-cols-2 gap-1.5 sm:gap-2">
-            <div>
-              <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">Diskon</Label>
-              <Input type="number" placeholder="0" value={discount} onChange={(e) => setDiscount(e.target.value)} className="h-7 sm:h-8 text-xs sm:text-sm" />
-            </div>
-            <div>
-              <Label className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 block">Catatan</Label>
-              <Input placeholder="Opsional" value={notes} onChange={(e) => setNotes(e.target.value)} className="h-7 sm:h-8 text-xs sm:text-sm" />
-            </div>
-          </div>
-
-          {/* Summary */}
-          <div className="flex-1 p-2 sm:p-3 flex flex-col">
-            <div className="space-y-1 sm:space-y-1.5 text-xs sm:text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span>{formatCurrency(subtotal)}</span>
-              </div>
-              {discountAmount > 0 && (
-                <div className="flex justify-between text-red-600">
-                  <span>Diskon</span>
-                  <span>-{formatCurrency(discountAmount)}</span>
+            {/* Cash Input */}
+            {paymentMethod === "cash" && (
+              <div className={isMobile ? 'p-4 border-b' : 'p-2 sm:p-3 border-b'}>
+                <Label className={`block font-semibold ${isMobile ? 'text-sm mb-2' : 'text-[10px] sm:text-xs text-muted-foreground mb-1 sm:mb-1.5'}`}>Jumlah Bayar</Label>
+                <Input type="number" placeholder="0" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} className={`text-right font-medium ${isMobile ? 'h-14 text-xl' : 'h-8 sm:h-9 text-sm'}`} />
+                <div className={`flex flex-wrap ${isMobile ? 'gap-2 mt-3' : 'gap-1.5 sm:gap-1 mt-2 sm:mt-2'}`}>
+                  {quickAmounts.map((amt) => (
+                    <Button key={amt} variant="outline" size="sm" className={isMobile ? 'h-10 px-4 text-sm' : 'h-7 sm:h-6 text-xs sm:text-xs px-2.5 sm:px-2'} onClick={() => setPaidAmount(amt.toString())}>
+                      {amt >= 1000000 ? `${amt / 1000000}jt` : `${amt / 1000}rb`}
+                    </Button>
+                  ))}
+                  <Button variant="outline" size="sm" className={isMobile ? 'h-10 px-4 text-sm' : 'h-7 sm:h-6 text-xs sm:text-xs px-2.5 sm:px-2'} onClick={() => setPaidAmount(grandTotal.toString())}>Pas</Button>
                 </div>
-              )}
-              {paymentMethod === "cash" && paidAmountNum > 0 && (
-                <>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Dibayar</span>
-                    <span>{formatCurrency(paidAmountNum)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Kembalian</span>
-                    <span className="text-green-600">{formatCurrency(changeAmount)}</span>
-                  </div>
-                </>
-              )}
-            </div>
-            <div className="border-t my-1.5 sm:my-2" />
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground text-xs sm:text-sm">Total</span>
-              <span className="text-lg sm:text-xl font-bold text-primary">{formatCurrency(grandTotal)}</span>
-            </div>
-          </div>
+              </div>
+            )}
 
-          {/* Actions */}
-          <div className="p-2 sm:p-3 border-t space-y-1.5 sm:space-y-2">
-            <Button
-              className="w-full h-10 sm:h-11 bg-green-600 hover:bg-green-700 text-sm"
-              disabled={cart.length === 0 || isSubmitting}
-              onClick={handlePaymentClick}
-            >
-              <CheckCircle2 className="h-4 w-4 mr-2" />
-              Proses Pembayaran
-            </Button>
+            {/* Discount & Notes */}
+            <div className={`border-b grid grid-cols-2 ${isMobile ? 'p-4 gap-4' : 'p-2 sm:p-3 gap-1.5 sm:gap-2'}`}>
+              <div>
+                <Label className={`block font-semibold ${isMobile ? 'text-sm mb-2' : 'text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1'}`}>Diskon</Label>
+                <Input type="number" placeholder="0" value={discount} onChange={(e) => setDiscount(e.target.value)} className={isMobile ? 'h-14 text-base' : 'h-7 sm:h-8 text-xs sm:text-sm'} />
+              </div>
+              <div>
+                <Label className={`block font-semibold ${isMobile ? 'text-sm mb-2' : 'text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1'}`}>Catatan</Label>
+                <Input placeholder="Opsional" value={notes} onChange={(e) => setNotes(e.target.value)} className={isMobile ? 'h-14 text-base' : 'h-7 sm:h-8 text-xs sm:text-sm'} />
+              </div>
+            </div>
+
+            {/* Summary */}
+            <div className={`flex-1 flex flex-col ${isMobile ? 'p-4' : 'p-2 sm:p-3'}`}>
+              <div className={isMobile ? 'space-y-2 text-sm' : 'space-y-1 sm:space-y-1.5 text-xs sm:text-sm'}>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className={isMobile ? 'font-medium' : ''}>{formatCurrency(subtotal)}</span>
+                </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-red-600">
+                    <span>Diskon</span>
+                    <span className={isMobile ? 'font-medium' : ''}>-{formatCurrency(discountAmount)}</span>
+                  </div>
+                )}
+                {paymentMethod === "cash" && paidAmountNum > 0 && (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Dibayar</span>
+                      <span className={isMobile ? 'font-medium' : ''}>{formatCurrency(paidAmountNum)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Kembalian</span>
+                      <span className={`text-green-600 ${isMobile ? 'font-medium' : ''}`}>{formatCurrency(changeAmount)}</span>
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className={`border-t ${isMobile ? 'my-4' : 'my-1.5 sm:my-2'}`} />
+              <div className="flex justify-between items-center mt-auto">
+                <span className={`text-muted-foreground ${isMobile ? 'text-lg font-medium' : 'text-xs sm:text-sm'}`}>Total</span>
+                <span className={`font-bold text-primary ${isMobile ? 'text-3xl' : 'text-lg sm:text-xl'}`}>{formatCurrency(grandTotal)}</span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className={`border-t ${isMobile ? 'p-4 space-y-3 bg-muted/10' : 'p-2 sm:p-3 space-y-1.5 sm:space-y-2'}`}>
+              <Button
+                className={`w-full bg-green-600 hover:bg-green-700 ${isMobile ? 'h-16 text-xl rounded-xl' : 'h-10 sm:h-12 md:h-14 text-sm sm:text-base md:text-lg'}`}
+                disabled={cart.length === 0 || isSubmitting}
+                onClick={handlePaymentClick}
+              >
+                <CheckCircle2 className={`${isMobile ? 'h-6 w-6 mr-3' : 'h-4 w-4 sm:h-5 sm:w-5 mr-2'}`} />
+                Proses Pembayaran
+              </Button>
+              {isMobile && (
+                <Button variant="outline" className={`w-full ${isMobile ? 'h-14 text-lg' : 'h-10 sm:h-12 md:h-14 text-sm sm:text-base md:text-lg'}`} onClick={() => setMobileStep(2)}>
+                  Kembali ke Keranjang
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Confirmation Modal */}

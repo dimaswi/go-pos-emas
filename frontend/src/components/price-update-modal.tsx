@@ -169,7 +169,7 @@ export function PriceUpdateModal({ open, onOpenChange, onSuccess }: PriceUpdateM
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="w-screen h-[100dvh] max-w-none max-h-[100dvh] sm:max-w-6xl sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col rounded-none sm:rounded-lg p-4 sm:p-6">
         <DialogHeader className="pb-2">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Coins className="h-5 w-5 text-yellow-500" />
@@ -221,9 +221,9 @@ export function PriceUpdateModal({ open, onOpenChange, onSuccess }: PriceUpdateM
           </div>
         ) : (
           <>
-            <ScrollArea className="flex-1 pr-4">
+            <ScrollArea className="flex-1 min-h-0 pr-4">
               {/* Grid 3 kolom */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {priceData.map((item, index) => {
                   const margin = (parseFloat(item.new_sell_price) || 0) - (parseFloat(item.new_buy_price) || 0);
 
