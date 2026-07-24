@@ -50,7 +50,7 @@ services:
         VITE_API_URL: https://tanah-mas.dimaswysnu.com/api
     container_name: tanah-mas-kedungadem-frontend
     ports:
-      - "3001:80"
+      - "3005:80"
     depends_on:
       - backend
     networks:

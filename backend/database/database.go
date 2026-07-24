@@ -396,8 +396,8 @@ func SeedData() error {
 
 	// Create default admin user
 	var adminUser models.User
-	result := DB.Where(models.User{Email: "admin@pos.com"}).FirstOrCreate(&adminUser, models.User{
-		Email:    "admin@pos.com",
+	result := DB.Where(models.User{Username: "admin"}).FirstOrCreate(&adminUser, models.User{
+		Email:    "admin@tanahmas.com",
 		Username: "admin",
 		FullName: "System Administrator",
 		IsActive: true,
@@ -405,9 +405,9 @@ func SeedData() error {
 	})
 
 	if result.RowsAffected > 0 {
-		adminUser.HashPassword("admin123")
+		adminUser.HashPassword("rahasia123")
 		DB.Save(&adminUser)
-		log.Println("Default admin user created: admin@pos.com / admin123")
+		log.Println("Default admin user created: admin / rahasia123")
 	}
 
 	// Create default settings

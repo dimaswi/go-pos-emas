@@ -12,7 +12,7 @@ import { Building2 } from 'lucide-react';
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuthStore();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -47,7 +47,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await authApi.login({ email, password });
+      const response = await authApi.login({ username, password });
       login(response.data.token, response.data.user);
       navigate('/dashboard');
     } catch (err: any) {
@@ -75,13 +75,13 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs font-medium">Email</Label>
+              <Label htmlFor="username" className="text-xs font-medium">Username</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="admin@pos.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="username"
+                type="text"
+                placeholder="admin"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="h-9 text-sm"
                 required
               />
