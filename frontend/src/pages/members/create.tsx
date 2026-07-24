@@ -84,14 +84,17 @@ export default function MemberCreate() {
     <div className="p-6 space-y-4">
       <Card className="shadow-md">
         <CardHeader className="border-b bg-muted/50 py-4">
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => navigate('/members')}
-            >
-              <ArrowLeft />
-            </Button>
+          <div className="flex items-center gap-4">
+            <div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => navigate('/members')}
+                className="h-9 w-9"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </div>
             <div>
               <CardTitle className="text-base font-semibold">Tambah Member</CardTitle>
               <CardDescription className="text-xs">Isi informasi member baru</CardDescription>
@@ -194,8 +197,10 @@ export default function MemberCreate() {
                 type="button"
                 variant="outline"
                 onClick={() => navigate('/members')}
+                className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3"
               >
-                Batal
+                <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Batal</span>
               </Button>
               <Button type="submit" disabled={saving}>
                 {saving ? (

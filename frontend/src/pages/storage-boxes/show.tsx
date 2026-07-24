@@ -102,28 +102,36 @@ export default function StorageBoxShow() {
       {/* Header Card */}
       <Card className="shadow-md">
         <CardHeader className="border-b bg-muted/50 py-3 sm:py-4 px-3 sm:px-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
-            <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0 flex items-center gap-2">
+              <Box className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
+              <div className="min-w-0">
+                <CardTitle className="text-sm sm:text-base font-semibold truncate">Detail Kotak Penyimpanan</CardTitle>
+                <CardDescription className="text-[10px] sm:text-xs truncate">{storageBox.code} - {storageBox.name}</CardDescription>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
               <Button 
                 variant="outline" 
                 size="sm"
-                className="h-8 w-8 sm:h-9 sm:w-9 p-0"
+                className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3"
                 onClick={() => navigate('/storage-boxes')}
               >
-                <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+                <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Kembali</span>
               </Button>
-              <Box className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-              <div>
-                <CardTitle className="text-sm sm:text-base font-semibold">Detail Kotak Penyimpanan</CardTitle>
-                <CardDescription className="text-[10px] sm:text-xs">{storageBox.code} - {storageBox.name}</CardDescription>
-              </div>
+              {hasPermission('locations.update') && (
+                <Button 
+                  variant="outline"
+                  size="sm" 
+                  className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3" 
+                  onClick={() => navigate(`/storage-boxes/${id}/edit`)}
+                >
+                  <Edit className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Edit</span>
+                </Button>
+              )}
             </div>
-            {hasPermission('locations.update') && (
-              <Button size="sm" className="h-8 sm:h-9 text-xs sm:text-sm w-full sm:w-auto" onClick={() => navigate(`/storage-boxes/${id}/edit`)}>
-                <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                Edit
-              </Button>
-            )}
           </div>
         </CardHeader>
         <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">

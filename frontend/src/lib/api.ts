@@ -413,6 +413,16 @@ export const stocksApi = {
     api.post<{ data: StockTransfer }>('/stocks/transfer', data),
   getTransfers: (params?: { stock_id?: number; from_location_id?: number; to_location_id?: number }) => 
     api.get<{ data: StockTransfer[] }>('/stock-transfers', { params }),
+  batchTransfer: (data: { stock_ids: number[]; to_location_id: number; to_box_id: number; notes?: string }) =>
+    api.post<{ message: string; transfer_number: string; count: number }>('/stocks/batch-transfer', data),
+  getTransferBatches: (params?: { status?: string }) =>
+    api.get<{ data: any[] }>('/stocks/transfers/batches', { params }),
+  getTransferBatchDetails: (transferNumber: string) =>
+    api.get<{ data: StockTransfer[] }>(`/stocks/transfers/batches/${transferNumber}`),
+  approveTransfer: (transferNumber: string) =>
+    api.post<{ message: string; count: number }>(`/stocks/transfers/${transferNumber}/approve`),
+  rejectTransfer: (transferNumber: string) =>
+    api.post<{ message: string; count: number }>(`/stocks/transfers/${transferNumber}/reject`),
 };
 
 // Transaction Types

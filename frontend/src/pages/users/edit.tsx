@@ -97,22 +97,23 @@ export default function UserEdit() {
     <div className="p-6 space-y-4">
       <Card className="shadow-md">
         <CardHeader className="border-b bg-muted/50 py-4">
-          <div className="flex items-center gap-4">
-            <div>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => navigate("/users")}
-                className="h-9 w-9"
-              >
-                <ArrowLeft/>
-              </Button>
-            </div>
-            <div>
-              <CardTitle className="text-base font-semibold">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-sm sm:text-base font-semibold truncate">
                 Informasi User
               </CardTitle>
-              <CardDescription className="text-xs">Update detail informasi user</CardDescription>
+              <CardDescription className="text-[10px] sm:text-xs truncate">Update detail informasi user</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/users")}
+                className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3"
+              >
+                <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Kembali</span>
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -188,18 +189,25 @@ export default function UserEdit() {
               <Button
                 type="button"
                 variant="outline"
+                size="sm"
                 onClick={() => navigate("/users")}
-                className="h-9 text-sm"
+                className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3"
               >
-                Batal
+                <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Batal</span>
               </Button>
               <Button
                 type="submit"
+                size="sm"
                 disabled={loading}
-                className="h-9 text-sm min-w-24"
+                className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3"
               >
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Update
+                {loading ? (
+                  <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4 sm:mr-2" />
+                )}
+                <span className="hidden sm:inline">{loading ? 'Menyimpan...' : 'Update'}</span>
               </Button>
             </div>
           </form>

@@ -28,7 +28,7 @@ import {
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { permissionsApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Loader2, Lock, FileText, Package, Tag, Check, ChevronsUpDown, Eye, PlusCircle, Edit, Trash, UserCheck } from "lucide-react";
+import { ArrowLeft, Loader2, Lock, FileText, Package, Tag, Check, ChevronsUpDown, Eye, PlusCircle, Edit, Trash, UserCheck, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function PermissionEdit() {
@@ -176,26 +176,27 @@ export default function PermissionEdit() {
       <div className="p-6 space-y-4">
         <Card className="shadow-md">
           <CardHeader className="border-b bg-muted/50 py-4">
-            <div className="flex items-center gap-4">
-              <div>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => navigate("/permissions")}
-                  className="h-9 w-9"
-                >
-                  <ArrowLeft/>
-                </Button>
-              </div>
-              <div>
-                <CardTitle className="text-base font-semibold">
-                  Informasi Permission
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Edit detail informasi permission
-                </CardDescription>
-              </div>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-sm sm:text-base font-semibold truncate">
+                Informasi Permission
+              </CardTitle>
+              <CardDescription className="text-[10px] sm:text-xs truncate">
+                Edit detail informasi permission
+              </CardDescription>
             </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/permissions")}
+                className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3"
+              >
+                <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Kembali</span>
+              </Button>
+            </div>
+          </div>
           </CardHeader>
           <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -362,18 +363,25 @@ export default function PermissionEdit() {
                 <Button
                   type="button"
                   variant="outline"
+                  size="sm"
                   onClick={() => navigate("/permissions")}
-                  className="h-10"
+                  className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3"
                 >
-                  Batal
+                  <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Batal</span>
                 </Button>
                 <Button
                   type="submit"
+                  size="sm"
                   disabled={loading}
-                  className="h-10 min-w-24"
+                  className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3"
                 >
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Update
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4 sm:mr-2" />
+                  )}
+                  <span className="hidden sm:inline">{loading ? 'Menyimpan...' : 'Update'}</span>
                 </Button>
               </div>
             </form>

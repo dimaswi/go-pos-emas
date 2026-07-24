@@ -159,6 +159,11 @@ func main() {
 			protected.PUT("/stocks/:id", middleware.RequireAnyPermission("stocks.update", "pos.update-stocks"), handlers.UpdateStock)
 			protected.DELETE("/stocks/:id", middleware.RequirePermission("stocks.delete"), handlers.DeleteStock)
 			protected.GET("/stock-transfers", middleware.RequirePermission("stocks.view"), handlers.GetStockTransfers)
+			protected.POST("/stocks/batch-transfer", middleware.RequirePermission("stocks.transfer"), handlers.BatchTransferStock)
+			protected.GET("/stocks/transfers/batches", middleware.RequirePermission("stocks.view"), handlers.GetTransferBatches)
+			protected.GET("/stocks/transfers/batches/:transfer_number", middleware.RequirePermission("stocks.view"), handlers.GetTransferBatchDetails)
+			protected.POST("/stocks/transfers/:transfer_number/approve", middleware.RequirePermission("stocks.transfer.approve"), handlers.ApproveTransfer)
+			protected.POST("/stocks/transfers/:transfer_number/reject", middleware.RequirePermission("stocks.transfer.approve"), handlers.RejectTransfer)
 
 			// Transactions routes (POS)
 			protected.GET("/transactions", middleware.RequirePermission("transactions.view"), handlers.GetTransactions)

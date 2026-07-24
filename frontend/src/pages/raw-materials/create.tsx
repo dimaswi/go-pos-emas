@@ -179,17 +179,24 @@ export default function CreateRawMaterialPage() {
     <div className="p-6 space-y-4">
       <Card className="shadow-md">
         <CardHeader className="border-b bg-muted/50 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base font-semibold">Tambah Bahan Baku</CardTitle>
-              <CardDescription className="text-xs">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-sm sm:text-base font-semibold truncate">Tambah Bahan Baku</CardTitle>
+              <CardDescription className="text-[10px] sm:text-xs truncate">
                 Catat bahan baku emas baru yang diterima
               </CardDescription>
             </div>
-            <Button variant="outline" onClick={() => navigate('/raw-materials')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Kembali
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/raw-materials')}
+                className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3"
+              >
+                <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Kembali</span>
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="pt-6">
@@ -372,22 +379,18 @@ export default function CreateRawMaterialPage() {
             </div>
 
             {/* Submit */}
-            <div className="flex justify-end gap-4">
-              <Button type="button" variant="outline" onClick={() => navigate('/raw-materials')}>
-                Batal
+            <div className="flex justify-end gap-3 sm:gap-4">
+              <Button type="button" variant="outline" size="sm" onClick={() => navigate('/raw-materials')} className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3">
+                <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Batal</span>
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" size="sm" className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3" disabled={loading}>
                 {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Menyimpan...
-                  </>
+                  <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
                 ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Simpan
-                  </>
+                  <Save className="h-4 w-4 sm:mr-2" />
                 )}
+                <span className="hidden sm:inline">{loading ? 'Menyimpan...' : 'Simpan'}</span>
               </Button>
             </div>
           </form>

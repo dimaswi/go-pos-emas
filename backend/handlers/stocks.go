@@ -342,6 +342,251 @@ func GetStockTransfers(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": transfers})
 }
 
+// ==================== BATCH TRANSFER & APPROVAL ====================
+
+type BatchTransferStockRequest struct {
+	StockIDs     []uint `json:"stock_ids" binding:"required"`
+	ToLocationID uint   `json:"to_location_id" binding:"required"`
+	ToBoxID      uint   `json:"to_box_id" binding:"required"`
+	Notes        string `json:"notes"`
+}
+
+// BatchTransferStock creates a pending transfer for multiple stocks
+func BatchTransferStock(c *gin.Context) {
+	var req BatchTransferStockRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if len(req.StockIDs) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No stocks selected for transfer"})
+		return
+	}
+
+	userID, _ := c.Get("user_id")
+
+	// Verify destination box
+	var toBox models.StorageBox
+	if err := database.DB.Where("id = ? AND location_id = ?", req.ToBoxID, req.ToLocationID).First(&toBox).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Destination box not found in specified location"})
+		return
+	}
+
+	// Fetch all requested stocks
+	var stocks []models.Stock
+	if err := database.DB.Where("id IN ?", req.StockIDs).Find(&stocks).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch stocks"})
+		return
+	}
+
+	if len(stocks) != len(req.StockIDs) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Some stocks were not found"})
+		return
+	}
+
+	// Check if all stocks are available
+	for _, stock := range stocks {
+		if stock.Status != models.StockStatusAvailable {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Stock SN: %s is not available for transfer (Status: %s)", stock.SerialNumber, stock.Status)})
+			return
+		}
+	}
+
+	transferNumber := fmt.Sprintf("TRF%d", time.Now().UnixNano()/1000000)
+	now := time.Now()
+
+	tx := database.DB.Begin()
+
+	for _, stock := range stocks {
+		transfer := models.StockTransfer{
+			TransferNumber:  transferNumber,
+			StockID:         stock.ID,
+			FromLocationID:  stock.LocationID,
+			FromBoxID:       stock.StorageBoxID,
+			ToLocationID:    req.ToLocationID,
+			ToBoxID:         req.ToBoxID,
+			TransferredByID: userID.(uint),
+			TransferredAt:   now,
+			Notes:           req.Notes,
+			Status:          "pending", // Require approval
+		}
+
+		if err := tx.Create(&transfer).Error; err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Update stock status to transfer (locked)
+		if err := tx.Model(&stock).Update("status", models.StockStatusTransfer).Error; err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	}
+
+	tx.Commit()
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message":         "Batch transfer requested successfully",
+		"transfer_number": transferNumber,
+		"count":           len(stocks),
+	})
+}
+
+// ApproveTransfer approves a pending batch transfer
+func ApproveTransfer(c *gin.Context) {
+	transferNumber := c.Param("transfer_number")
+
+	tx := database.DB.Begin()
+
+	var transfers []models.StockTransfer
+	if err := tx.Where("transfer_number = ? AND status = ?", transferNumber, "pending").Find(&transfers).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch transfers"})
+		return
+	}
+
+	if len(transfers) == 0 {
+		tx.Rollback()
+		c.JSON(http.StatusNotFound, gin.H{"error": "Pending transfer not found"})
+		return
+	}
+
+	for _, transfer := range transfers {
+		// Update transfer status
+		if err := tx.Model(&transfer).Update("status", "completed").Error; err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Update stock location and status
+		if err := tx.Model(&models.Stock{}).Where("id = ?", transfer.StockID).Updates(map[string]interface{}{
+			"location_id":    transfer.ToLocationID,
+			"storage_box_id": transfer.ToBoxID,
+			"status":         models.StockStatusAvailable,
+		}).Error; err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	}
+
+	tx.Commit()
+	c.JSON(http.StatusOK, gin.H{"message": "Transfer approved successfully", "count": len(transfers)})
+}
+
+// RejectTransfer rejects a pending batch transfer
+func RejectTransfer(c *gin.Context) {
+	transferNumber := c.Param("transfer_number")
+
+	tx := database.DB.Begin()
+
+	var transfers []models.StockTransfer
+	if err := tx.Where("transfer_number = ? AND status = ?", transferNumber, "pending").Find(&transfers).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch transfers"})
+		return
+	}
+
+	if len(transfers) == 0 {
+		tx.Rollback()
+		c.JSON(http.StatusNotFound, gin.H{"error": "Pending transfer not found"})
+		return
+	}
+
+	for _, transfer := range transfers {
+		// Update transfer status
+		if err := tx.Model(&transfer).Update("status", "cancelled").Error; err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Unlock stock (return status to available, keep original location)
+		if err := tx.Model(&models.Stock{}).Where("id = ?", transfer.StockID).Update("status", models.StockStatusAvailable).Error; err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	}
+
+	tx.Commit()
+	c.JSON(http.StatusOK, gin.H{"message": "Transfer rejected successfully", "count": len(transfers)})
+}
+
+// TransferBatchSummary represents a grouped batch transfer
+type TransferBatchSummary struct {
+	TransferNumber  string    `json:"transfer_number"`
+	Status          string    `json:"status"`
+	TransferredAt   time.Time `json:"transferred_at"`
+	FromLocation    string    `json:"from_location"`
+	ToLocation      string    `json:"to_location"`
+	TransferredBy   string    `json:"transferred_by"`
+	TotalItems      int       `json:"total_items"`
+	Notes           string    `json:"notes"`
+}
+
+// GetTransferBatches returns grouped stock transfers
+func GetTransferBatches(c *gin.Context) {
+	status := c.Query("status")
+	
+	var transfers []models.StockTransfer
+	query := database.DB.Preload("FromLocation").Preload("ToLocation").Preload("TransferredBy").Order("created_at DESC")
+	
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+	
+	if err := query.Find(&transfers).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	
+	batchesMap := make(map[string]*TransferBatchSummary)
+	var orderedBatches []*TransferBatchSummary
+	
+	for _, t := range transfers {
+		if _, exists := batchesMap[t.TransferNumber]; !exists {
+			summary := &TransferBatchSummary{
+				TransferNumber: t.TransferNumber,
+				Status:         t.Status,
+				TransferredAt:  t.TransferredAt,
+				FromLocation:   t.FromLocation.Name,
+				ToLocation:     t.ToLocation.Name,
+				TotalItems:     0,
+				Notes:          t.Notes,
+			}
+			if t.TransferredBy.ID != 0 {
+				summary.TransferredBy = t.TransferredBy.FullName
+			}
+			batchesMap[t.TransferNumber] = summary
+			orderedBatches = append(orderedBatches, summary)
+		}
+		batchesMap[t.TransferNumber].TotalItems++
+	}
+	
+	c.JSON(http.StatusOK, gin.H{"data": orderedBatches})
+}
+
+// GetTransferBatchDetails returns all transfers for a specific transfer number
+func GetTransferBatchDetails(c *gin.Context) {
+	transferNumber := c.Param("transfer_number")
+	
+	var transfers []models.StockTransfer
+	if err := database.DB.Preload("Stock").Preload("Stock.Product").Preload("Stock.Product.GoldCategory").
+		Preload("FromLocation").Preload("FromBox").
+		Preload("ToLocation").Preload("ToBox").Preload("TransferredBy").
+		Where("transfer_number = ?", transferNumber).Find(&transfers).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{"data": transfers})
+}
+
 // GetStocksByBox returns all stocks in a specific storage box for barcode printing
 func GetStocksByBox(c *gin.Context) {
 	boxID := c.Param("box_id")

@@ -60,7 +60,8 @@ export const columns = ({ onDelete, onPrintBarcode, hasPermission, enableSelecti
   // Add other columns
   baseColumns.push(
   {
-    accessorKey: 'product',
+    id: 'product',
+    accessorFn: (row) => `${row.product?.name || ''} ${row.serial_number || ''} ${row.product?.barcode || ''}`,
     header: 'Produk',
     cell: ({ row }) => {
       const product = row.original.product;
@@ -78,7 +79,8 @@ export const columns = ({ onDelete, onPrintBarcode, hasPermission, enableSelecti
     },
   },
   {
-    accessorKey: 'location',
+    id: 'location',
+    accessorFn: (row) => row.location?.name || '',
     header: 'Lokasi',
     cell: ({ row }) => {
       const location = row.original.location;
@@ -93,7 +95,8 @@ export const columns = ({ onDelete, onPrintBarcode, hasPermission, enableSelecti
     },
   },
   {
-    accessorKey: 'storage_box',
+    id: 'storage_box',
+    accessorFn: (row) => row.storage_box?.code || '',
     header: 'Kotak Penyimpanan',
     cell: ({ row }) => {
       const box = row.original.storage_box;

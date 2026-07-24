@@ -313,6 +313,7 @@ func SeedData() error {
 		{Name: "stocks.update", Module: "Inventory", Category: "Stocks", Description: "Update existing stocks", Actions: `["update"]`},
 		{Name: "stocks.delete", Module: "Inventory", Category: "Stocks", Description: "Delete stocks", Actions: `["delete"]`},
 		{Name: "stocks.transfer", Module: "Inventory", Category: "Stocks", Description: "Transfer stocks between locations", Actions: `["transfer"]`},
+		{Name: "stocks.transfer.approve", Module: "Inventory", Category: "Stocks", Description: "Approve stock transfers", Actions: `["approve"]`},
 
 		// Raw Materials Management (Bahan Baku)
 		{Name: "raw-materials.view", Module: "Inventory", Category: "Raw Materials", Description: "View raw materials list and details", Actions: `["read"]`},

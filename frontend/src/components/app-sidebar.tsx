@@ -1,9 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Shield, 
+import {
+  LayoutDashboard,
+  Users,
+  Shield,
   LogOut,
   ChevronUp,
   ChevronRight,
@@ -20,6 +20,7 @@ import {
   Box,
   Scale,
   FileBarChart,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import { usePermission } from '@/hooks/usePermission';
@@ -61,9 +62,9 @@ import {
 const menuItems = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard.view' },
   { path: '/pos', label: 'POS', icon: Computer, permission: 'transactions.view' },
-  { 
-    path: '/master-data', 
-    label: 'Master Data', 
+  {
+    path: '/master-data',
+    label: 'Master Data',
     icon: Package,
     permission: 'gold-categories.view',
     submenu: [
@@ -73,32 +74,33 @@ const menuItems = [
       { path: '/storage-boxes', label: 'Kotak Penyimpanan', icon: Box, permission: 'locations.view' },
     ]
   },
-  { 
-    path: '/inventory', 
-    label: 'Inventori', 
+  {
+    path: '/inventory',
+    label: 'Inventori',
     icon: PackageSearch,
     permission: 'stocks.view',
     submenu: [
       { path: '/stocks', label: 'Stok', icon: PackageSearch, permission: 'stocks.view' },
+      { path: '/stock-transfers', label: 'Riwayat Transfer', icon: ArrowRightLeft, permission: 'stocks.view' },
       { path: '/raw-materials', label: 'Bahan Baku', icon: Scale, permission: 'raw-materials.view' },
     ]
   },
   { path: '/members', label: 'Member', icon: UserCircle, permission: 'members.view' },
-  { 
-    path: '/transactions', 
-    label: 'Transaksi', 
+  {
+    path: '/transactions',
+    label: 'Transaksi',
     icon: ShoppingCart,
     permission: 'transactions.view',
   },
-  { 
-    path: '/reports', 
-    label: 'Laporan', 
+  {
+    path: '/reports',
+    label: 'Laporan',
     icon: FileBarChart,
     permission: 'reports.view',
   },
-  { 
-    path: '/users', 
-    label: 'User Management', 
+  {
+    path: '/users',
+    label: 'User Management',
     icon: Users,
     permission: 'users.view',
     submenu: [
@@ -112,7 +114,7 @@ const menuItems = [
 export function AppSidebar() {
   const location = useLocation();
   const { user, logout } = useAuthStore();
-  const { state } = useSidebar();
+  const { state, isMobile } = useSidebar();
   const { hasPermission } = usePermission();
   const [appName, setAppName] = useState(getAppName());
   const [appSubtitle, setAppSubtitle] = useState(getAppSubtitle());
@@ -125,7 +127,7 @@ export function AppSidebar() {
     };
 
     window.addEventListener('storage', handleStorageChange);
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
@@ -172,7 +174,7 @@ export function AppSidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      
+
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs text-muted-foreground font-medium">Menu</SidebarGroupLabel>
@@ -180,13 +182,13 @@ export function AppSidebar() {
             <SidebarMenu>
               {visibleMenuItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.path || 
+                const isActive = location.pathname === item.path ||
                   ('submenu' in item && item.submenu && item.submenu.some((sub: any) => location.pathname === sub.path));
-                
+
                 // Menu with submenu
                 if ('submenu' in item && item.submenu) {
-                  // If sidebar collapsed, use dropdown menu
-                  if (state === 'collapsed') {
+                  // If sidebar collapsed and not mobile, use dropdown menu
+                  if (state === 'collapsed' && !isMobile) {
                     return (
                       <DropdownMenu key={item.path}>
                         <TooltipProvider>
@@ -210,10 +212,10 @@ export function AppSidebar() {
                           {item.submenu.map((subItem: any) => {
                             const SubIcon = subItem.icon;
                             const isSubActive = location.pathname === subItem.path;
-                            
+
                             return (
                               <DropdownMenuItem key={subItem.path} asChild>
-                                <Link 
+                                <Link
                                   to={subItem.path}
                                   className={isSubActive ? 'bg-accent' : ''}
                                 >
@@ -227,7 +229,7 @@ export function AppSidebar() {
                       </DropdownMenu>
                     );
                   }
-                  
+
                   // If sidebar expanded, use collapsible
                   return (
                     <Collapsible key={item.path} asChild defaultOpen={isActive}>
@@ -253,7 +255,7 @@ export function AppSidebar() {
                             {item.submenu.map((subItem: any) => {
                               const SubIcon = subItem.icon;
                               const isSubActive = location.pathname === subItem.path;
-                              
+
                               return (
                                 <SidebarMenuSubItem key={subItem.path}>
                                   <TooltipProvider>
@@ -280,7 +282,7 @@ export function AppSidebar() {
                     </Collapsible>
                   );
                 }
-                
+
                 // Simple menu item
                 return (
                   <SidebarMenuItem key={item.path}>

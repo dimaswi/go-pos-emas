@@ -97,24 +97,32 @@ export default function ShowRawMaterialPage() {
     <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
       <Card className="shadow-md">
         <CardHeader className="border-b bg-muted/50 py-3 sm:py-4 px-3 sm:px-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+          <div className="flex items-center gap-4">
             <div>
-              <CardTitle className="text-sm sm:text-base font-semibold">Detail Bahan Baku</CardTitle>
-              <CardDescription className="text-[10px] sm:text-xs">
-                Informasi lengkap bahan baku
-              </CardDescription>
-            </div>
-            <div className="flex gap-1.5 sm:gap-2">
-              <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm flex-1 sm:flex-none" onClick={() => navigate('/raw-materials')}>
-                <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                Kembali
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => navigate('/raw-materials')}
+                className="h-9 w-9"
+              >
+                <ArrowLeft className="h-4 w-4" />
               </Button>
-              {hasPermission('raw-materials.update') && rawMaterial.status === 'available' && (
-                <Button size="sm" className="h-8 sm:h-9 text-xs sm:text-sm flex-1 sm:flex-none" onClick={() => navigate(`/raw-materials/${id}/edit`)}>
-                  <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                  Edit
-                </Button>
-              )}
+            </div>
+            <div className="flex-1 min-w-0 flex items-center justify-between">
+              <div className="min-w-0">
+                <CardTitle className="text-sm sm:text-base font-semibold truncate">Detail Bahan Baku</CardTitle>
+                <CardDescription className="text-[10px] sm:text-xs truncate">
+                  Informasi lengkap bahan baku
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                {hasPermission('raw-materials.update') && rawMaterial.status === 'available' && (
+                  <Button size="sm" className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3" onClick={() => navigate(`/raw-materials/${id}/edit`)}>
+                    <Edit className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Edit</span>
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </CardHeader>

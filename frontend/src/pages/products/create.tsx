@@ -41,6 +41,7 @@ import {
   Box,
   Plus,
   Trash2,
+  Save,
 } from "lucide-react";
 import { setPageTitle } from "@/lib/page-title";
 import { generateUUID } from "@/lib/utils";
@@ -293,24 +294,25 @@ export default function ProductCreate() {
     <div className="p-6 space-y-4">
       <Card className="shadow-md">
         <CardHeader className="border-b bg-muted/50 py-4">
-          <div className="flex items-center gap-4">
-            <div>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => navigate("/products")}
-                className="h-9 w-9"
-              >
-                <ArrowLeft/>
-              </Button>
-            </div>
-            <div>
-              <CardTitle className="text-base font-semibold">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-sm sm:text-base font-semibold truncate">
                 Tambah Produk Baru
               </CardTitle>
-              <CardDescription className="text-xs">
+              <CardDescription className="text-[10px] sm:text-xs truncate">
                 Masukkan detail produk perhiasan baru
               </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/products")}
+                className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3"
+              >
+                <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Kembali</span>
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -656,13 +658,20 @@ export default function ProductCreate() {
               <Button
                 type="button"
                 variant="outline"
+                size="sm"
                 onClick={() => navigate("/products")}
+                className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3"
               >
-                Batal
+                <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Batal</span>
               </Button>
-              <Button type="submit" disabled={loading || (addStock && !isStockValid())}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {addStock ? `Simpan Produk & ${getTotalStockCount()} Stok` : "Simpan"}
+              <Button type="submit" size="sm" className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3" disabled={loading || (addStock && !isStockValid())}>
+                {loading ? (
+                  <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4 sm:mr-2" />
+                )}
+                <span className="hidden sm:inline">{loading ? 'Menyimpan...' : (addStock ? `Simpan & ${getTotalStockCount()} Stok` : "Simpan")}</span>
               </Button>
             </div>
           </form>

@@ -132,17 +132,23 @@ export default function StockCreate() {
     <div className="p-6 space-y-4">
       <Card className="shadow-md">
         <CardHeader className="border-b bg-muted/50 py-4">
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => navigate('/stocks')}
-            >
-              <ArrowLeft/>
-            </Button>
-            <div>
-              <CardTitle className="text-base font-semibold">Tambah Stok</CardTitle>
-              <CardDescription className="text-xs">Masukkan detail informasi stok baru</CardDescription>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-sm sm:text-base font-semibold truncate">Tambah Stok</CardTitle>
+              <CardDescription className="text-[10px] sm:text-xs truncate">
+                Masukkan detail informasi stok baru
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/stocks')}
+                className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3"
+              >
+                <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Kembali</span>
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -225,22 +231,20 @@ export default function StockCreate() {
               <Button
                 type="button"
                 variant="outline"
+                size="sm"
                 onClick={() => navigate('/stocks')}
+                className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3"
               >
-                Batal
+                <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Batal</span>
               </Button>
-              <Button type="submit" disabled={saving || !formData.product_id || !formData.location_id || !formData.storage_box_id}>
+              <Button type="submit" size="sm" className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3" disabled={saving || !formData.product_id || !formData.location_id || !formData.storage_box_id}>
                 {saving ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Menyimpan...
-                  </>
+                  <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
                 ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Simpan
-                  </>
+                  <Save className="h-4 w-4 sm:mr-2" />
                 )}
+                <span className="hidden sm:inline">{saving ? 'Menyimpan...' : 'Simpan'}</span>
               </Button>
             </div>
           </form>

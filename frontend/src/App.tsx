@@ -66,8 +66,11 @@ const StocksIndex = lazy(() => import('./pages/stocks/index'));
 const StocksCreate = lazy(() => import('./pages/stocks/create'));
 const StocksEdit = lazy(() => import('./pages/stocks/edit'));
 const StocksShow = lazy(() => import('./pages/stocks/show'));
-const StocksTransfer = lazy(() => import('./pages/stocks/transfer'));
-const LocationMonitor = lazy(() => import('./pages/stocks/location-monitor'));
+const StockTransfersIndex = lazy(() => import('./pages/stock-transfers/index'));
+const StockTransfersCreate = lazy(() => import('./pages/stock-transfers/create'));
+const StockTransfersShow = lazy(() => import('./pages/stock-transfers/show'));
+const BatchTransferCreate = lazy(() => import('./pages/batch-transfers/create'));
+const LocationMonitor = lazy(() => import('./pages/location-monitor/index'));
 
 // Raw Materials (input via Setor Emas only)
 const RawMaterialsIndex = lazy(() => import('./pages/raw-materials/index'));
@@ -97,22 +100,22 @@ function LoadingFallback() {
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
-  
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
-  
+
   return <AppLayout>{children}</AppLayout>;
 }
 
 // For full-screen pages without sidebar (like POS)
 function AuthOnly({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
-  
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
-  
+
   return <>{children}</>;
 }
 
@@ -135,7 +138,7 @@ function App() {
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
           <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-          
+
           {/* Users */}
           <Route path="/users" element={<ProtectedRoute><UsersIndex /></ProtectedRoute>} />
           <Route path="/users/create" element={
@@ -153,7 +156,7 @@ function App() {
               </PermissionGuard>
             </ProtectedRoute>
           } />
-          
+
           {/* Roles */}
           <Route path="/roles" element={<ProtectedRoute><RolesIndex /></ProtectedRoute>} />
           <Route path="/roles/create" element={
@@ -171,7 +174,7 @@ function App() {
               </PermissionGuard>
             </ProtectedRoute>
           } />
-          
+
           {/* Permissions */}
           <Route path="/permissions" element={<ProtectedRoute><PermissionsIndex /></ProtectedRoute>} />
           <Route path="/permissions/create" element={
@@ -189,7 +192,7 @@ function App() {
               </PermissionGuard>
             </ProtectedRoute>
           } />
-          
+
           {/* Gold Categories */}
           <Route path="/gold-categories" element={<ProtectedRoute><GoldCategoriesIndex /></ProtectedRoute>} />
           <Route path="/gold-categories/create" element={
@@ -207,7 +210,7 @@ function App() {
               </PermissionGuard>
             </ProtectedRoute>
           } />
-          
+
           {/* Products */}
           <Route path="/products" element={<ProtectedRoute><ProductsIndex /></ProtectedRoute>} />
           <Route path="/products/create" element={
@@ -225,7 +228,7 @@ function App() {
               </PermissionGuard>
             </ProtectedRoute>
           } />
-          
+
           {/* Locations */}
           <Route path="/locations" element={<ProtectedRoute><LocationsIndex /></ProtectedRoute>} />
           <Route path="/locations/create" element={
@@ -243,7 +246,7 @@ function App() {
               </PermissionGuard>
             </ProtectedRoute>
           } />
-          
+
           {/* Storage Boxes */}
           <Route path="/storage-boxes" element={<ProtectedRoute><StorageBoxesIndex /></ProtectedRoute>} />
           <Route path="/storage-boxes/create" element={
@@ -261,7 +264,7 @@ function App() {
               </PermissionGuard>
             </ProtectedRoute>
           } />
-          
+
           {/* Members */}
           <Route path="/members" element={<ProtectedRoute><MembersIndex /></ProtectedRoute>} />
           <Route path="/members/create" element={
@@ -279,7 +282,7 @@ function App() {
               </PermissionGuard>
             </ProtectedRoute>
           } />
-          
+
           {/* Stocks */}
           <Route path="/stocks" element={<ProtectedRoute><StocksIndex /></ProtectedRoute>} />
           <Route path="/stocks/location-monitor" element={<ProtectedRoute><LocationMonitor /></ProtectedRoute>} />
@@ -290,10 +293,31 @@ function App() {
               </PermissionGuard>
             </ProtectedRoute>
           } />
-          <Route path="/stocks/transfer" element={
+          <Route path="/stock-transfers" element={
+            <ProtectedRoute>
+              <PermissionGuard permission="stocks.view">
+                <StockTransfersIndex />
+              </PermissionGuard>
+            </ProtectedRoute>
+          } />
+          <Route path="/stock-transfers/create" element={
             <ProtectedRoute>
               <PermissionGuard permission="stocks.transfer">
-                <StocksTransfer />
+                <StockTransfersCreate />
+              </PermissionGuard>
+            </ProtectedRoute>
+          } />
+          <Route path="/stock-transfers/:id" element={
+            <ProtectedRoute>
+              <PermissionGuard permission="stocks.view">
+                <StockTransfersShow />
+              </PermissionGuard>
+            </ProtectedRoute>
+          } />
+          <Route path="/batch-transfers/create" element={
+            <ProtectedRoute>
+              <PermissionGuard permission="stocks.transfer">
+                <BatchTransferCreate />
               </PermissionGuard>
             </ProtectedRoute>
           } />
@@ -305,7 +329,7 @@ function App() {
               </PermissionGuard>
             </ProtectedRoute>
           } />
-          
+
           {/* Raw Materials - Input via Setor Emas */}
           <Route path="/raw-materials" element={<ProtectedRoute><RawMaterialsIndex /></ProtectedRoute>} />
           <Route path="/raw-materials/:id" element={<ProtectedRoute><RawMaterialsShow /></ProtectedRoute>} />
@@ -316,11 +340,11 @@ function App() {
               </PermissionGuard>
             </ProtectedRoute>
           } />
-          
+
           {/* Transactions */}
           <Route path="/transactions" element={<ProtectedRoute><TransactionsIndex /></ProtectedRoute>} />
           <Route path="/transactions/:id" element={<ProtectedRoute><TransactionsShow /></ProtectedRoute>} />
-          
+
           {/* POS & Setor Emas - Full screen pages without AppLayout sidebar */}
           <Route path="/pos" element={
             <AuthOnly>
@@ -351,7 +375,7 @@ function App() {
               <MemberSelectPage />
             </AuthOnly>
           } />
-          
+
           {/* Reports */}
           <Route path="/reports" element={
             <ProtectedRoute>
@@ -360,7 +384,7 @@ function App() {
               </PermissionGuard>
             </ProtectedRoute>
           } />
-          
+
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Suspense>

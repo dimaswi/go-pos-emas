@@ -97,47 +97,46 @@ export default function LocationShow() {
     <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
       <Card className="shadow-md">
         <CardHeader className="border-b bg-muted/50 py-3 sm:py-4 px-3 sm:px-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
-            <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-sm sm:text-base font-semibold truncate">Detail Lokasi</CardTitle>
+              <CardDescription className="text-[10px] sm:text-xs truncate">Informasi lengkap tentang lokasi</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
               <Button 
                 variant="outline" 
                 size="sm"
-                className="h-8 w-8 sm:h-9 sm:w-9 p-0"
+                className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3"
                 onClick={() => navigate('/locations')}
               >
-                <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+                <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Kembali</span>
               </Button>
-              <div>
-                <CardTitle className="text-sm sm:text-base font-semibold">Detail Lokasi</CardTitle>
-                <CardDescription className="text-[10px] sm:text-xs">Informasi lengkap tentang lokasi</CardDescription>
-              </div>
-            </div>
-            <div className="flex gap-1.5 sm:gap-2">
               {hasPermission('locations.update') && (
                 <Button 
                   variant="outline"
                   size="sm"
-                  className="h-8 sm:h-9 text-xs sm:text-sm flex-1 sm:flex-none"
+                  className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3"
                   onClick={() => navigate(`/locations/${id}/edit`)}
                 >
-                  <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                  Edit
+                  <Edit className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Edit</span>
                 </Button>
               )}
               {hasPermission('locations.delete') && (
                 <Button 
                   variant="destructive"
                   size="sm"
-                  className="h-8 sm:h-9 text-xs sm:text-sm flex-1 sm:flex-none"
+                  className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3"
                   onClick={handleDelete}
                   disabled={deleting}
                 >
                   {deleting ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
                   ) : (
-                    <Trash2 className="h-4 w-4 mr-2" />
+                    <Trash2 className="h-4 w-4 sm:mr-2" />
                   )}
-                  Hapus
+                  <span className="hidden sm:inline">Hapus</span>
                 </Button>
               )}
             </div>

@@ -45,26 +45,24 @@ export default function TransactionsPage() {
     <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
       <Card className="shadow-md">
         <CardHeader className="border-b bg-muted/50 py-3 sm:py-4 px-3 sm:px-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
-            <div>
-              <CardTitle className="text-sm sm:text-base font-semibold">Transaksi</CardTitle>
-              <CardDescription className="text-[10px] sm:text-xs">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-sm sm:text-base font-semibold truncate">Transaksi</CardTitle>
+              <CardDescription className="text-[10px] sm:text-xs truncate">
                 Riwayat transaksi penjualan dan pembelian/setor
               </CardDescription>
             </div>
-            <div className="flex gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-2">
               {hasPermission('transactions.purchase') && (
-                <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm flex-1 sm:flex-none" onClick={() => navigate('/setor-emas')}>
-                  <ArrowDownToLine className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                  <span className="hidden xs:inline">Setor Emas</span>
-                  <span className="xs:hidden">Setor</span>
+                <Button variant="outline" size="sm" className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3" onClick={() => navigate('/setor-emas')}>
+                  <ArrowDownToLine className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Setor Emas</span>
                 </Button>
               )}
               {hasPermission('transactions.sale') && (
-                <Button size="sm" className="h-8 sm:h-9 text-xs sm:text-sm flex-1 sm:flex-none" onClick={() => navigate('/pos')}>
-                  <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                  <span className="hidden xs:inline">POS Kasir</span>
-                  <span className="xs:hidden">POS</span>
+                <Button size="sm" className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3" onClick={() => navigate('/pos')}>
+                  <ShoppingCart className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">POS Kasir</span>
                 </Button>
               )}
             </div>

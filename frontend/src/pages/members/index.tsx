@@ -99,24 +99,22 @@ export default function MembersPage() {
     <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
       <Card className="shadow-md">
         <CardHeader className="border-b bg-muted/50 py-3 sm:py-4 px-3 sm:px-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
-            <div>
-              <CardTitle className='text-sm sm:text-base font-semibold'>Member</CardTitle>
-              <CardDescription className='text-[10px] sm:text-xs'>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <CardTitle className='text-sm sm:text-base font-semibold truncate'>Member</CardTitle>
+              <CardDescription className='text-[10px] sm:text-xs truncate'>
                 Kelola data member dan poin
               </CardDescription>
             </div>
             {hasPermission('members.create') && (
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm" onClick={handleRecalculateStats} disabled={recalculating}>
-                  <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 ${recalculating ? 'animate-spin' : ''}`} />
-                  <span className="hidden xs:inline">Hitung Ulang</span>
-                  <span className="xs:hidden">Hitung</span>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3" onClick={handleRecalculateStats} disabled={recalculating}>
+                  <RefreshCw className={`h-4 w-4 sm:mr-2 ${recalculating ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">Hitung Ulang</span>
                 </Button>
-                <Button size="sm" className="h-8 sm:h-9 text-xs sm:text-sm" onClick={() => navigate('/members/create')}>
-                  <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                  <span className="hidden xs:inline">Tambah Member</span>
-                  <span className="xs:hidden">Tambah</span>
+                <Button size="sm" className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3" onClick={() => navigate('/members/create')}>
+                  <Plus className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Tambah Member</span>
                 </Button>
               </div>
             )}

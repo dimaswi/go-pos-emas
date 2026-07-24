@@ -14,6 +14,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { PermissionDetailModal } from "@/components/permission-detail-modal";
 import { rolesApi, permissionsApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +31,7 @@ import {
   CheckSquare,
   Info,
   Package,
+  Save,
 } from "lucide-react";
 
 export default function RoleEdit() {
@@ -139,22 +146,23 @@ export default function RoleEdit() {
     <div className="p-6 space-y-4">
       <Card className="shadow-md">
         <CardHeader className="border-b bg-muted/50 py-4">
-          <div className="flex items-center gap-4">
-            <div>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => navigate("/roles")}
-                className="h-9 w-9"
-              >
-                <ArrowLeft/>
-              </Button>
-            </div>
-            <div>
-              <CardTitle className="text-base font-semibold">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-sm sm:text-base font-semibold truncate">
                 Informasi Role
               </CardTitle>
-              <CardDescription className="text-xs">Edit detail informasi role</CardDescription>
+              <CardDescription className="text-[10px] sm:text-xs truncate">Edit detail informasi role</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/roles")}
+                className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3"
+              >
+                <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Kembali</span>
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -212,115 +220,115 @@ export default function RoleEdit() {
                 </Badge>
               </div>
 
-              <div className="max-h-96 overflow-y-auto border rounded-md">
-                {Object.entries(groupedPermissions).map(
-                  ([module, modulePermissions]) => (
-                    <div key={module} className="border-b last:border-b-0">
-                      <div className="bg-muted/30 p-3 border-b">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Package className="h-4 w-4 text-primary" />
-                            <h4 className="font-medium text-sm">{module}</h4>
-                            <Badge variant="outline" className="text-xs">
-                              {
-                                modulePermissions.filter((p) =>
-                                  formData.permission_ids.includes(p.id)
-                                ).length
-                              }
-                              /{modulePermissions.length}
-                            </Badge>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              const modulePermIds = modulePermissions.map(
-                                (p) => p.id
-                              );
-                              const allSelected = modulePermIds.every((id) =>
-                                formData.permission_ids.includes(id)
-                              );
-                              if (allSelected) {
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  permission_ids: prev.permission_ids.filter(
-                                    (id) => !modulePermIds.includes(id)
-                                  ),
-                                }));
-                              } else {
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  permission_ids: [
-                                    ...new Set([
-                                      ...prev.permission_ids,
-                                      ...modulePermIds,
-                                    ]),
-                                  ],
-                                }));
-                              }
-                            }}
-                            className="text-xs"
-                          >
-                            {modulePermissions.every((p) =>
-                              formData.permission_ids.includes(p.id)
-                            )
-                              ? "Deselect All"
-                              : "Select All"}
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="p-3 space-y-2">
-                        {modulePermissions.map((perm) => (
-                          <div
-                            key={perm.id}
-                            className="flex items-center space-x-3 p-2 rounded-md hover:bg-muted/50 border transition-colors"
-                          >
-                            <Checkbox
-                              id={`perm-${perm.id}`}
-                              checked={formData.permission_ids.includes(
-                                perm.id
-                              )}
-                              onCheckedChange={() =>
-                                handlePermissionToggle(perm.id)
-                              }
-                            />
-                            <div className="flex-1 flex items-center justify-between">
-                              <div className="space-y-1">
-                                <label
-                                  htmlFor={`perm-${perm.id}`}
-                                  className="text-sm font-medium leading-none cursor-pointer flex items-center gap-2"
-                                >
-                                  {perm.name}
-                                  <Badge
-                                    variant="secondary"
-                                    className="text-xs"
-                                  >
-                                    {perm.category}
-                                  </Badge>
-                                </label>
-                                {perm.description && (
-                                  <p className="text-xs text-muted-foreground">
-                                    {perm.description}
-                                  </p>
-                                )}
+              <div className="border rounded-md bg-card">
+                <Accordion type="multiple" className="w-full">
+                  {Object.entries(groupedPermissions).map(
+                    ([module, modulePermissions]) => {
+                      const selectedCount = modulePermissions.filter((p) =>
+                        formData.permission_ids.includes(p.id)
+                      ).length;
+                      const isAllSelected = selectedCount === modulePermissions.length;
+
+                      return (
+                        <AccordionItem value={module} key={module} className="border-b last:border-b-0">
+                          <div className="bg-muted/30 px-4 flex items-center justify-between group">
+                            <AccordionTrigger className="hover:no-underline py-3 flex-1 data-[state=open]:text-primary">
+                              <div className="flex items-center gap-2 text-left">
+                                <Package className="h-4 w-4 text-muted-foreground group-data-[state=open]:text-primary transition-colors" />
+                                <h4 className="font-semibold text-sm">{module}</h4>
+                                <Badge variant={selectedCount > 0 ? "default" : "outline"} className="text-xs ml-2">
+                                  {selectedCount} / {modulePermissions.length}
+                                </Badge>
                               </div>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleShowPermissionInfo(perm)}
-                                className="h-6 w-6 p-0"
-                              >
-                                <Info className="h-3 w-3" />
-                              </Button>
-                            </div>
+                            </AccordionTrigger>
+                            <Button
+                              type="button"
+                              variant={isAllSelected ? "secondary" : "outline"}
+                              size="sm"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const modulePermIds = modulePermissions.map((p) => p.id);
+                                if (isAllSelected) {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    permission_ids: prev.permission_ids.filter(
+                                      (id) => !modulePermIds.includes(id)
+                                    ),
+                                  }));
+                                } else {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    permission_ids: [
+                                      ...new Set([
+                                        ...prev.permission_ids,
+                                        ...modulePermIds,
+                                      ]),
+                                    ],
+                                  }));
+                                }
+                              }}
+                              className="ml-4 text-xs h-7 px-2 z-10"
+                            >
+                              {isAllSelected ? "Deselect All" : "Select All"}
+                            </Button>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                )}
+                          <AccordionContent className="p-4 bg-background border-t">
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                              {modulePermissions.map((perm) => (
+                                <div
+                                  key={perm.id}
+                                  className={`flex items-start space-x-3 p-3 rounded-lg border transition-colors ${
+                                    formData.permission_ids.includes(perm.id)
+                                      ? "bg-primary/5 border-primary/20"
+                                      : "hover:bg-muted/50"
+                                  }`}
+                                >
+                                  <Checkbox
+                                    id={`perm-${perm.id}`}
+                                    className="mt-0.5"
+                                    checked={formData.permission_ids.includes(perm.id)}
+                                    onCheckedChange={() =>
+                                      handlePermissionToggle(perm.id)
+                                    }
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <label
+                                      htmlFor={`perm-${perm.id}`}
+                                      className="text-sm font-medium leading-tight cursor-pointer block mb-1.5 truncate"
+                                      title={perm.name}
+                                    >
+                                      {perm.name}
+                                    </label>
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-normal">
+                                        {perm.category}
+                                      </Badge>
+                                    </div>
+                                    {perm.description && (
+                                      <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed" title={perm.description}>
+                                        {perm.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleShowPermissionInfo(perm)}
+                                    className="h-6 w-6 shrink-0 text-muted-foreground hover:text-primary"
+                                  >
+                                    <Info className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      );
+                    }
+                  )}
+                </Accordion>
                 {Object.keys(groupedPermissions).length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <p className="text-sm">Tidak ada permission tersedia.</p>
@@ -333,18 +341,25 @@ export default function RoleEdit() {
               <Button
                 type="button"
                 variant="outline"
+                size="sm"
                 onClick={() => navigate("/roles")}
-                className="h-10"
+                className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3"
               >
-                Batal
+                <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Batal</span>
               </Button>
               <Button
                 type="submit"
+                size="sm"
                 disabled={loading}
-                className="h-10 min-w-24"
+                className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3"
               >
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Update
+                {loading ? (
+                  <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4 sm:mr-2" />
+                )}
+                <span className="hidden sm:inline">{loading ? 'Menyimpan...' : 'Update'}</span>
               </Button>
             </div>
           </form>

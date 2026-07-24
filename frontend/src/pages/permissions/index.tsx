@@ -109,17 +109,17 @@ export default function PermissionsPage() {
     <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
       <Card className="shadow-md">
         <CardHeader className="border-b bg-muted/50 py-3 sm:py-4 px-3 sm:px-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
-            <div>
-              <CardTitle className="text-sm sm:text-base font-semibold">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-sm sm:text-base font-semibold truncate">
                 Permissions
               </CardTitle>
-              <CardDescription className="text-[10px] sm:text-xs">Manage system permissions</CardDescription>
+              <CardDescription className="text-[10px] sm:text-xs truncate">Manage system permissions</CardDescription>
             </div>
             {hasPermission("permissions.create") && (
-              <Button onClick={() => navigate("/permissions/create")} size="sm" className="h-8 sm:h-9 text-xs sm:text-sm w-full sm:w-auto">
-                <Plus className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                Add Permission
+              <Button onClick={() => navigate("/permissions/create")} size="sm" className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3">
+                <Plus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Add Permission</span>
               </Button>
             )}
           </div>

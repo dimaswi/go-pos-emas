@@ -128,34 +128,33 @@ export default function StorageBoxesPage() {
     <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
       <Card className="shadow-md">
         <CardHeader className="border-b bg-muted/50 py-3 sm:py-4 px-3 sm:px-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
-              <div>
-                <CardTitle className="text-sm sm:text-base font-semibold">Kotak Penyimpanan</CardTitle>
-                <CardDescription className="text-[10px] sm:text-xs">
-                  Kelola rak, kotak, dan tempat penyimpanan perhiasan
-                </CardDescription>
-              </div>
-            <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-sm sm:text-base font-semibold truncate">Kotak Penyimpanan</CardTitle>
+              <CardDescription className="text-[10px] sm:text-xs truncate">
+                Kelola rak, kotak, dan tempat penyimpanan perhiasan
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
               <Button 
                 variant={isFilterActive ? "secondary" : "outline"} 
                 size="sm"
                 onClick={() => setFilterOpen(!filterOpen)}
-                className="relative h-8 sm:h-9 text-xs sm:text-sm"
+                className="relative h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3"
               >
-                <Filter className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                <span className="hidden xs:inline">Filter</span>
+                <Filter className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Filter</span>
                 {isFilterActive && (
                   <Badge variant="destructive" className="ml-1 sm:ml-2 h-4 w-4 sm:h-5 sm:w-5 p-0 flex items-center justify-center text-[10px] sm:text-xs">
                     1
                   </Badge>
                 )}
-                <ChevronDown className={`h-3 w-3 sm:h-4 sm:w-4 ml-0.5 sm:ml-1 transition-transform ${filterOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`h-4 w-4 ml-0.5 sm:ml-1 transition-transform ${filterOpen ? 'rotate-180' : ''} hidden sm:block`} />
               </Button>
               {hasPermission('locations.create') && (
-                <Button size="sm" className="h-8 sm:h-9 text-xs sm:text-sm" onClick={() => navigate('/storage-boxes/create')}>
-                  <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                  <span className="hidden xs:inline">Tambah Kotak</span>
-                  <span className="xs:hidden">Tambah</span>
+                <Button size="sm" className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3" onClick={() => navigate('/storage-boxes/create')}>
+                  <Plus className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Tambah Kotak</span>
                 </Button>
               )}
             </div>

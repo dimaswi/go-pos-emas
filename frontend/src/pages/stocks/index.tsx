@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { BarcodePrintDialog } from '@/components/barcode-print-dialog';
 import { columns } from './columns';
-import { Plus, Loader2, ArrowLeftRight, Printer, X, MapPin } from 'lucide-react';
+import { Plus, Loader2, ArrowLeftRight, Printer, X, MapPin, ScanBarcode } from 'lucide-react';
 import { setPageTitle } from '@/lib/page-title';
 
 export default function StocksPage() {
@@ -132,32 +132,36 @@ export default function StocksPage() {
     <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
       <Card className="shadow-md">
         <CardHeader className="border-b bg-muted/50 py-3 sm:py-4 px-3 sm:px-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
-            <div>
-              <CardTitle className="text-sm sm:text-base font-semibold">Stok</CardTitle>
-              <CardDescription className="text-[10px] sm:text-xs">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-sm sm:text-base font-semibold truncate">Stok</CardTitle>
+              <CardDescription className="text-[10px] sm:text-xs truncate">
                 Kelola stok produk di gudang dan toko
               </CardDescription>
             </div>
-            <div className="flex flex-wrap gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-2">
               {hasPermission('stocks.view') && (
-                <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm" onClick={() => navigate('/stocks/location-monitor')}>
-                  <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                  <span className="hidden xs:inline">Monitor Lokasi</span>
-                  <span className="xs:hidden">Monitor</span>
+                <Button variant="outline" size="sm" className="h-9 shrink-0 rounded-lg p-0 w-9 xl:w-auto xl:px-3" onClick={() => navigate('/stocks/location-monitor')}>
+                  <MapPin className="h-4 w-4 xl:mr-2" />
+                  <span className="hidden xl:inline">Monitor Lokasi</span>
                 </Button>
               )}
               {hasPermission('stocks.transfer') && (
-                <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm" onClick={() => navigate('/stocks/transfer')}>
-                  <ArrowLeftRight className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                  <span className="hidden xs:inline">Transfer Stok</span>
-                  <span className="xs:hidden">Transfer</span>
-                </Button>
+                <>
+                  <Button variant="outline" size="sm" className="h-9 shrink-0 rounded-lg p-0 w-9 xl:w-auto xl:px-3" onClick={() => navigate('/stocks/transfer')}>
+                    <ArrowLeftRight className="h-4 w-4 xl:mr-2" />
+                    <span className="hidden xl:inline">Transfer Stok</span>
+                  </Button>
+                  <Button variant="outline" size="sm" className="h-9 shrink-0 rounded-lg p-0 w-9 xl:w-auto xl:px-3" onClick={() => navigate('/stocks/batch-transfer')}>
+                    <ScanBarcode className="h-4 w-4 xl:mr-2" />
+                    <span className="hidden xl:inline">Batch Transfer</span>
+                  </Button>
+                </>
               )}
               {hasPermission('stocks.create') && (
-                <Button size="sm" className="h-8 sm:h-9 text-xs sm:text-sm" onClick={() => navigate('/stocks/create')}>
-                  <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                  Tambah
+                <Button size="sm" className="h-9 shrink-0 rounded-lg p-0 w-9 xl:w-auto xl:px-3" onClick={() => navigate('/stocks/create')}>
+                  <Plus className="h-4 w-4 xl:mr-2" />
+                  <span className="hidden xl:inline">Tambah</span>
                 </Button>
               )}
             </div>
@@ -166,8 +170,8 @@ export default function StocksPage() {
         
         {/* Selection Action Bar */}
         {selectedStocks.length > 0 && (
-          <div className="bg-primary/5 border-b px-3 sm:px-6 py-2 sm:py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between">
-            <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="bg-primary/5 border-b px-3 sm:px-6 py-2 sm:py-3 flex flex-row flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
               <Badge variant="secondary" className="font-medium text-[10px] sm:text-xs">
                 {selectedStocks.length} dipilih
               </Badge>
@@ -175,13 +179,13 @@ export default function StocksPage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setSelectedStocks([])}
-                className="text-muted-foreground h-7 sm:h-8 text-[10px] sm:text-xs"
+                className="text-muted-foreground h-7 sm:h-8 text-[10px] sm:text-xs px-2"
               >
                 <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                 Batal
               </Button>
             </div>
-            <div className="flex gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-2">
               {hasPermission('stocks.view') && (
                 <Button size="sm" className="h-7 sm:h-8 text-[10px] sm:text-xs" onClick={handlePrintSelectedBarcodes}>
                   <Printer className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />

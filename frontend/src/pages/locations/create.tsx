@@ -81,21 +81,25 @@ export default function LocationCreate() {
     <div className="p-6 space-y-4">
       <Card className="shadow-md">
         <CardHeader className="border-b bg-muted/50 py-4">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate("/locations")}
-            >
-              <ArrowLeft/>
-            </Button>
-            <div>
-              <CardTitle className="text-base font-semibold">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-sm sm:text-base font-semibold truncate">
                 Tambah Lokasi
               </CardTitle>
-              <CardDescription className="text-xs">
+              <CardDescription className="text-[10px] sm:text-xs truncate">
                 Isi detail lokasi baru
               </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/locations")}
+                className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3"
+              >
+                <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Kembali</span>
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -186,22 +190,20 @@ export default function LocationCreate() {
               <Button
                 type="button"
                 variant="outline"
+                size="sm"
                 onClick={() => navigate("/locations")}
+                className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3"
               >
-                Batal
+                <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Batal</span>
               </Button>
-              <Button type="submit" disabled={saving}>
+              <Button type="submit" size="sm" className="h-9 shrink-0 rounded-lg p-0 w-9 sm:w-auto sm:px-3" disabled={saving}>
                 {saving ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Menyimpan...
-                  </>
+                  <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
                 ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Simpan
-                  </>
+                  <Save className="h-4 w-4 sm:mr-2" />
                 )}
+                <span className="hidden sm:inline">{saving ? 'Menyimpan...' : 'Simpan'}</span>
               </Button>
             </div>
           </form>
