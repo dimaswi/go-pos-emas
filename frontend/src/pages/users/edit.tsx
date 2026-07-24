@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { usersApi, rolesApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Loader2, User, Shield } from "lucide-react";
+import { ArrowLeft, Loader2, User, Shield, Save } from "lucide-react";
 import { setPageTitle } from "@/lib/page-title";
 import { UserLocationAssignment } from "@/components/user-location-assignment";
 

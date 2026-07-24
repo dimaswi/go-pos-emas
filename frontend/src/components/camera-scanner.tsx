@@ -6,8 +6,7 @@ interface CameraScannerProps {
   onClose?: () => void;
 }
 
-export function CameraScanner({ onScan, onClose }: CameraScannerProps) {
-  const [error, setError] = useState<string | null>(null);
+export function CameraScanner({ onScan }: CameraScannerProps) {
 
   useEffect(() => {
     // Create instance
@@ -26,7 +25,7 @@ export function CameraScanner({ onScan, onClose }: CameraScannerProps) {
       onScan(decodedText);
     };
 
-    const onScanFailure = (err: any) => {
+    const onScanFailure = () => {
       // Ignored
     };
 
@@ -43,7 +42,6 @@ export function CameraScanner({ onScan, onClose }: CameraScannerProps) {
   return (
     <div className="flex flex-col space-y-4">
       <div id="reader" className="w-full max-w-md mx-auto overflow-hidden rounded-lg border"></div>
-      {error && <p className="text-sm text-destructive text-center">{error}</p>}
     </div>
   );
 }

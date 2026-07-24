@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usersApi, rolesApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Loader2, User, Mail, Lock, Shield } from "lucide-react";
+import { ArrowLeft, Loader2, User, Mail, Lock, Shield, Save } from "lucide-react";
 import { setPageTitle } from "@/lib/page-title";
 
 export default function UserCreate() {
