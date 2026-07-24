@@ -47,7 +47,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: http://147.93.104.139:8088/api
+        VITE_API_URL: https://tanah-mas.dimaswysnu.com/api
     container_name: tanah-mas-kedungadem-frontend
     ports:
       - "3001:80"
