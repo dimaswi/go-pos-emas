@@ -300,8 +300,8 @@ export default function POSPage() {
     const stock = stocks.find(
       (s) =>
         !cart.some(item => item.stock_id === s.id) && // Not already in cart
-        (s.product?.barcode.toLowerCase() === barcode.toLowerCase() ||
-          s.serial_number?.toLowerCase() === barcode.toLowerCase())
+        (s.product?.barcode.toLowerCase().trim() === barcode.toLowerCase().trim() ||
+          s.serial_number?.toLowerCase().trim() === barcode.toLowerCase().trim())
     );
 
     if (stock && stock.product) {
@@ -312,8 +312,8 @@ export default function POSPage() {
       // Check if item exists but already in cart
       const existingStock = stocks.find(
         (s) =>
-          s.product?.barcode.toLowerCase() === barcode.toLowerCase() ||
-          s.serial_number?.toLowerCase() === barcode.toLowerCase()
+          s.product?.barcode.toLowerCase().trim() === barcode.toLowerCase().trim() ||
+          s.serial_number?.toLowerCase().trim() === barcode.toLowerCase().trim()
       );
 
       if (existingStock && cart.some(item => item.stock_id === existingStock.id)) {
@@ -569,7 +569,7 @@ export default function POSPage() {
                     <Barcode className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                     <Input
                       ref={barcodeInputRef}
-                      placeholder={isMobile ? "Ketik barcode/SN..." : "Scan atau ketik barcode/SN..."}
+                      placeholder={isMobile ? "Ketik QR/SN..." : "Scan atau ketik QR/SN..."}
                       value={searchBarcode}
                       onChange={handleBarcodeInputChange}
                       onKeyDown={(e) => e.key === "Enter" && handleSearchBarcode()}
@@ -588,18 +588,16 @@ export default function POSPage() {
                       </div>
                     )}
                   </div>
-                  {/* Camera scan button - only show on mobile */}
-                  {isMobile && (
-                    <Button
-                      variant="default"
-                      onClick={() => setShowBarcodeScanner(true)}
-                      className="h-8 sm:h-10 px-3 bg-blue-600 hover:bg-blue-700"
-                      title="Scan dengan kamera"
-                    >
-                      <Camera className="h-4 w-4" />
-                      <span className="ml-1.5 text-xs">Scan</span>
-                    </Button>
-                  )}
+                  {/* Camera scan button - show on all devices */}
+                  <Button
+                    variant="default"
+                    onClick={() => setShowBarcodeScanner(true)}
+                    className="h-8 sm:h-10 px-3 bg-blue-600 hover:bg-blue-700"
+                    title="Scan dengan kamera"
+                  >
+                    <Camera className="h-4 w-4" />
+                    <span className="ml-1.5 text-xs">Scan</span>
+                  </Button>
                   <Button onClick={() => handleSearchBarcode()} className="h-8 sm:h-10 px-3 sm:px-4">
                     <Search className="h-3 w-3 sm:h-4 sm:w-4" />
                     <span className="hidden sm:inline ml-1.5">Cari</span>
