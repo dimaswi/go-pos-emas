@@ -122,7 +122,7 @@ export function BarcodeScannerModal({
     if (!open || !detector || !videoRef.current || isLoading || error) return;
 
     const scan = async () => {
-      if (!videoRef.current || videoRef.current.readyState !== 4) {
+      if (!videoRef.current || videoRef.current.readyState < 2 || videoRef.current.videoWidth === 0) {
         animationRef.current = requestAnimationFrame(scan);
         return;
       }
@@ -178,15 +178,15 @@ export function BarcodeScannerModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md w-full h-[100dvh] sm:h-auto max-w-full m-0 p-0 overflow-hidden flex flex-col rounded-none sm:rounded-lg gap-0">
-        <DialogHeader className="p-3 bg-background z-20 shrink-0 flex flex-row items-center justify-between">
-          <DialogTitle className="text-sm flex items-center gap-2 m-0">
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+        <DialogHeader className="p-3 pb-0">
+          <DialogTitle className="text-sm flex items-center gap-2">
             <Camera className="h-4 w-4" />
-            Scan
+            Scan Barcode
           </DialogTitle>
         </DialogHeader>
 
-        <div className="relative flex-1 sm:aspect-[4/3] bg-black w-full h-full flex items-center justify-center">
+        <div className="relative aspect-[4/3] bg-black">
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-10">
               <div className="flex flex-col items-center gap-2 text-white">
