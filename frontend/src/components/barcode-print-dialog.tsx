@@ -49,7 +49,7 @@ const LABEL_CONFIGS = {
     cols: 2,
     get labelWidth() { return (this.paperWidth - this.marginLeft - this.margin - this.gapBetween) / this.cols; },
     get labelHeight() { return this.paperHeight - this.marginTop - this.margin; },
-    qrSize: 12,
+    qrSize: 10,
   },
 } as const;
 
@@ -156,23 +156,6 @@ export function BarcodePrintDialog({
     }
   };
 
-  // Format berat
-  const formatWeight = (weight: number) => {
-    return weight.toFixed(2) + 'g';
-  };
-
-  // Format kadar
-  const formatKadar = (purity: number) => {
-    return (purity * 100).toFixed(1) + '%';
-  };
-
-  const getStockInfo = (stock: Stock) => {
-    const weight = stock.product?.weight || 0;
-    const purity = stock.product?.gold_category?.purity || 0;
-    const kadarCode = stock.product?.gold_category?.code || '-';
-    return { weight, purity, kadarCode };
-  };
-
   const handlePrint = async () => {
     setPrinting(true);
     try {
@@ -201,76 +184,44 @@ export function BarcodePrintDialog({
   const printedCount = stocks.filter(s => s.barcode_printed).length;
   const notPrintedCount = stocks.length - printedCount;
 
-  // Preview render for Mode B (small) - horizontal layout
-  const renderSmallPreviewLabel = (stock: Stock) => {
-    const { weight, purity } = getStockInfo(stock);
+  // Preview label - mirrored layout sesuai gambar referensi
+  // isRight=false (kiri): QR kecil kiri | Nama+Kode kanan
+  // isRight=true (kanan): Nama+Kode kiri | QR kecil kanan
+  const renderSmallPreviewLabel = (stock: Stock, isRight: boolean) => {
+    const nameStr = stock.product?.name
+      ? (stock.product.name.length > 16 ? stock.product.name.slice(0, 13) + '...' : stock.product.name)
+      : '-';
+    const serial = stock.serial_number || '-';
+
+    const qrEl = (
+      <div style={{ width: `${cfg.qrSize}mm`, height: `${cfg.qrSize}mm`, flexShrink: 0 }}>
+        <canvas id={`qr-${stock.id}`} style={{ width: `${cfg.qrSize}mm`, height: `${cfg.qrSize}mm` }} />
+      </div>
+    );
+
+    const txtEl = (
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 1mm', overflow: 'hidden' }}>
+        <div style={{ fontSize: '6pt', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {nameStr}
+        </div>
+        <div style={{ fontSize: '5pt', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#555', marginTop: '0.5mm' }}>
+          {serial}
+        </div>
+      </div>
+    );
+
     return (
       <div
         key={stock.id}
-        className={`overflow-hidden ${
-          stock.barcode_printed ? 'bg-green-50' : ''
-        }`}
-        style={{
-          width: `${cfg.labelWidth}mm`,
-          height: `${cfg.labelHeight}mm`,
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          position: 'relative',
-        }}
+        className={`overflow-hidden ${stock.barcode_printed ? 'bg-green-50' : ''}`}
+        style={{ width: `${cfg.labelWidth}mm`, height: `${cfg.labelHeight}mm`, display: 'flex', flexDirection: 'row', alignItems: 'center', position: 'relative' }}
       >
         {stock.barcode_printed && (
           <div className="absolute top-0 right-0 bg-green-500 text-white p-0.5 rounded-bl">
             <Check className="h-2 w-2" />
           </div>
         )}
-        {/* QR Code / Barcode (kiri, geser 3mm ke kanan) */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '0.5mm',
-          paddingLeft: '3mm',
-          flexShrink: 0,
-        }}>
-          <canvas
-            id={`qr-${stock.id}`}
-            style={{ width: `${cfg.qrSize}mm`, height: `${cfg.qrSize}mm`, flexShrink: 0 }}
-          />
-        </div>
-        {/* Berat dan Kadar (kanan) */}
-        <div style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '0.5mm',
-          overflow: 'hidden',
-        }}>
-          <div style={{
-            fontSize: '6pt',
-            fontWeight: 'bold',
-            lineHeight: 1.4,
-            textAlign: 'center',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}>
-            {formatWeight(weight)}
-          </div>
-          <div style={{
-            fontSize: '6pt',
-            fontWeight: 'bold',
-            lineHeight: 1.4,
-            textAlign: 'center',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}>
-            {formatKadar(purity)}
-          </div>
-        </div>
+        {isRight ? <>{txtEl}{qrEl}</> : <>{qrEl}{txtEl}</>}
       </div>
     );
   };
@@ -303,7 +254,7 @@ export function BarcodePrintDialog({
           </DialogDescription>
         </DialogHeader>
 
-        
+
 
         {/* Preview Area */}
         <div className="flex-1 border rounded-lg p-4 bg-gray-100 overflow-auto">
@@ -331,8 +282,8 @@ export function BarcodePrintDialog({
                     padding: `${cfg.marginTop}mm ${cfg.margin}mm ${cfg.margin}mm ${cfg.marginLeft}mm`,
                   }}
                 >
-                  {stocks.slice(rowIndex * cfg.cols, rowIndex * cfg.cols + cfg.cols).map((stock) =>
-                    renderSmallPreviewLabel(stock)
+                  {stocks.slice(rowIndex * cfg.cols, rowIndex * cfg.cols + cfg.cols).map((stock, colIndex) =>
+                    renderSmallPreviewLabel(stock, colIndex === 1)
                   )}
                 </div>
               ))}

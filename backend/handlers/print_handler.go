@@ -280,13 +280,13 @@ func GenerateLabelPDF(c *gin.Context) {
 	if sizeType == "small" {
 		for i := 0; i < len(stocks); i += 2 {
 			pdf.AddPage()
-			
-			// Item 1 (Kiri)
-			drawSmallLabel(pdf, stocks[i], 2, 4, false) // X=4, Y=3
 
-			// Item 2 (Kanan), if exists
+			// Label kiri: QR di tepi kiri
+			drawSmallLabel(pdf, stocks[i], 0, 37, false)
+
+			// Label kanan: QR di tepi kanan
 			if i+1 < len(stocks) {
-				drawSmallLabel(pdf, stocks[i+1], 39, 4, true) // X=41, Y=3
+				drawSmallLabel(pdf, stocks[i+1], 37, 37, true)
 			}
 		}
 	} else {
@@ -328,7 +328,7 @@ func GenerateLabelPDF(c *gin.Context) {
 	pdf.Output(c.Writer)
 }
 
-func drawSmallLabel(pdf *gofpdf.Fpdf, stock models.Stock, offsetX float64, offsetY float64, isRight bool) {
+func drawSmallLabel(pdf *gofpdf.Fpdf, stock models.Stock, offsetX float64, sectionWidth float64, isRight bool) {
 	qrCodeBytes, err := generateQRCode(stock.SerialNumber)
 	if err != nil { return }
 
@@ -336,46 +336,42 @@ func drawSmallLabel(pdf *gofpdf.Fpdf, stock models.Stock, offsetX float64, offse
 	qrName := fmt.Sprintf("qr_%d", stock.ID)
 	pdf.RegisterImageOptionsReader(qrName, opt, bytes.NewReader(qrCodeBytes))
 
-	purity := "-"
-	if stock.Product.GoldCategory.Name != "" {
-		purity = stock.Product.GoldCategory.Name
-	}
-	price := stock.Product.CalculateSellPrice()
+	qrSize := 10.0
+	halfH := 11.5 // setengah tinggi kertas
 
-	qrSize := 15.0
-	var qrX, infoX float64
-
+	// QR di tepi: kiri untuk label kiri, kanan untuk label kanan, 0.5mm dari tepi
+	var qrX float64
 	if isRight {
-		// Label kanan: QR di posisi paling kanan (2mm dari tepi kanan keseluruhan kertas)
-		// Lebar halaman = 74.
-		qrX = 74.0 - 2.0 - qrSize
-		infoX = offsetX // Teks dimulai dari offsetX yang diberikan (misal X=39)
+		qrX = offsetX + sectionWidth - qrSize - 0.5
 	} else {
-		// Label kiri: QR di posisi paling kiri (2mm dari tepi kiri)
-		qrX = 2.0
-		infoX = qrX + qrSize + 2 // Teks dimulai setelah QR
+		qrX = offsetX + 0.5
 	}
 
-	// QR Code
-	pdf.ImageOptions(qrName, qrX, offsetY, qrSize, qrSize, false, opt, 0, "")
+	// QR ditengahkan vertikal dalam top half
+	qrY := (halfH - qrSize) / 2.0
+	pdf.ImageOptions(qrName, qrX, qrY, qrSize, qrSize, false, opt, 0, "")
 
-	// Teks info
-	pdf.SetXY(infoX, offsetY)
-	pdf.SetFont("Arial", "B", 6)
-
+	// Nama item di BAWAH (bottom half), max 20mm, tidak menyentuh QR
 	nameStr := stock.Product.Name
-	if len(nameStr) > 17 {
-		nameStr = nameStr[:14] + "..."
-	}
-	pdf.CellFormat(18, 3, nameStr, "", 2, "L", false, 0, "")
+	lineH   := 3.5
+	textMaxW := 20.0
+	bottomY  := halfH + 1.0 // mulai dari bawah garis tengah
 
-	pdf.SetFont("Arial", "", 5)
-	pdf.CellFormat(18, 4, fmt.Sprintf("%s - %.2fg", purity, stock.Product.Weight), "", 2, "L", false, 0, "")
 	pdf.SetFont("Arial", "B", 6)
-	pdf.CellFormat(18, 4, fmt.Sprintf("Rp %s", formatCurrencyPDF(price)), "", 2, "L", false, 0, "")
-	pdf.SetFont("Arial", "", 5)
-	pdf.CellFormat(18, 4, stock.SerialNumber, "", 2, "L", false, 0, "")
+	if isRight {
+		// Label kanan: teks rata kanan, 0.5mm dari tepi kanan kertas
+		textX := 74.0 - textMaxW - 0.5
+		pdf.SetXY(textX, bottomY)
+		pdf.MultiCell(textMaxW, lineH, nameStr, "", "R", false)
+	} else {
+		// Label kiri: teks rata kiri, 0.5mm dari tepi kiri kertas
+		textX := 0.5
+		pdf.SetXY(textX, bottomY)
+		pdf.MultiCell(textMaxW, lineH, nameStr, "", "L", false)
+	}
 }
+
+
 
 // GenerateReceiptPDF generates simple thermal receipt
 func GenerateReceiptPDF(c *gin.Context) {
