@@ -102,7 +102,10 @@ export default function StockCreate() {
     setSaving(true);
 
     try {
-      await stocksApi.create(formData);
+      await stocksApi.create({
+        ...formData,
+        quantity: Number(formData.quantity) || 1,
+      } as any);
       toast({
         variant: "success",
         title: "Berhasil!",
@@ -198,7 +201,7 @@ export default function StockCreate() {
                   id="quantity"
                   type="number"
                   value={formData.quantity}
-                  onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
+                  onChange={(e) => setFormData({ ...formData, quantity: e.target.value === '' ? '' : parseInt(e.target.value) } as any)}
                   placeholder="Masukkan jumlah"
                   min={1}
                   required

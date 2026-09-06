@@ -21,14 +21,43 @@ export function BarcodeScannerModal({
   onScan,
 }: BarcodeScannerModalProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const isStartingRef = useRef<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Helper to safely cleanup scanner, even if it's currently in the middle of starting
+  const cleanupScanner = (scanner: Html5Qrcode | null) => {
+    if (!scanner) return;
+    const attemptStop = () => {
+      // If it's starting, wait for it to finish before stopping, 
+      // otherwise it will throw an uncatchable error or leave the camera on.
+      if (isStartingRef.current) {
+        setTimeout(attemptStop, 100);
+        return;
+      }
+      try {
+        const isScanning = (scanner as any).isScanning || (typeof scanner.getState === 'function' && scanner.getState() === 2);
+        if (isScanning) {
+          scanner.stop().then(() => {
+            try { scanner.clear(); } catch(e) {}
+          }).catch(() => {
+            try { scanner.clear(); } catch(e) {}
+          });
+        } else {
+          try { scanner.clear(); } catch(e) {}
+        }
+      } catch (e) {
+        try { scanner.clear(); } catch(err) {}
+      }
+    };
+    attemptStop();
+  };
 
   useEffect(() => {
     if (!open) {
       if (scannerRef.current) {
-        scannerRef.current.stop().catch((e) => console.error("Error stopping scanner", e));
-        scannerRef.current.clear();
+        const scanner = scannerRef.current;
         scannerRef.current = null;
+        cleanupScanner(scanner);
       }
       return;
     }
@@ -38,12 +67,16 @@ export function BarcodeScannerModal({
         setError(null);
         // Clean up previous instance if any
         if (scannerRef.current) {
-            await scannerRef.current.stop().catch(() => {});
-            scannerRef.current.clear();
+            const oldScanner = scannerRef.current;
+            scannerRef.current = null;
+            cleanupScanner(oldScanner);
         }
 
-        scannerRef.current = new Html5Qrcode("pos-barcode-reader");
-        await scannerRef.current.start(
+        const scanner = new Html5Qrcode("pos-barcode-reader");
+        scannerRef.current = scanner;
+        
+        isStartingRef.current = true;
+        await scanner.start(
           { facingMode: "environment" },
           {
             fps: 10,
@@ -53,25 +86,21 @@ export function BarcodeScannerModal({
           (decodedText) => {
             if (navigator.vibrate) navigator.vibrate(100);
             
-            // Only trigger if we still have an active scanner (prevents double triggers on close)
             if (scannerRef.current) {
-                // Stop scanner before closing to prevent memory leaks/camera freezing
-                scannerRef.current.stop().then(() => {
-                    scannerRef.current?.clear();
-                    scannerRef.current = null;
-                    onScan(decodedText);
-                    onOpenChange(false);
-                }).catch(() => {
-                    onScan(decodedText);
-                    onOpenChange(false);
-                });
+                const s = scannerRef.current;
+                scannerRef.current = null;
+                cleanupScanner(s);
+                onScan(decodedText);
+                onOpenChange(false);
             }
           },
           (_errorMessage) => {
             // ignore continuous scan failures
           }
         );
+        isStartingRef.current = false;
       } catch (err) {
+        isStartingRef.current = false;
         console.error("Scanner error:", err);
         setError("Gagal mengakses kamera. Pastikan izin kamera diberikan (Klik Allow/Izinkan) dan website diakses via HTTPS.");
       }
@@ -83,9 +112,9 @@ export function BarcodeScannerModal({
     return () => {
       clearTimeout(timeoutId);
       if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
-        scannerRef.current.clear();
+        const s = scannerRef.current;
         scannerRef.current = null;
+        cleanupScanner(s);
       }
     };
   }, [open, onScan, onOpenChange]);

@@ -58,6 +58,10 @@ type Transaction struct {
 	Status          string    `gorm:"not null;size:20;default:'completed'" json:"status"` // completed, cancelled, refunded
 	TransactionDate time.Time `gorm:"not null;index" json:"transaction_date"`
 
+	// Validation Images
+	ItemImage     string `gorm:"size:255" json:"item_image,omitempty"`
+	CustomerImage string `gorm:"size:255" json:"customer_image,omitempty"`
+
 	// Relations
 	Items []TransactionItem `gorm:"foreignKey:TransactionID" json:"items,omitempty"`
 }

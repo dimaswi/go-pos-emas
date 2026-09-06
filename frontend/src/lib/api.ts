@@ -476,6 +476,8 @@ export interface Transaction {
   status: string;
   transaction_date: string;
   items?: TransactionItem[];
+  item_image?: string;
+  customer_image?: string;
   created_at: string;
   updated_at: string;
 }
@@ -530,6 +532,8 @@ export const transactionsApi = {
     payment_method: string;
     paid_amount: number;
     notes?: string;
+    item_image_base64: string;
+    customer_image_base64: string;
   }) => api.post<{ data: Transaction }>('/transactions/sale', data),
   createPurchase: (data: {
     location_id: number;
@@ -539,6 +543,8 @@ export const transactionsApi = {
     items: { gold_category_id?: number; purity?: string; weight: number; price_per_gram: number; condition?: string; notes?: string }[];
     payment_method: string;
     notes?: string;
+    item_image_base64: string;
+    customer_image_base64: string;
   }) => api.post<{ data: Transaction }>('/transactions/purchase', data),
   cancel: (id: number) => api.put<{ data: Transaction }>(`/transactions/${id}/cancel`),
   getDailySummary: (params?: { date?: string; location_id?: number }) => 

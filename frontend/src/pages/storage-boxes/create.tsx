@@ -71,7 +71,10 @@ export default function StorageBoxCreate() {
     setSaving(true);
 
     try {
-      await storageBoxesApi.create(formData);
+      await storageBoxesApi.create({
+        ...formData,
+        capacity: Number(formData.capacity) || 0,
+      } as any);
       toast({
         variant: "success",
         title: "Berhasil!",
@@ -183,8 +186,8 @@ export default function StorageBoxCreate() {
                     id="capacity"
                     type="number"
                     min="0"
-                    value={formData.capacity || ''}
-                    onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) || 0 })}
+                    value={formData.capacity === 0 && formData.capacity.toString() !== '0' ? '' : formData.capacity}
+                    onChange={(e) => setFormData({ ...formData, capacity: e.target.value === '' ? '' : parseInt(e.target.value) } as any)}
                     placeholder="0 = Tak terbatas"
                   />
                   <p className="text-xs text-muted-foreground">

@@ -1,10 +1,14 @@
 package handlers
 
 import (
+	"encoding/base64"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"starter/backend/database"
 	"starter/backend/models"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -164,6 +168,43 @@ type CreateSaleRequest struct {
 	PaymentMethod   string            `json:"payment_method" binding:"required"`
 	PaidAmount      float64           `json:"paid_amount" binding:"required"`
 	Notes           string            `json:"notes"`
+
+	ItemImageBase64     string `json:"item_image_base64" binding:"required"`
+	CustomerImageBase64 string `json:"customer_image_base64" binding:"required"`
+}
+
+// Helper to save base64 image
+func saveBase64Image(base64Str string, prefix string) (string, error) {
+	if base64Str == "" {
+		return "", fmt.Errorf("base64 string is empty")
+	}
+
+	// Remove data URI prefix if present (e.g., "data:image/jpeg;base64,")
+	commaIdx := strings.Index(base64Str, ",")
+	if commaIdx != -1 {
+		base64Str = base64Str[commaIdx+1:]
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(base64Str)
+	if err != nil {
+		return "", err
+	}
+
+	// Ensure directory exists
+	uploadDir := "./uploads/transactions"
+	if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
+		return "", err
+	}
+
+	fileName := fmt.Sprintf("%s_%d.jpg", prefix, time.Now().UnixNano())
+	filePath := filepath.Join(uploadDir, fileName)
+
+	if err := os.WriteFile(filePath, decoded, 0644); err != nil {
+		return "", err
+	}
+
+	// Return web path
+	return "/uploads/transactions/" + fileName, nil
 }
 
 // CreateSale creates a new sale transaction
@@ -186,6 +227,19 @@ func CreateSale(c *gin.Context) {
 
 	// Generate transaction code
 	txCode := generateTransactionCode("SL")
+
+	// Save Images
+	itemImagePath, err := saveBase64Image(req.ItemImageBase64, "sale_item")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Gagal menyimpan foto barang: " + err.Error()})
+		return
+	}
+
+	customerImagePath, err := saveBase64Image(req.CustomerImageBase64, "sale_customer")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Gagal menyimpan foto pelanggan: " + err.Error()})
+		return
+	}
 
 	// Begin database transaction
 	tx := database.DB.Begin()
@@ -281,6 +335,8 @@ func CreateSale(c *gin.Context) {
 		Notes:           req.Notes,
 		Status:          "completed",
 		TransactionDate: time.Now(),
+		ItemImage:       itemImagePath,
+		CustomerImage:   customerImagePath,
 	}
 
 	if err := tx.Create(&transaction).Error; err != nil {
@@ -351,6 +407,9 @@ type CreatePurchaseRequest struct {
 	PaymentMethod     string                `json:"payment_method" binding:"required"`
 	Notes             string                `json:"notes"`
 	SaveAsRawMaterial bool                  `json:"save_as_raw_material"` // Flag untuk simpan ke raw material
+	
+	ItemImageBase64     string `json:"item_image_base64" binding:"required"`
+	CustomerImageBase64 string `json:"customer_image_base64" binding:"required"`
 }
 
 // CreatePurchase creates a new purchase/setor transaction (buying from customer)
@@ -373,6 +432,19 @@ func CreatePurchase(c *gin.Context) {
 
 	// Generate transaction code
 	txCode := generateTransactionCode("PR")
+
+	// Save Images
+	itemImagePath, err := saveBase64Image(req.ItemImageBase64, "purchase_item")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Gagal menyimpan foto barang: " + err.Error()})
+		return
+	}
+
+	customerImagePath, err := saveBase64Image(req.CustomerImageBase64, "purchase_customer")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Gagal menyimpan foto pelanggan: " + err.Error()})
+		return
+	}
 
 	// Begin database transaction
 	tx := database.DB.Begin()
@@ -443,6 +515,8 @@ func CreatePurchase(c *gin.Context) {
 		Notes:           req.Notes,
 		Status:          "completed",
 		TransactionDate: time.Now(),
+		ItemImage:       itemImagePath,
+		CustomerImage:   customerImagePath,
 	}
 
 	if err := tx.Create(&transaction).Error; err != nil {
@@ -548,6 +622,12 @@ func CancelTransaction(c *gin.Context) {
 
 	if transaction.Status != "completed" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Only completed transactions can be cancelled"})
+		return
+	}
+
+	// Check if transaction is less than 24 hours old
+	if time.Since(transaction.TransactionDate) > 24*time.Hour {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Transaksi tidak dapat dibatalkan (refund) karena sudah melewati 24 jam"})
 		return
 	}
 

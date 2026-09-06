@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { TransactionConfirmationModal } from "@/components/transaction-confirmation-modal";
 import { printReceipt, type ReceiptData } from "@/lib/print-receipt";
 import { BarcodeScannerModal } from "@/components/barcode-scanner-modal";
+import { ValidationCameraModal } from "@/components/validation-camera-modal";
 import { PriceUpdateModal } from "@/components/price-update-modal";
 import {
   LayoutDashboard,
@@ -96,6 +97,8 @@ export default function SetorEmasPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [saveAsRawMaterial, setSaveAsRawMaterial] = useState(true); // Hybrid: Simpan sebagai bahan baku (default: true)
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showValidationCameraModal, setShowValidationCameraModal] = useState(false);
+  const [pendingPrintOpts, setPendingPrintOpts] = useState({ withPrint: false });
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [showPriceUpdateModal, setShowPriceUpdateModal] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -490,8 +493,15 @@ export default function SetorEmasPage() {
     setShowConfirmModal(true);
   };
 
-  const submit = async (withPrint: boolean = false) => {
+  const handlePaymentConfirmed = (withPrint: boolean = false) => {
+    setPendingPrintOpts({ withPrint });
+    setShowConfirmModal(false);
+    setShowValidationCameraModal(true);
+  };
+
+  const submitTransaction = async (itemImageBase64: string, customerImageBase64: string) => {
     setIsSubmitting(true);
+    setShowValidationCameraModal(false);
     try {
       // SELALU simpan sebagai transaksi pembelian untuk laporan
       // Backend akan otomatis membuat raw material jika save_as_raw_material = true
@@ -511,6 +521,8 @@ export default function SetorEmasPage() {
         payment_method: paymentMethod,
         notes,
         save_as_raw_material: saveAsRawMaterial, // Backend akan handle raw material creation
+        item_image_base64: itemImageBase64,
+        customer_image_base64: customerImageBase64,
       });
 
       if (res.data.success || res.data.data) {
@@ -520,7 +532,7 @@ export default function SetorEmasPage() {
           toast.success("Setor emas berhasil!");
         }
 
-        if (withPrint) {
+        if (pendingPrintOpts.withPrint) {
           // Print receipt with 80mm layout
           const receiptData: ReceiptData = {
             type: "deposit",
@@ -549,7 +561,6 @@ export default function SetorEmasPage() {
         }
       }
 
-      setShowConfirmModal(false);
       clearAll();
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: string } } };
@@ -1282,7 +1293,13 @@ export default function SetorEmasPage() {
         grandTotal={totals.totalAmount}
         saveAsRawMaterial={saveAsRawMaterial}
         isSubmitting={isSubmitting}
-        onConfirm={submit}
+        onConfirm={handlePaymentConfirmed}
+      />
+
+      <ValidationCameraModal
+        open={showValidationCameraModal}
+        onOpenChange={setShowValidationCameraModal}
+        onConfirm={submitTransaction}
       />
 
       {/* Barcode Scanner Modal */}

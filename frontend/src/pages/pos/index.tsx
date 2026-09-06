@@ -9,6 +9,7 @@ import { TransactionConfirmationModal } from "@/components/transaction-confirmat
 import { PrintNotaOverlay, type NotaData } from "@/components/print-nota-overlay";
 import { printReceipt, type ReceiptData } from "@/lib/print-receipt";
 import { BarcodeScannerModal } from "@/components/barcode-scanner-modal";
+import { ValidationCameraModal } from "@/components/validation-camera-modal";
 import { PriceUpdateModal } from "@/components/price-update-modal";
 import {
   LayoutDashboard,
@@ -82,6 +83,8 @@ export default function POSPage() {
   const [showNotaOverlay, setShowNotaOverlay] = useState(false);
   const [notaData, setNotaData] = useState<NotaData | null>(null);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [showValidationCameraModal, setShowValidationCameraModal] = useState(false);
+  const [pendingPrintOpts, setPendingPrintOpts] = useState({ withPrint: false, withNotaPrint: false });
   const [showPriceUpdateModal, setShowPriceUpdateModal] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileStep, setMobileStep] = useState<1 | 2 | 3>(1);
@@ -395,7 +398,13 @@ export default function POSPage() {
     setShowConfirmModal(true);
   };
 
-  const submitTransaction = async (withPrint: boolean = false, withNotaPrint: boolean = false) => {
+  const handlePaymentConfirmed = (withPrint: boolean = false, withNotaPrint: boolean = false) => {
+    setPendingPrintOpts({ withPrint, withNotaPrint });
+    setShowConfirmModal(false);
+    setShowValidationCameraModal(true);
+  };
+
+  const submitTransaction = async (itemImageBase64: string, customerImageBase64: string) => {
     setIsSubmitting(true);
     try {
       const response = await transactionsApi.createSale({
@@ -406,12 +415,15 @@ export default function POSPage() {
         notes,
         discount: discountAmount,
         items: cart.map((item) => ({ stock_id: item.stock_id })),
+        item_image_base64: itemImageBase64,
+        customer_image_base64: customerImageBase64,
       });
 
       if (response.data.data) {
         toast.success(`Transaksi berhasil! No: ${response.data.data.transaction_code}`);
+        setShowValidationCameraModal(false);
 
-        if (withNotaPrint) {
+        if (pendingPrintOpts.withNotaPrint) {
           try {
             const url = await import("@/lib/api").then(m => m.printApi.getSuratPdf(response.data.data.id));
             window.open(url, "_blank");
@@ -419,7 +431,7 @@ export default function POSPage() {
             console.error(e);
             toast.error("Gagal mencetak surat");
           }
-        } else if (withPrint) {
+        } else if (pendingPrintOpts.withPrint) {
           // Print receipt with 80mm layout
           const receiptData: ReceiptData = {
             type: 'sale',
@@ -449,7 +461,6 @@ export default function POSPage() {
           printReceipt(receiptData);
         }
 
-        setShowConfirmModal(false);
         clearAll();
         // Reload stocks for current location
         if (selectedLocationId) {
@@ -909,6 +920,12 @@ export default function POSPage() {
         paidAmount={paidAmountNum}
         changeAmount={changeAmount}
         isSubmitting={isSubmitting}
+        onConfirm={handlePaymentConfirmed}
+      />
+
+      <ValidationCameraModal
+        open={showValidationCameraModal}
+        onOpenChange={setShowValidationCameraModal}
         onConfirm={submitTransaction}
       />
 

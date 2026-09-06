@@ -73,7 +73,10 @@ export default function MemberEdit() {
     setSaving(true);
 
     try {
-      await membersApi.update(Number(id), formData);
+      await membersApi.update(Number(id), {
+        ...formData,
+        points: Number(formData.points) || 0,
+      } as any);
       toast({
         variant: "success",
         title: "Berhasil!",
@@ -207,8 +210,8 @@ export default function MemberEdit() {
                 <Input
                   id="points"
                   type="number"
-                  value={formData.points}
-                  onChange={(e) => setFormData({ ...formData, points: parseInt(e.target.value) || 0 })}
+                  value={formData.points === 0 && formData.points.toString() !== '0' ? '' : formData.points}
+                  onChange={(e) => setFormData({ ...formData, points: e.target.value === '' ? '' : parseInt(e.target.value) } as any)}
                   placeholder="Jumlah poin"
                   min={0}
                 />

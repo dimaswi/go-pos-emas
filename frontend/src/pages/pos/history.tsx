@@ -40,6 +40,7 @@ import {
   AlertCircle,
   RotateCcw,
   FileText,
+  Camera,
 } from "lucide-react";
 import { toast } from "sonner";
 import { transactionsApi, type Transaction } from "@/lib/api";
@@ -84,6 +85,10 @@ export default function POSHistoryPage() {
   const [isPrinting, setIsPrinting] = useState(false);
   const [showNotaOverlay, setShowNotaOverlay] = useState(false);
   const [notaData, setNotaData] = useState<NotaData | null>(null);
+  const [showValidationImages, setShowValidationImages] = useState(false);
+  const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     setPageTitle("Riwayat Transaksi");
@@ -170,6 +175,39 @@ export default function POSHistoryPage() {
     setShowDetail(false);
     setSelectedTransaction(null);
     window.history.pushState({}, "", `/pos/history${window.location.search}`);
+  };
+
+  const handleCancelClick = () => {
+    if (!selectedTransaction) return;
+    
+    // Check if within 24 hours
+    const txDate = new Date(selectedTransaction.transaction_date);
+    const now = new Date();
+    const diffHours = (now.getTime() - txDate.getTime()) / (1000 * 60 * 60);
+    
+    if (diffHours > 24) {
+      toast.error("Transaksi tidak dapat dibatalkan (refund) karena sudah melewati 24 jam");
+      return;
+    }
+
+    setShowCancelConfirm(true);
+  };
+
+  const executeCancelTransaction = async () => {
+    if (!selectedTransaction) return;
+    
+    setIsCancelling(true);
+    try {
+      await transactionsApi.cancel(selectedTransaction.id);
+      toast.success("Transaksi berhasil dibatalkan (refund)");
+      setShowCancelConfirm(false);
+      setShowDetail(false);
+      fetchTransactions();
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || "Gagal membatalkan transaksi");
+    } finally {
+      setIsCancelling(false);
+    }
   };
 
   const handlePrint = async () => {
@@ -448,19 +486,32 @@ export default function POSHistoryPage() {
         <DialogContent className="w-full h-full sm:h-auto sm:max-h-[90vh] max-w-full sm:max-w-2xl flex flex-col p-0 sm:rounded-lg rounded-none">
           {selectedTransaction && (
             <>
-              <DialogHeader className="px-3 sm:px-6 pt-3 sm:pt-6 pb-2 sm:pb-4 border-b bg-gradient-to-r from-primary/10 to-primary/5 shrink-0">
+              <DialogHeader className={cn(
+                "px-3 sm:px-6 pt-3 sm:pt-6 pb-2 sm:pb-4 border-b shrink-0",
+                selectedTransaction.status === "cancelled"
+                  ? "bg-gradient-to-r from-red-500/10 to-red-500/5 dark:from-red-950/50 dark:to-red-950/30"
+                  : "bg-gradient-to-r from-primary/10 to-primary/5"
+              )}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 sm:gap-3">
                     <div className={cn(
                       "p-2 sm:p-3 rounded-full",
-                      selectedTransaction.type === "sale"
-                        ? "bg-green-100 dark:bg-green-900/50"
-                        : "bg-blue-100 dark:bg-blue-900/50"
+                      selectedTransaction.status === "cancelled"
+                        ? "bg-red-100 dark:bg-red-900/50"
+                        : selectedTransaction.type === "sale"
+                          ? "bg-green-100 dark:bg-green-900/50"
+                          : "bg-blue-100 dark:bg-blue-900/50"
                     )}>
                       {selectedTransaction.type === "sale" ? (
-                        <ArrowUpRight className="h-4 w-4 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
+                        <ArrowUpRight className={cn(
+                          "h-4 w-4 sm:h-6 sm:w-6", 
+                          selectedTransaction.status === "cancelled" ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"
+                        )} />
                       ) : (
-                        <ArrowDownRight className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
+                        <ArrowDownRight className={cn(
+                          "h-4 w-4 sm:h-6 sm:w-6", 
+                          selectedTransaction.status === "cancelled" ? "text-red-600 dark:text-red-400" : "text-blue-600 dark:text-blue-400"
+                        )} />
                       )}
                     </div>
                     <div>
@@ -541,9 +592,11 @@ export default function POSHistoryPage() {
                     <div className="border rounded-lg overflow-hidden">
                       <div className={cn(
                         "px-2.5 sm:px-4 py-1.5 sm:py-2 flex items-center gap-1.5 sm:gap-2",
-                        selectedTransaction.type === "sale"
-                          ? "bg-green-50 dark:bg-green-950/50"
-                          : "bg-blue-50 dark:bg-blue-950/50"
+                        selectedTransaction.status === "cancelled"
+                          ? "bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-400"
+                          : selectedTransaction.type === "sale"
+                            ? "bg-green-50 dark:bg-green-950/50"
+                            : "bg-blue-50 dark:bg-blue-950/50"
                       )}>
                         <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         <span className="text-xs sm:text-sm font-medium">
@@ -575,9 +628,11 @@ export default function POSHistoryPage() {
                             </div>
                             <p className={cn(
                               "text-xs sm:text-sm font-semibold shrink-0 ml-2",
-                              selectedTransaction.type === "sale"
-                                ? "text-green-600 dark:text-green-400"
-                                : "text-blue-600 dark:text-blue-400"
+                              selectedTransaction.status === "cancelled"
+                                ? "text-red-600 dark:text-red-400 line-through opacity-70"
+                                : selectedTransaction.type === "sale"
+                                  ? "text-green-600 dark:text-green-400"
+                                  : "text-blue-600 dark:text-blue-400"
                             )}>
                               {formatCurrency(item.sub_total || item.unit_price || 0)}
                             </p>
@@ -609,9 +664,11 @@ export default function POSHistoryPage() {
                     <div className="flex justify-between text-base sm:text-lg font-bold">
                       <span>Grand Total</span>
                       <span className={cn(
-                        selectedTransaction.type === "sale"
-                          ? "text-green-600 dark:text-green-400"
-                          : "text-blue-600 dark:text-blue-400"
+                        selectedTransaction.status === "cancelled"
+                          ? "text-red-600 dark:text-red-400 line-through opacity-70"
+                          : selectedTransaction.type === "sale"
+                            ? "text-green-600 dark:text-green-400"
+                            : "text-blue-600 dark:text-blue-400"
                       )}>
                         {formatCurrency(selectedTransaction.grand_total || 0)}
                       </span>
@@ -625,13 +682,19 @@ export default function POSHistoryPage() {
                         </div>
                         <div className="flex justify-between text-xs sm:text-sm font-medium">
                           <span className="text-muted-foreground">Kembalian</span>
-                          <span className="text-green-600">
+                          <span className={cn(
+                            selectedTransaction.status === "cancelled"
+                              ? "text-red-600 line-through opacity-70"
+                              : "text-green-600"
+                          )}>
                             {formatCurrency(selectedTransaction.change_amount || 0)}
                           </span>
                         </div>
                       </>
                     )}
                   </div>
+
+                  {/* Validation Images rendering moved to separate Dialog */}
 
                   {/* Notes */}
                   {selectedTransaction.notes && (
@@ -653,6 +716,16 @@ export default function POSHistoryPage() {
 
               {/* Actions */}
               <div className="px-3 sm:px-6 py-3 sm:py-4 border-t bg-muted/30 flex flex-col gap-1.5 sm:gap-2 shrink-0">
+                {(selectedTransaction.item_image || selectedTransaction.customer_image) && (
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 text-sm border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-950/30"
+                    onClick={() => setShowValidationImages(true)}
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    Lihat Validasi
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   className="w-full h-10 text-sm"
@@ -666,7 +739,7 @@ export default function POSHistoryPage() {
                     variant="outline"
                     className="flex-1 h-10 text-[11px] sm:text-sm px-2 sm:px-4"
                     onClick={handlePrint}
-                    disabled={isPrinting}
+                    disabled={isPrinting || selectedTransaction.status === "cancelled"}
                   >
                     {isPrinting ? (
                       <Loader2 className="h-4 w-4 mr-1.5 sm:mr-2 animate-spin" />
@@ -676,7 +749,7 @@ export default function POSHistoryPage() {
                     Cetak Struk
                   </Button>
                   {/* Cetak Nota button - only for sale transactions */}
-                  {selectedTransaction.type === "sale" && (
+                  {selectedTransaction.type === "sale" && selectedTransaction.status !== "cancelled" && (
                     <Button
                       variant="outline"
                       className="flex-1 h-10 text-[11px] sm:text-sm px-2 sm:px-4 border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/30"
@@ -686,10 +759,117 @@ export default function POSHistoryPage() {
                       Cetak Nota
                     </Button>
                   )}
+                  {/* Cancel/Refund Button - Only if within 24 hours and completed */}
+                  {selectedTransaction.status === "completed" && (
+                    <Button
+                      variant="outline"
+                      className="flex-1 h-10 text-[11px] sm:text-sm px-2 sm:px-4 border-red-300 text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/30"
+                      onClick={handleCancelClick}
+                    >
+                      <RotateCcw className="h-4 w-4 mr-1.5 sm:mr-2" />
+                      Refund
+                    </Button>
+                  )}
                 </div>
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Validation Images Dialog */}
+      <Dialog open={showValidationImages} onOpenChange={setShowValidationImages}>
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Camera className="h-5 w-5" /> Foto Validasi Transaksi
+            </DialogTitle>
+          </DialogHeader>
+          {selectedTransaction && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+              {selectedTransaction.item_image && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-center text-muted-foreground">Barang / Emas (Klik untuk perbesar)</p>
+                  <img
+                    src={(import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:8088/api')).replace(/\/api$/, '') + selectedTransaction.item_image}
+                    alt="Barang/Emas"
+                    className="w-full h-auto rounded-lg border object-cover shadow-sm bg-black/5 aspect-video sm:aspect-[4/3] cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => setFullScreenImage((import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:8088/api')).replace(/\/api$/, '') + selectedTransaction.item_image)}
+                  />
+                </div>
+              )}
+              {selectedTransaction.customer_image && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-center text-muted-foreground">Pelanggan (Klik untuk perbesar)</p>
+                  <img
+                    src={(import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:8088/api')).replace(/\/api$/, '') + selectedTransaction.customer_image}
+                    alt="Pelanggan"
+                    className="w-full h-auto rounded-lg border object-cover shadow-sm bg-black/5 aspect-video sm:aspect-[4/3] cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => setFullScreenImage((import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:8088/api')).replace(/\/api$/, '') + selectedTransaction.customer_image)}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+          <div className="flex justify-end mt-4">
+            <Button variant="outline" onClick={() => setShowValidationImages(false)}>
+              Tutup
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Full Screen Image Dialog */}
+      <Dialog open={!!fullScreenImage} onOpenChange={(open) => !open && setFullScreenImage(null)}>
+        <DialogContent className="max-w-full max-h-full w-screen h-screen p-0 bg-black/95 border-none shadow-none focus:outline-none flex flex-col justify-center items-center rounded-none [&>button]:hidden">
+          <div className="absolute top-4 right-4 z-50">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full text-white/70 hover:text-white hover:bg-white/20"
+              onClick={() => setFullScreenImage(null)}
+            >
+              <X className="h-6 w-6" />
+            </Button>
+          </div>
+          <img
+            src={fullScreenImage || ''}
+            alt="Full screen validation"
+            className="w-full h-full object-contain p-2 sm:p-8"
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Confirmation Dialog */}
+      <Dialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
+        <DialogContent className="w-[95vw] sm:max-w-md rounded-xl p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600 text-lg">
+              <RotateCcw className="h-5 w-5" /> Konfirmasi Refund Transaksi
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2 space-y-4">
+            <div className="bg-red-50 dark:bg-red-950/30 p-3 sm:p-4 rounded-lg border border-red-200 dark:border-red-900/50">
+              <p className="text-sm text-red-800 dark:text-red-200">
+                Apakah Anda yakin ingin membatalkan (refund) transaksi ini? 
+              </p>
+              <ul className="list-disc list-inside mt-2 text-xs sm:text-sm text-red-700 dark:text-red-300 space-y-1">
+                <li>Status transaksi akan menjadi <span className="font-semibold">Cancelled</span>.</li>
+                {selectedTransaction?.type === 'sale' && (
+                  <li>Stok barang akan otomatis dikembalikan ke <span className="font-bold underline">{selectedTransaction?.location?.name || 'lokasi semula'}</span> dan menjadi <span className="font-semibold">Tersedia</span> kembali.</li>
+                )}
+                <li>Tindakan ini tidak dapat dibatalkan.</li>
+              </ul>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-2">
+            <Button variant="outline" onClick={() => setShowCancelConfirm(false)} disabled={isCancelling} className="flex-1 sm:flex-none">
+              Batal
+            </Button>
+            <Button variant="destructive" onClick={executeCancelTransaction} disabled={isCancelling} className="flex-1 sm:flex-none">
+              {isCancelling ? "Memproses..." : "Ya, Refund"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
