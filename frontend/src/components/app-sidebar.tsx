@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import { usePermission } from '@/hooks/usePermission';
-import { getAppName, getAppSubtitle } from '@/lib/page-title';
+import { getAppName, getAppSubtitle, getMediaUrl } from '@/lib/page-title';
 import {
   Sidebar,
   SidebarContent,
@@ -166,7 +166,7 @@ export function AppSidebar() {
               <a href="/" className="font-semibold">
                 {appLogo ? (
                   <img 
-                    src={(import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:8088/api')).replace(/\/api$/, '') + appLogo} 
+                    src={getMediaUrl(appLogo)} 
                     alt="Logo" 
                     className="flex aspect-square size-8 items-center justify-center object-contain rounded" 
                   />

@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { authApi, settingsApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
-import { setPageTitle, getAppName, setAppFavicon } from '@/lib/page-title';
+import { setPageTitle, getAppName, setAppFavicon, getMediaUrl } from '@/lib/page-title';
 import { Building2 } from 'lucide-react';
 
 export default function LoginPage() {
@@ -75,7 +75,7 @@ export default function LoginPage() {
           <div className="flex items-center gap-2 mb-2">
             {appLogo ? (
               <img
-                src={(import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:8088/api')).replace(/\/api$/, '') + appLogo}
+                src={getMediaUrl(appLogo)}
                 alt="Logo"
                 className="h-8 w-auto object-contain rounded"
               />

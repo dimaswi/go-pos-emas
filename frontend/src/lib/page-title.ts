@@ -22,6 +22,22 @@ export const getAppSubtitle = () => {
 };
 
 /**
+ * Helper to get full media URL
+ */
+export const getMediaUrl = (path: string) => {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  
+  const apiUrl = (import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:8088/api')).replace(/\/api$/, '');
+  
+  // Ensure there's a slash between apiUrl and path
+  if (apiUrl && !path.startsWith('/')) {
+    return `${apiUrl}/${path}`;
+  }
+  return `${apiUrl}${path}`;
+};
+
+/**
  * Utility function to set app favicon dynamically
  */
 export const setAppFavicon = () => {
@@ -33,7 +49,6 @@ export const setAppFavicon = () => {
       link.rel = 'icon';
       document.getElementsByTagName('head')[0].appendChild(link);
     }
-    const apiUrl = (import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:8088/api')).replace(/\/api$/, '');
-    link.href = apiUrl + favicon;
+    link.href = getMediaUrl(favicon);
   }
 };
