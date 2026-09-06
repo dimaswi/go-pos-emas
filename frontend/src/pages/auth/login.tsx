@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { authApi, settingsApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
-import { setPageTitle, getAppName } from '@/lib/page-title';
+import { setPageTitle, getAppName, setAppFavicon } from '@/lib/page-title';
 import { Building2 } from 'lucide-react';
 
 export default function LoginPage() {
@@ -16,10 +16,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [appName, setAppName] = useState('StarterKits');
+  const [appName, setAppName] = useState('Tanah Mas');
+  const [appLogo, setAppLogo] = useState('');
 
   useEffect(() => {
     setPageTitle('Login');
+    const savedLogo = localStorage.getItem('appLogo');
+    if (savedLogo) setAppLogo(savedLogo);
     loadSettings();
   }, []);
 
@@ -27,13 +30,21 @@ export default function LoginPage() {
     try {
       const response = await settingsApi.getAll();
       const settings = response.data.data;
-      
+
       if (settings.app_name) {
         setAppName(settings.app_name);
         localStorage.setItem('appName', settings.app_name);
       }
       if (settings.app_subtitle) {
         localStorage.setItem('appSubtitle', settings.app_subtitle);
+      }
+      if (settings.app_logo) {
+        setAppLogo(settings.app_logo);
+        localStorage.setItem('appLogo', settings.app_logo);
+      }
+      if (settings.app_favicon) {
+        localStorage.setItem('appFavicon', settings.app_favicon);
+        setAppFavicon();
       }
     } catch (error) {
       // Use default if API fails
@@ -62,9 +73,17 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm border-0 shadow-sm">
         <CardHeader className="space-y-1.5">
           <div className="flex items-center gap-2 mb-2">
-            <div className="flex aspect-square size-8 items-center justify-center rounded bg-foreground text-background">
-              <Building2 className="size-4" />
-            </div>
+            {appLogo ? (
+              <img
+                src={(import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:8088/api')).replace(/\/api$/, '') + appLogo}
+                alt="Logo"
+                className="h-8 w-auto object-contain rounded"
+              />
+            ) : (
+              <div className="flex aspect-square size-8 items-center justify-center rounded bg-foreground text-background">
+                <Building2 className="size-4" />
+              </div>
+            )}
             <span className="text-lg font-semibold">{appName}</span>
           </div>
           <CardTitle className="text-xl font-semibold">Sign In</CardTitle>

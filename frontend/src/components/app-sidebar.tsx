@@ -118,12 +118,14 @@ export function AppSidebar() {
   const { hasPermission } = usePermission();
   const [appName, setAppName] = useState(getAppName());
   const [appSubtitle, setAppSubtitle] = useState(getAppSubtitle());
+  const [appLogo, setAppLogo] = useState(localStorage.getItem('appLogo') || '');
 
-  // Listen for storage changes to update app name/subtitle in real-time
+  // Listen for storage changes to update app name/subtitle/logo in real-time
   useEffect(() => {
     const handleStorageChange = () => {
       setAppName(getAppName());
       setAppSubtitle(getAppSubtitle());
+      setAppLogo(localStorage.getItem('appLogo') || '');
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -162,10 +164,18 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild className="data-[state=open]:bg-transparent">
               <a href="/" className="font-semibold">
-                <div className="flex aspect-square size-7 items-center justify-center rounded bg-foreground text-background">
-                  <Building2 className="size-4" />
-                </div>
-                <div className="flex flex-col gap-0.5 leading-none">
+                {appLogo ? (
+                  <img 
+                    src={(import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:8088/api')).replace(/\/api$/, '') + appLogo} 
+                    alt="Logo" 
+                    className="flex aspect-square size-8 items-center justify-center object-contain rounded" 
+                  />
+                ) : (
+                  <div className="flex aspect-square size-8 items-center justify-center rounded bg-foreground text-background">
+                    <Building2 className="size-4" />
+                  </div>
+                )}
+                <div className="flex flex-col gap-0.5 leading-none ml-1">
                   <span className="font-semibold text-sm">{appName}</span>
                   <span className="text-xs text-muted-foreground">{appSubtitle}</span>
                 </div>

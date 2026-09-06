@@ -412,7 +412,7 @@ func SeedData() error {
 
 	// Create default settings
 	defaultSettings := []models.Setting{
-		{Key: "app_name", Value: "StarterKits"},
+		{Key: "app_name", Value: "Tanah Mas"},
 		{Key: "app_subtitle", Value: "Hospital System"},
 	}
 

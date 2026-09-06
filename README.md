@@ -1,4 +1,4 @@
-# StarterKits - Fullstack Starter Template
+# Tanah Mas - Fullstack Starter Template
 
 Aplikasi fullstack starter template dengan **Golang (Gin + GORM)** backend dan **React TypeScript** frontend. Dilengkapi dengan autentikasi JWT dan RBAC (Role-Based Access Control).
 
@@ -257,7 +257,7 @@ Contoh:
 - Support untuk semua komponen
 
 ### Application Branding
-- Customizable application name (default: StarterKits)
+- Customizable application name (default: Tanah Mas)
 - Customizable subtitle (default: Starter Template)
 - Changes reflect immediately in sidebar
 - Dynamic page titles (format: "Page Name - App Name")

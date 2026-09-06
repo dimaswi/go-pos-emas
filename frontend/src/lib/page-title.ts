@@ -20,3 +20,20 @@ export const getAppName = () => {
 export const getAppSubtitle = () => {
   return localStorage.getItem('appSubtitle') || 'Your Application Subtitle';
 };
+
+/**
+ * Utility function to set app favicon dynamically
+ */
+export const setAppFavicon = () => {
+  const favicon = localStorage.getItem('appFavicon');
+  if (favicon) {
+    let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.getElementsByTagName('head')[0].appendChild(link);
+    }
+    const apiUrl = (import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:8088/api')).replace(/\/api$/, '');
+    link.href = apiUrl + favicon;
+  }
+};

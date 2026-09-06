@@ -24,7 +24,7 @@ const BASE_URL = getBaseUrl();
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [appName, setAppName] = useState("StarterKits");
+  const [appName, setAppName] = useState("Tanah Mas");
   const [appSubtitle, setAppSubtitle] = useState("Hospital System");
   const [appLogo, setAppLogo] = useState("");
   const [appFavicon, setAppFavicon] = useState("");
@@ -32,13 +32,13 @@ export default function SettingsPage() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingFavicon, setUploadingFavicon] = useState(false);
   const [fetching, setFetching] = useState(true);
-  
+
   const logoInputRef = useRef<HTMLInputElement>(null);
   const faviconInputRef = useRef<HTMLInputElement>(null);
 
   // Set page title
   useEffect(() => {
-    const savedAppName = localStorage.getItem("appName") || "StarterKits";
+    const savedAppName = localStorage.getItem("appName") || "Tanah Mas";
     document.title = `Settings - ${savedAppName}`;
   }, []);
 
@@ -100,7 +100,7 @@ export default function SettingsPage() {
       setAppLogo(url);
       localStorage.setItem("appLogo", url);
       window.dispatchEvent(new Event("storage"));
-      
+
       toast({
         variant: "success",
         title: "Success!",
@@ -128,7 +128,7 @@ export default function SettingsPage() {
       setAppFavicon(url);
       localStorage.setItem("appFavicon", url);
       updateFavicon(url);
-      
+
       toast({
         variant: "success",
         title: "Success!",
@@ -227,7 +227,7 @@ export default function SettingsPage() {
                       id="appName"
                       value={appName}
                       onChange={(e) => setAppName(e.target.value)}
-                      placeholder="StarterKits"
+                      placeholder="Tanah Mas"
                       className="max-w-md h-8 sm:h-9 text-xs sm:text-sm"
                     />
                     <p className="text-[10px] sm:text-xs text-muted-foreground">
@@ -297,9 +297,9 @@ export default function SettingsPage() {
                     <div className="flex items-center gap-4">
                       <div className="w-20 h-20 border rounded-lg flex items-center justify-center bg-muted/30 overflow-hidden">
                         {appLogo ? (
-                          <img 
-                            src={`${BASE_URL}${appLogo}`} 
-                            alt="Logo" 
+                          <img
+                            src={`${BASE_URL}${appLogo}`}
+                            alt="Logo"
                             className="w-full h-full object-contain"
                           />
                         ) : (
@@ -348,9 +348,9 @@ export default function SettingsPage() {
                     <div className="flex items-center gap-4">
                       <div className="w-20 h-20 border rounded-lg flex items-center justify-center bg-muted/30 overflow-hidden">
                         {appFavicon ? (
-                          <img 
-                            src={`${BASE_URL}${appFavicon}`} 
-                            alt="Favicon" 
+                          <img
+                            src={`${BASE_URL}${appFavicon}`}
+                            alt="Favicon"
                             className="w-full h-full object-contain"
                           />
                         ) : (

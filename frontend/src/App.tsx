@@ -6,6 +6,7 @@ import { ProtectedRoute as PermissionGuard } from './components/protected-route'
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import { Loader2 } from 'lucide-react';
+import { setAppFavicon } from '@/lib/page-title';
 
 // Lazy load pages
 const LoginPage = lazy(() => import('./pages/auth/login'));
@@ -120,7 +121,7 @@ function AuthOnly({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
-  // Load theme on app start
+  // Load theme and favicon on app start
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'dark') {
@@ -128,6 +129,18 @@ function App() {
     } else {
       document.documentElement.classList.remove('dark');
     }
+    
+    // Set favicon
+    setAppFavicon();
+    
+    // Listen for storage changes to update favicon if changed from settings
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'appFavicon') {
+        setAppFavicon();
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   return (
